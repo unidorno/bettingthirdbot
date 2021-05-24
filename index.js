@@ -9,10 +9,6 @@ const keyboards = require('./src/keyboard-buttons')
 console.log('bot has been started...')
 
 //====================INITIALIZE FIREBASE==============================
-import * as functions from "firebase-functions"
-import * as functions from "express"
-import * as functions from "cors"
-
 const firebase_connect = require('firebase')
 
 const fb = firebase_connect.initializeApp({
