@@ -1,0 +1,272 @@
+{
+  "Delivery" : {
+    "bills" : {
+      "29-05-2021" : {
+        "date" : "29-05-2021,1:28",
+        "order_info" : "'Ваш заказ: 1. Семга'",
+        "price" : 7400,
+        "status" : "delivered",
+        "username" : "thermite28"
+      }
+    },
+    "chats" : {
+      "admin" : 338134907,
+      "delivery_chat" : -534169111
+    },
+    "clients" : {
+      "Iossif Kutateladze" : {
+        "adress" : "проспект богенбай батыра, 21, квартира 50",
+        "average_price" : 2100,
+        "average_purchases" : 1.3,
+        "email" : "undefined",
+        "favourite_food" : "Deserts",
+        "id" : 124211244,
+        "name" : "Iossif Kutateladze",
+        "phone" : "+77075112224",
+        "username" : "thermite28"
+      },
+      "clients_amount" : 1
+    },
+    "ordering" : {
+      "categories" : {
+        "0" : {
+          "category_name" : "Завтраки 🍳",
+          "food" : {
+            "0" : {
+              "description" : "Описание блюда",
+              "name" : "Сырники",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/623/695/729/thumb__576_384_0_0_auto.jpg",
+              "price" : 1600
+            },
+            "1" : {
+              "description" : "Описание блюда",
+              "name" : "Сытный завтрак",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/482/3b8/8b7/thumb__576_384_0_0_auto.jpg",
+              "price" : 2100
+            },
+            "food_number" : 2
+          }
+        },
+        "1" : {
+          "category_name" : "Десерты 🍰",
+          "food" : {
+            "0" : {
+              "description" : "Описание блюда",
+              "name" : "Whoopie cake",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/b17/9cc/470/thumb__576_384_0_0_auto.jpg",
+              "price" : 1800
+            },
+            "1" : {
+              "description" : "Описание блюда",
+              "name" : "Devil's cake",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/13b/b70/1a9/thumb__576_384_0_0_auto.jpg",
+              "price" : 1300
+            },
+            "food_number" : 2
+          }
+        },
+        "categories_number" : 2
+      }
+    },
+    "other_info" : {
+      "adress_text" : "Мәңгілік Ел, 47",
+      "contact_phone" : "+77057777777",
+      "latitude" : 51.0984065,
+      "longitude" : 71.4251721
+    }
+  },
+  "cities" : [ {
+    "city_name" : "Нур-Султан",
+    "points" : [ {
+      "categories" : {
+        "0" : {
+          "category_name" : "Салаты 🥗",
+          "food" : {
+            "0" : {
+              "description" : "Тут будет описание салата",
+              "name" : "Домашний салат со сметаной",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/c0e/59a/0d8/thumb__576_384_0_0_auto.jpg",
+              "price" : 1300
+            },
+            "1" : {
+              "description" : "Тут будет описание салата",
+              "name" : "Греческий салат",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/36b/369/c58/thumb__576_384_0_0_auto.jpg",
+              "price" : 1600
+            },
+            "food_number" : 2
+          }
+        },
+        "1" : {
+          "category_name" : "Завтраки 🍳",
+          "food" : {
+            "0" : {
+              "description" : "Омлет с фирменной колбаской, болгарским перцем и картофелем фри",
+              "name" : "Американский завтрак",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/1e5/0ca/671/thumb__576_384_0_0_auto.jpg",
+              "price" : 1750
+            },
+            "1" : {
+              "description" : "Глазунья, колбаска говяжья, салат из капусты и болгарского перца, картофель, тосты из темного хлеба",
+              "name" : "Дикий завтрак",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/b34/0f1/ad2/thumb__576_384_0_0_auto.jpg",
+              "price" : 1850
+            },
+            "2" : {
+              "descrtiption" : "Описание Описание Описание Описание ",
+              "name" : "Швейцарский завтрак",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/ba5/044/e43/thumb__576_384_0_0_auto.jpg",
+              "price" : 1800
+            },
+            "food_number" : 3
+          }
+        },
+        "categories_number" : 2
+      },
+      "latitude" : 51.0984065,
+      "longitude" : 71.4251721,
+      "point_name" : "Мәңгілік Ел, 47"
+    }, {
+      "categories" : {
+        "0" : {
+          "category_name" : "Десерты 🍰",
+          "food" : {
+            "0" : {
+              "description" : "Тут будет описание пирога",
+              "name" : "Ягодный пирог",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/3bd/4da/d0f/thumb__576_384_0_0_auto.jpg",
+              "price" : 850
+            },
+            "1" : {
+              "description" : "Тут будет описание чизкейка",
+              "name" : "Чизкейк охлажденный",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/2cd/c4b/259/thumb__576_384_0_0_auto.jpg",
+              "price" : 1700
+            },
+            "2" : {
+              "description" : "Тут будет описание пирога",
+              "name" : "Шоколадный с малиной",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/63a/231/fa4/thumb__576_384_0_0_auto.jpg",
+              "price" : 1100
+            },
+            "food_number" : 3
+          }
+        },
+        "1" : {
+          "category_name" : "Напитки ☕️",
+          "food" : {
+            "0" : {
+              "description" : "Тут будет описание Латте",
+              "name" : "Латте классический Boom",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/2b4/c4e/b46/thumb__576_384_0_0_auto.jpg",
+              "price" : 850
+            },
+            "1" : {
+              "description" : "Тут будет описание Мокко Single",
+              "name" : "Мокко Single",
+              "photo" : "https://coffeeboom.kz/storage/app/uploads/public/f1f/07a/d59/thumb__576_384_0_0_auto.jpg",
+              "price" : 1100
+            },
+            "food_number" : 2
+          }
+        },
+        "categories_number" : 2
+      },
+      "latitude" : 51.09264,
+      "longitude" : 71.3892069,
+      "point_name" : "Мәңгілік Ел, 28"
+    } ],
+    "points_number" : 2
+  }, {
+    "city_name" : "Алматы",
+    "points" : [ {
+      "categories" : [ {
+        "food" : [ {
+          "description" : "Тут будет описание салата",
+          "name" : "Домашний салат со сметаной",
+          "photo" : "link to a photo",
+          "price" : 1300
+        }, {
+          "description" : "Тут будет описание салата",
+          "name" : "Греческий салат",
+          "photo" : "link to a photo",
+          "price" : 1600
+        } ],
+        "name" : "Салаты"
+      }, {
+        "food" : [ {
+          "description" : "Омлет с фирменной колбаской, болгарским перцем и картофелем фри",
+          "name" : "Американский завтрак",
+          "photo" : "link to a photo",
+          "price" : 1750
+        }, {
+          "description" : "Глазунья, колбаска говяжья, салат из капусты и болгарского перца, картофель, тосты из темного хлеба",
+          "name" : "Дикий завтрак",
+          "photo" : "link to a photo",
+          "price" : 1850
+        } ],
+        "name" : "Завтраки"
+      } ],
+      "point_name" : "А Мәңгілік Ел, 47"
+    }, {
+      "categories" : [ {
+        "food" : [ {
+          "description" : "Тут будет описание салата",
+          "name" : "Домашний салат со сметаной",
+          "photo" : "link to a photo",
+          "price" : 1300
+        }, {
+          "description" : "Тут будет описание салата",
+          "name" : "Греческий салат",
+          "photo" : "link to a photo",
+          "price" : 1600
+        } ],
+        "name" : "Салаты 2"
+      }, {
+        "food" : [ {
+          "description" : "Омлет с фирменной колбаской, болгарским перцем и картофелем фри",
+          "name" : "Американский завтрак",
+          "photo" : "link to a photo",
+          "price" : 1750
+        }, {
+          "description" : "Глазунья, колбаска говяжья, салат из капусты и болгарского перца, картофель, тосты из темного хлеба",
+          "name" : "Дикий завтрак",
+          "photo" : "link to a photo",
+          "price" : 1850
+        } ],
+        "name" : "Завтраки 2"
+      } ],
+      "point_name" : "А Мәңгілік Ел, 28"
+    }, {
+      "categories" : [ {
+        "food" : [ {
+          "description" : "Тут будет описание салата",
+          "name" : "Домашний салат со сметаной",
+          "photo" : "link to a photo",
+          "price" : 1300
+        }, {
+          "description" : "Тут будет описание салата",
+          "name" : "Греческий салат",
+          "photo" : "link to a photo",
+          "price" : 1600
+        } ],
+        "name" : "Салаты 3"
+      }, {
+        "food" : [ {
+          "description" : "Омлет с фирменной колбаской, болгарским перцем и картофелем фри",
+          "name" : "Американский завтрак",
+          "photo" : "link to a photo",
+          "price" : 1750
+        }, {
+          "description" : "Глазунья, колбаска говяжья, салат из капусты и болгарского перца, картофель, тосты из темного хлеба",
+          "name" : "Дикий завтрак",
+          "photo" : "link to a photo",
+          "price" : 1850
+        } ],
+        "name" : "Завтраки 3"
+      } ],
+      "point_name" : "А Рақымжан Қошқарбаев, 10/1"
+    } ],
+    "points_number" : 1
+  } ]
+}

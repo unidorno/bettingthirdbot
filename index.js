@@ -5,8 +5,10 @@ const debug = require('./helpers')
 const config = require('./config')
 const database = require('./database.json')
 const keyboards = require('./src/keyboard-buttons')
+const NodeGeocoder = require('node-geocoder');
 //const firebase = require('./firebase_connect')
 console.log('bot has been started...')
+
 
 //====================INITIALIZE FIREBASE==============================
 const firebase_connect = require('firebase')
@@ -18,28 +20,6 @@ const fb = firebase_connect.initializeApp({
 })
 
 //====================================================================
-//=====================INITIALIZE MONGOOSE============================
-
-/*mongoose.connect(config.DB_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    socketTimeoutMS: 0,
-    keepAlive: true,
-    //reconnectTries: 30
-})
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.log(err))
-
-require('./models/categories.models')
-
-const Category = mongoose.model('categories')
-
-database.cities.forEach(c => new Category(c).save())*/
-//=====================================================================
-//=======================KEYBOARDS=====================================
-let NurSultan_keyboard = []
-let Almaty_keyboard = []
-//=====================================================================
 
 const bot = new TelegramBot(config.TOKEN,
     {
@@ -54,11 +34,9 @@ const bot = new TelegramBot(config.TOKEN,
     })
 
 // text variables
-var owner_chatid = 0
-var moderator_chatid = 0
-var current_chatid = 0
-var tg_username = '@thermite28'
-var tg_username_link = 'https://t.me/thermite28'
+let admin_id = 0
+let delivery_chat = 0
+let current_chat = 0
 
 let temp_message = 0
 var userCity = 0 // 0-NurSultan, 1-Almaty
@@ -79,7 +57,8 @@ const anotherpoint_text = '◀️ Выбрать другое заведение
 const anothercategory_text = '◀️ Выбрать другую категорию'
 let anotherpoint_multiple = 0
 const choosecity_text = '◀️ Выбрать другой город'
-const whereareyoufrom_text = 'Добрый день. Выберите, из какого вы города:'
+let restaurant_name = 'Coffee BOOM'
+const hellomessage_text = `Привет! Я бот ресторана ` + restaurant_name + `. С моей помощью Вы можете заказывать еду и узнавать о новых акциях 🛍`
 const youchosecafe_text = 'Вы выбрали кофейню Coffee BOOM, которая находится по адресу: '
 const sendlocation = '📍 Отметить на карте'
 const choosecategory_text = 'Выберите категорию блюда, которое хотите заказать:'
@@ -93,57 +72,557 @@ const anotherfood_text = '◀️ Назад к списку блюд'
 const anotherfood_text2 = '◀️ Назад к списку'
 const chooseamountoffood_text = 'Введите нужное количество: '
 const editbasket_text = '✏️ Редактировать корзину'
-const paybasket_text = '💳 Перейти к оплате'
+const paybasket_text = '✅ Сделать заказ'
 const youwanttochangepoint_text = 'Вы точно хотите сделать предзаказ в другом заведении? При смене заведения придется выбирать блюда снова'
 const query_deletethismessage = 'Нет, не хочу'
 const choosefoodtoedit_text = 'Выберите номер блюда, которое нужно отредактировать:'
 const delete_basketfood = '🗑  Удалить'
 const basketisempty_text = 'Теперь корзина пустая. Давай наполним ее 😏'
 const mybasket_text = '🛒 Моя корзина'
+const myorder_text = '🧾 Мой заказ'
 const choosetime_text = 'Через сколько минут Вы хотите получить заказ? (мин. 15 мин)'
 const chooseanothertime_text = '⏳ Выбрать другое время'
 const paybutton_text = '💳 Оплатить'
-const afterorder_keyboard1 = '✅ Я получил заказ'
-const afterorder_keyboard2 = '📍 Место выдачи'
-const afterorder_keyboard3 = '❓ Служба поддержки'
+const location_text = '📍 Где мы находимся?'
+const phone_text = '📞 Позвонить нам'
 const didyougetorder_text = 'Вы точно получили свой заказ? Данные о заказе могут не сохраниться'
 const yesigotorder_text = 'Да, заказ получен'
 const noigotorder_text = 'Я еще не забрал заказ'
-const help_phone = '+77077777777'
-//
+const almostthere_text = '🤗 Почти готово! Осталось только указать свой номер и адрес доставки. При необходимости курьер позвонит Вам и уточнит детали'
+const dataiscorrect_text = '✔️ Продолжить'
+const order_status_button = '🚴‍♂️ Статус заказа'
+const coins_text = '💰 Мой баланс'
+const finish_order_text = '✔️ Завершить'
+const add_email = '🔗 Добавить email'
+const dont_add_email = 'Нет, спасибо'
+const spendmycoins = 'Да, хочу'
+const dontspendmycoins = 'Нет'
+let help_phone = '+77077777777'
+const didntaddemail_text = '😕 Жаль, что вы не хотите указать свой email. Это еще одна возможность быть в курсе акций и уникальных предложений'
+const emailalreadyadded_text = 'Спасибо за то, что выбираете нас! Вы можете сделать еще один заказ: '
+/////////////////////////////////////////////////////////////////
+const sticker_hello = 'CAACAgIAAxkBAAMPYLD3oI-JToPQK3oid4_X8irtMrQAAlQAA0G1Vgxqt_jHCI0B-h8E'
+
+/////////////////////////////////////////////////////////////////
 let basket = [] //корзина (массив массивов)
 let decrease_foodcount = '-'
 let increase_foodcount = '+'
 let decrease_foodcount2 = '.-.'
 let increase_foodcount2 = '.+.'
 let temp_foodamount = 1
+let food_categories = [['☕️ Кофе', 0, 'coffee'], ['🍦 Мороженое', 0, 'icecream'], ['🍣 Суши', 0, 'sushi'], ['🍰 Десерты', 0, 'deserts'], ['🍔 Фаст-фуд', 0, 'fastfood'], ['Остальное', 0, 'other']]
 let temp_food_price = 0
 let temp_food_text = ''
 let temp_backet_food = 0
-let times = [15, 30, 45]
 let finalbasket = ''
 let finalprice = 0
 let finaltime_deelay = ''
 let finaltime = new Date()
-let finalplace = ''
-//
-//var NurSultan_adresses = ['Мәңгілік Ел, 47', 'Мәңгілік Ел, 28', 'Рақымжан Қошқарбаев, 10/1']
-var NurSultan_adresses = []
-//var NurSultan_geo1 = [51.0984065,51.09264,51.1288777]
-//var NurSultan_geo2 = [71.4251721,71.3892069,71.4577355]
-var NurSultan_geo1 = []
-var NurSultan_geo2 = []
-/////////////////////////////////////////////////////////////////
-var Almaty_adresses = ['Мәңгілік Ел, 47', 'Мәңгілік Ел, 28', 'Рақымжан Қошқарбаев, 10/1']
-var Almaty_geo1 = [51.0984065,51.09264,51.1288777]
-var Almaty_geo2 = [71.4251721,71.3892069,71.4577355]
-/////////////////////////////////////////////////////////////////
+
+///////////Настройки для системы лояльности///////////
+let cashback = 0
+let max_pay_percentage = 0
+let min_pay_percentage = 0
+let percent_foremail = 0
+let skidka = 0
+
+///////////Настройки для рассылки///////////
+let cheap_max = 0
+let group_buys_amount = 0
+let reach_min = 0
+
+///////////////Данные о пользователе//////////////////
+let user_phone = ''
+let user_email = ''
+let user_adress = ''
+let user_name = ''
+let user_username = 'unknown'
+let user_id = 0
+let average_price = 0
+let average_purchases = 0
+let user_coins = 0
+let added_coins = 0
+let favourite_food = 'unknown'
+let alltime_purchases_amount = 0
+let userstatus = 'unknown'
+let order_name = ''
+let order_date = ''
+let order_status = 'unknown'
+let order_statuses_text = ['В обработке ⏳', '🚴‍♂️ Доставляется', '✅ Доставлен', '❌ Отклонен']
+///////////////////////////////////////////////////////
+
+//////////////////QUERY USER DATA//////////////////////
+const changename_text = 'Изменить имя'
+const changephone_text = 'Изменить номер'
+const changeadress_text = 'Изменить адрес'
+let isMakingChanges = 0
+///////////////////////////////////////////////////////
+
+let Point_location = []
+let point_adress = ''
+const delivery_started = '✅ Заказ отправлен! Через несколько минут его увидит курьер и приступит к доставке. Мы уведомим Вас об изменении статуса вашего заказа.'
+
 var userlocation = [0.1,0.1]
 var nearest_place = 0 //номер ближайшего заведения(в массиве)
 var min_distance = 9999999
 
-GetPoints_NurSultan()
-GetPoints_Almaty()
+//////////////////DATA FOR DELIVERS//////////////////////
+let delivers_bill = ''
+let deliver_bill_topic = ''
+let deliver_bill_topic_names = ['🎉 Новый заказ!', '⚙️ Заказ принят. Статус: ', '❌ Заказ отклонен работником: ']
+let deliver_bill_client_info = ''
+let deliver_bill_order_info = ''
+let deliver_bill_finalprice = 0
+let deliver_bill_order_details = ''
+let accepted_order_name = ''
+let accept_order_callback = 'acc_n'
+let refuse_order_callback = 'ref_n'
+let isdelivered_callback = 'del_c'
+let deliver_bill_messageids = []
+///////////////////////////////////////////////////////
+
+let unregistered_keyboard = []
+unregistered_keyboard[0] = [
+    [{
+        text: mybasket_text
+    }],
+    [{
+        text: paybasket_text
+    }],
+    [{
+        text: location_text
+    },{
+        text: phone_text
+    }]
+]
+unregistered_keyboard[1] = [
+    [{
+        text: finish_order_text
+    },{
+        text: myorder_text
+    }],
+    [{
+        text: location_text
+    },{
+        text: phone_text
+    }]
+]
+unregistered_keyboard[2] = [
+    [{
+        text: order_status_button
+    },{
+        text: myorder_text
+    }],
+    [{
+        text: location_text
+    },{
+        text: phone_text
+    }]
+]
+
+let registered_keyboard = []
+registered_keyboard[0] = [
+    [{
+        text: mybasket_text
+    }],
+    [{
+        text: paybasket_text
+    },{
+        text: coins_text
+    }],
+    [{
+        text: location_text
+    },{
+        text: phone_text
+    }]
+]
+
+function StartCheckingOrder(){
+    let order_data = fb.database().ref(order_name)
+    order_data.on('value', (result) => 
+    {
+        order_status = result.val().order_status
+        console.log('ORDER STATUS: ' + result.val().order_status + ', name: "' + order_name + '"')
+
+        if (order_status === order_statuses_text[3]){
+            for (let i=0; i<100; i++){
+                bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+                    console.log(err)
+                })
+            }
+            bot.sendMessage(current_chat, 'Нам жаль, но мы были вынуждены отклонить Ваш заказ. Вы можете связаться с нами, нажав на кнопку ' + phone_text)
+        }
+        
+        if (order_status === order_statuses_text[2]){
+            //мы получили заказ. На клаве вместо статус заказа поставить "заказ получен". Также написать сообщение мол ваш заказ был успешно доставлен. Нажмите на кнопку "готово", чтобы получить баллы или заказать еще раз. 
+            //После нажатия на кнопку готово, мы очищаем все данные связывающие аккаунт с чеком доставки, чтобы если в чате доставщиков поменяют статус, клиент не получал опевещений. 
+            
+            const temp_text = `✅ Ваш заказ был успешно доставлен! 
+            
+Для завершение заказа <b> нажмите кнопку "` + finish_order_text + `". </b>
+
+Если вы столкнулись с проблемой при заказе, нажмите на кнопку "` + phone_text + `". Мы будем рады помочь.`
+            
+            bot.sendMessage(current_chat, temp_text, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    keyboard: unregistered_keyboard[1],
+                    resize_keyboard: true
+
+                }
+            })
+        
+        }
+
+        if (order_status === order_statuses_text[1]){
+            //в этом случае выводить клавиатуру как после успешного заказа. Вдруг кто-то по ошибке нажмет что заказ доставлен. Тогда клиент звонит в кафе и после разговора статус снова меняют на "доставляется" и продолжают работать. 
+            bot.sendMessage(current_chat, 'Статус заказа изменен на "' +  order_status + '".') 
+        }
+    }
+)
+}
+
+
+
+var other_data = fb.database().ref('Delivery/other_info')
+    other_data.on('value', (snapshot) => 
+    {
+        help_phone = snapshot.val().contact_phone
+        Point_location[0] = snapshot.val().latitude
+        Point_location[1] = snapshot.val().longitude
+        point_adress = snapshot.val().adress_text
+        console.log('!! ' + help_phone + ' ' + point_adress + ' ' + Point_location[0] + ' ' + Point_location[1])
+    }
+)
+
+var loyalsys_data = fb.database().ref('Delivery/loyal_system/preferences')
+loyalsys_data.on('value', (snapshot) => 
+    {
+        cashback = snapshot.val().percentage
+        max_pay_percentage = snapshot.val().max_pay_percentage
+        min_pay_percentage = snapshot.val().min_pay_percentage
+        percent_foremail = snapshot.val().percent_foremail
+    }
+)
+
+var mailing_data = fb.database().ref('Delivery/mailing/preferences')
+    mailing_data.on('value', (snapshot) => 
+    {
+        reach_min = snapshot.val().reach_min
+        group_buys_amount = snapshot.val().group_buys_amount
+        cheap_max = snapshot.val().cheap_max
+    }
+)
+
+var chats_data = fb.database().ref('Delivery/chats')
+    chats_data.on('value', (snapshot) => 
+    {
+        admin_id = snapshot.val().admin
+        delivery_chat = snapshot.val().delivery_chat
+        console.log('!!! ' + admin_id + ' ' + delivery_chat)
+    }
+)
+
+function CheckUser(userid, username, chatId){
+    console.log('checking user: ' + userid + ' ' + username)
+    let userdata = fb.database().ref('Delivery/clients/' + userid)
+    userdata.get().then((result) => 
+    {
+        console.log('Пользователь зарегистрирован. ID: ' + userid + ' ' + result.val().id)
+        user_adress = result.val().adress
+        user_email = result.val().email
+        user_name = result.val().name
+        user_username = result.val().username
+        user_phone = result.val().phone
+        user_id = result.val().id
+        alltime_purchases_amount = result.val().alltime_purchases_amount
+        user_coins = result.val().coins
+
+        userstatus = 'registered'
+
+        bot.sendMessage(chatId, almostthere_text, {
+            reply_markup:{
+                inline_keyboard:[
+                    [{
+                        text: 'Имя: ' + user_name,
+                        callback_data: changename_text
+                    },
+                    {
+                        text: 'Телефон: ' + user_phone,
+                        callback_data: changephone_text
+                    }],
+                    [{
+                        text: 'Адрес: ' + user_adress,
+                        callback_data: changeadress_text
+                    }],
+                    [{
+                        text: dataiscorrect_text,
+                        callback_data: dataiscorrect_text
+                    }]
+                ]
+            }
+        })
+
+        StartAnalitycs()
+
+    }).catch(error => {
+        console.log('Пользователь не зарегистрирован. ' + error)
+        userstatus = 'unregistered'
+        /*fb.database().ref('Delivery/clients/').set({
+            userid : {
+                adress: 'unknown'
+            }
+            username: name,
+            email: email,
+            profile_picture : imageUrl
+          });*/
+        user_name = username
+          bot.sendMessage(chatId, almostthere_text, {
+            reply_markup:{
+                inline_keyboard:[
+                    [{
+                        text: 'Имя: ' + user_name,
+                        callback_data: changename_text
+                    },
+                    {
+                        text: 'Телефон: ' + user_phone,
+                        callback_data: changephone_text
+                    }],
+                    [{
+                        text: 'Адрес: ' + user_adress,
+                        callback_data: changeadress_text
+                    }]
+                ]
+            }
+        })
+
+        StartAnalitycs()
+    })
+}
+
+function StartAnalitycs(){
+    
+    //узнаем любимую еду пользователя
+    for (let i = 0; i < basket.length; i++){
+        if (basket[i][3] === 0){
+            //тут идут завтраки, а значит попадает в категорию "основное"
+            food_categories[5][1] = food_categories[5][1] + basket[i][1]
+            console.log('Добавляем в категорию "основное" очки. Основного теперь: ' + food_categories[5][1])
+        }
+        if (basket[i][3] === 1){
+            //тут идут десерты, значит попадает в "десерты"
+            food_categories[3][1] = food_categories[3][1] + basket[i][1]
+            console.log('Добавляем в категорию "десерты" очки. Десертов теперь: ' + food_categories[3][1])
+        }
+        if (i === basket.length - 1){
+            //все распределили, теперь узнаем какую еду любим
+            console.log('Баллы определили. Теперь выбираем любимую еду')
+            let favourite_food_number = 0
+            for (let i = 0; i < food_categories.length; i++){
+                if (i <= food_categories.length - 1){
+                    console.log('Сравниваем категорию #' + i + ' и #' + (i+1))
+                    /* if (food_categories[i][1] >= food_categories[i+1][1]){
+                        favourite_food = food_categories[i][0]
+                        console.log(i +' 1 Категория ' + food_categories[i][0] + ' больше, чем категория ' + food_categories[i+1][0])
+                    }
+                    else if (food_categories[i][1] < food_categories[i+1][1]){
+                        favourite_food = food_categories[i+1][0]
+                        console.log(i + ' 2 Категория ' + food_categories[i+1][0] + ' больше, чем категория ' + food_categories[i][0])
+                    }*/
+                    if (food_categories[i][1] >= favourite_food_number){
+                        favourite_food = food_categories[i][2]
+                        favourite_food_number = food_categories[i][1]
+                        console.log(i +' 1 Категория ' + food_categories[i][0] + ' больше')
+                    }
+                    if (i === food_categories.length - 1){
+                        console.log('WINNER: ' + favourite_food)
+                    } 
+
+                }
+            }
+        }
+    }
+
+    //узаем средний чек пользователя
+    if (average_price === 0){
+        console.log('1 finalprice is ' + finalprice)
+        average_price = finalprice
+    }
+    if (average_price !== 0){
+        console.log('2 finalprice is ' + finalprice)
+        average_price = (average_price + finalprice) / 2
+        console.log('2 average price is ' + average_price)
+    }
+
+    //узнаем среднее число заказываемых за раз блюд
+    if (average_purchases === 0){
+        for (let i = 0; i < basket.length; i++){
+            average_purchases += basket[i][1]
+            if (i === basket - 1){
+                console.log('1 purchases amount = ' + average_purchases)
+            }
+        }
+    }
+    if (average_purchases !== 0){
+        let temp_purchases = 0
+        for (let i = 0; i < basket.length; i++){
+            temp_purchases += basket[i][1]
+            if (i === basket - 1){
+                console.log('2 old purchases amount = ' + average_purchases)
+                console.log('2 new purchases amount = ' + temp_purchases)
+                average_purchases = (average_purchases + temp_purchases) / 2
+                console.log('2 final purchases amount = ' + average_purchases)
+            }
+        }
+    }
+}
+
+function AddMailingData(){
+
+    if (finalprice >= reach_min){
+        console.log('!? reach_min: ' + reach_min)
+        let userdata = fb.database().ref('Delivery/mailing/categories/reach')
+        userdata.get().then((result) => {
+            let count = result.val().user_amount
+            count++
+            let user_ids_string = ''
+            user_ids_string = result.val().user_ids
+            let user_ids = user_ids_string.split(',')
+            for (let i = 0; i < user_ids.length; i++){
+                if (user_ids[i] === current_chat.toString()){
+                    break
+                }
+                if (i === user_ids.length - 1 && user_ids[i] !== current_chat.toString()){
+                    let updates = {}
+                    updates['Delivery/mailing/categories/reach/user_amount'] = count
+
+                    if (user_ids_string !== ''){
+                        user_ids_string += ',' + current_chat
+                    }
+
+                    else if (user_ids_string === ''){
+                        user_ids_string += current_chat
+                    }
+
+                    updates['Delivery/mailing/categories/reach/user_ids'] = user_ids_string
+
+                    fb.database().ref().update(updates)
+                }
+            }
+           
+        })
+    }
+
+    if (finalprice <= cheap_max){
+        let userdata = fb.database().ref('Delivery/mailing/categories/cheap')
+        userdata.get().then((result) => {
+            let count = result.val().user_amount
+            count++
+            let user_ids_string = ''
+            user_ids_string = result.val().user_ids
+            let user_ids = user_ids_string.split(',')
+            for (let i = 0; i < user_ids.length; i++){
+                if (user_ids[i] === current_chat.toString()){
+                    break
+                }
+                if (i === user_ids.length - 1 && user_ids[i] !== current_chat.toString()){
+                    let updates = {}
+                    updates['Delivery/mailing/categories/cheap/user_amount'] = count
+
+                    if (user_ids_string !== ''){
+                        user_ids_string += ',' + current_chat
+                    }
+
+                    else if (user_ids_string === ''){
+                        user_ids_string += current_chat
+                    }
+                    
+                    updates['Delivery/mailing/categories/cheap/user_ids'] = user_ids_string
+                    
+                    fb.database().ref().update(updates)
+                }
+            }
+           
+        })
+    }
+
+    for (let i = 0; i < food_categories.length; i++){
+        if (favourite_food === food_categories[i][2]){
+            console.log('!!! Delivery/mailing/categories/' + food_categories[i][2])
+            let userdata = fb.database().ref('Delivery/mailing/categories/' + food_categories[i][2])
+            userdata.get().then((result) => 
+            {
+                let count = result.val().user_amount
+                count++
+                let user_ids_string = ''
+                user_ids_string = result.val().user_ids
+                let user_ids = user_ids_string.split(',')
+                
+                for (let i = 0; i < user_ids.length; i++){
+                    console.log('category user ids list: ' + user_ids[i] + ' ' + current_chat)
+                    if (user_ids[i] === current_chat.toString()){
+                        console.log('found user_id. BREAK! ' + user_ids[i] + ' ' + current_chat)
+                        break
+                    }
+                    if (i === user_ids.length - 1 && user_ids[i] !== current_chat.toString()){
+                        console.log('users length = ' + user_ids.length + ', i =' + i)
+                        let updates = {}
+                        updates['Delivery/mailing/categories/' + favourite_food + '/user_amount'] = count
+
+                        if (user_ids_string !== ''){
+                            user_ids_string += ',' + current_chat
+                        }
+    
+                        else if (user_ids_string === ''){
+                            user_ids_string += current_chat
+                        }
+
+                        updates['Delivery/mailing/categories/' + favourite_food + '/user_ids'] = user_ids_string
+                        
+                        fb.database().ref().update(updates)
+                    }
+                }
+            })
+
+            
+            
+        }
+    }
+
+        let userdata = fb.database().ref('Delivery/mailing/all')
+        userdata.get().then((result) => {
+            let count = result.val().user_amount
+            count++
+            let user_ids_string = ''
+            user_ids_string = result.val().user_ids
+            let user_ids = user_ids_string.split(',')
+            for (let i = 0; i < user_ids.length; i++){
+                console.log('all, user ids list: ' + user_ids[i] + ' ' + current_chat)
+                if (user_ids[i] === current_chat.toString()){
+                    console.log('found user_id. BREAK! "' + user_ids[i] + '" "' + current_chat + '"')
+                    break
+                }
+                if (i === user_ids.length - 1 && user_ids[i] !== current_chat.toString()){
+                    console.log('users length = "' + user_ids.length + '", i = "' + i + '". (user_ids[i] !== current_chat): ' + user_ids[i] + ' !== ' + current_chat)
+                    let updates = {}
+                    updates['Delivery/mailing/all/user_amount'] = count
+
+                    if (user_ids_string !== ''){
+                        user_ids_string += ',' + current_chat
+                    }
+
+                    else if (user_ids_string === ''){
+                        user_ids_string += current_chat
+                    }
+
+                    updates['Delivery/mailing/all/user_ids'] = user_ids_string
+
+                    fb.database().ref().update(updates)
+                }
+            }
+           
+        })
+}
 
 bot.on("polling_error", console.log);
 
@@ -152,51 +631,6 @@ bot.on('pre_checkout_query', pre_checkout_query => {
         error_message: 'При оплате произошла ошибка. Попробуйте повторить действие позже'
     })
 
-})
-
-bot.on('successful_payment', successful_payment => {
-   // console.log('info: ' + successful_payment.)
-   const chatId = successful_payment.chat.id
-   finaltime.Date = Date.now()
-   finaltime.setMinutes( finaltime.getMinutes() + finaltime_deelay);
-    const text = `Ваш заказ принят 👍
-` + finalbasket
-    bot.sendMessage(chatId, text).then(() => {
-        const contact_text = `Вы сможете забрать заказ по адресу: <b>` + NurSultan_adresses[userPoint] + `</b> в <b>` + finaltime.getHours() + ':' + finaltime.getMinutes() + `</b>`
-        bot.sendMessage(chatId, contact_text, {
-            parse_mode: 'HTML',
-            reply_markup: {
-                keyboard: 
-                [[
-                    {
-                        text: afterorder_keyboard1
-                    }
-                ],[
-                    {
-                        text: afterorder_keyboard2
-                    },
-                    {
-                        text: afterorder_keyboard3
-                    }
-                ]],
-                    resize_keyboard: true
-                }
-        }).then(() => {
-            bot.sendLocation(chatId, NurSultan_geo1[userPoint], NurSultan_geo2[userPoint])
-        })
-    })
-
-   // bot.forwardMessage(owner_chatid, current_chatid, current_chatid.username)
-
-   /* const owner_notification_text = `<b>💰 Новая покупка!</b>
-Услуга: `+ current_item +`
-Стоимость: `+ current_price +` тенге
-Способ оплаты: `+ current_pmethod +`
-Пользователь: @`+ successful_payment.user_id +`
-`
-    bot.sendMessage(owner_chatid,owner_notification_text, {
-        parse_mode: 'HTML'
-    })*/
 })
 
 bot.on('location', (msg) => {
@@ -278,6 +712,23 @@ bot.on('message', (msg) =>
 {
     const chatId = msg.chat.id
 
+    console.log(msg)
+
+    if (msg.text === coins_text){
+        /* bot.editMessageText(msg.text, {
+            chat_id: chatId,
+            message_id: msg.message_id - 1
+        }).then(() => {
+            bot.deleteMessage(chatId, msg.message_id).then(() => {
+                bot.sendMessage(chatId, 'Ваш баланс: ' + user_coins + ' тенге. Заказывайте больше блюд, чтобы получать больше денег на свой баланс.')
+            })
+        }) */
+
+        bot.deleteMessage(chatId, msg.message_id).then(() => {
+            bot.sendMessage(chatId, 'Ваш баланс: ' + user_coins + ' тенге. Заказывайте больше блюд, чтобы получать больше денег на свой баланс.')
+        })
+    }
+
     if (msg.text === anotherpoint_text){
         finalprice = 0
         finaltime_deelay = 0
@@ -307,7 +758,6 @@ bot.on('message', (msg) =>
 
     if (msg.text === mybasket_text){
         finalprice = 0
-        finaltime_deelay = 0
         bot.deleteMessage(chatId, msg.message_id)
         bot.deleteMessage(chatId, msg.message_id - 1).then(() => {
             let editmsg = `Ваш заказ: `
@@ -345,9 +795,38 @@ bot.on('message', (msg) =>
         
     }
 
+    if (msg.text === myorder_text){
+
+        //bot.deleteMessage(chatId, msg.message_id-1)
+        bot.deleteMessage(chatId, msg.message_id).then(() => {
+            let editmsg = `Ваш заказ: `
+            let finalsum = 0
+            for (let i = 0; i < basket.length; i++){
+                            finalsum += (basket[i][2] * basket[i][1])
+                            if (i === basket.length - 1){
+                                editmsg += finalsum + 'тг.'
+                                console.log(finalsum + ' ' + i)
+                                for (let i = 0; i < basket.length; i++){
+                                    console.log('1Блюдо: ' + basket[i][0] + '. Цена: ' + basket[i][2] + ' х ' + basket[i][1] + ' = ' + (basket[i][1] * basket[i][2]))
+                                    editmsg += `
+` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
+                                        if (skidka !== 0) {
+                                            editmsg += `
+
+Цена с учетом скидки: ` + finalprice + ' тенге.'
+                                        }
+                                        if (i === basket.length - 1){
+                                        bot.sendMessage(chatId,  editmsg)
+                                    }
+                                }
+                            }
+            }
+        })
+        
+    }
+
     if (msg.text === paybasket_text){
         finaltime_deelay = 0
-        finalplace = NurSultan_adresses[userPoint]
         bot.deleteMessage(chatId, msg.message_id - 1)
         bot.deleteMessage(chatId, msg.message_id).then(() => {
             let editmsg = `Ваш заказ: `
@@ -365,25 +844,7 @@ bot.on('message', (msg) =>
                                         finalbasket = editmsg
                                         finalprice = finalsum
                                         bot.sendMessage(chatId,  editmsg).then(() => {
-                                            bot.sendMessage(chatId, choosetime_text, {
-                                                reply_markup:{
-                                                    inline_keyboard: [
-                                                        [{
-                                                            text: times[0].toString() + ' минут',
-                                                            callback_data: times[0].toString() + ' минут'
-                                                        },
-                                                        {
-                                                            text: times[1].toString() + ' минут',
-                                                            callback_data: times[1].toString() + ' минут'
-                                                        },
-                                                        {
-                                                            text: times[2].toString() + ' минут',
-                                                            callback_data: times[2].toString() + ' минут'
-                                                        },
-                                                    ]
-                                                    ]
-                                                }
-                                            })
+                                            CheckUser(msg.chat.id, msg.chat.first_name, chatId)
                                         })
             
                                     }
@@ -393,35 +854,208 @@ bot.on('message', (msg) =>
         })
     }
 
-    if (msg.text === afterorder_keyboard1){
-        bot.sendMessage(chatId, didyougetorder_text, {
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        {
-                            text: yesigotorder_text,
-                            callback_data: yesigotorder_text
-                        }
-                    ],
-                    [
-                        {
-                            text: noigotorder_text,
-                            callback_data: query_deletethismessage
-                        }
-                    ]
-                ]
-            }
+    if (msg.text === location_text){
+        bot.sendLocation(chatId, Point_location[0], Point_location[1]).then(() => {
+            bot.sendMessage(chatId, '📍 Мы находимся по адресу: ' + point_adress)
         })
+        
     }
-    if (msg.text === afterorder_keyboard2){
-        bot.sendLocation(chatId, NurSultan_geo1[userPoint], NurSultan_geo2[userPoint])
+    if (msg.text === phone_text){
+        bot.sendContact(chatId, help_phone, restaurant_name)
     }
-    if (msg.text === afterorder_keyboard3){
-        bot.sendContact(chatId, help_phone, 'Coffee BOOM', {
-            last_name: 'Служба поддержки'
+
+    if (isMakingChanges !== 0){
+        if (isMakingChanges === 1){
+            isMakingChanges = 0
+            user_name = msg.text
+        }
+
+        if (isMakingChanges === 2){
+            isMakingChanges = 0
+            user_phone = msg.text
+        }
+
+        if (isMakingChanges === 3){
+            isMakingChanges = 0
+            user_adress = msg.text
+        }
+
+        if (isMakingChanges === 4){
+            isMakingChanges = 0
+            user_email = msg.text
+            user_coins = user_coins + (added_coins * percent_foremail)
+            //тут возвращаем пользователя на главную, но уже регистеред
+
+            let updates = {};
+            updates['Delivery/clients/' + msg.chat.id + '/email'] = user_email
+            updates['Delivery/clients/' + msg.chat.id + '/coins'] = user_coins
+            fb.database().ref().update(updates).then(() => {
+                //тут отправить в главное меню
+                for (let i=0; i<100; i++){
+                    bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+                        console.log(err)
+                    })
+                }
+                bot.sendMessage(chatId, 'Ура! Email подтвержден. Вам было зачислено ' + (added_coins * percent_foremail) + ' тенге. Ваш баланс: ' + user_coins + ' тенге').then(() => {
+                    anotherpoint_multiple = 2
+                    keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
+                })
+            })
+        }
+
+        if (user_adress !== '' && user_phone !== '' && user_name !== ''){
+            //order_status = order_statuses_text[0]
+            console.log('LOL ' + msg.message_id + ', ' + (msg.message_id - 1))
+            bot.deleteMessage(chatId, msg.message_id).then(() => {
+                console.log('LOL2 ' + msg.message_id + ', ' + (msg.message_id - 1))
+            })
+            bot.editMessageText(almostthere_text, {
+                chat_id: chatId,
+                message_id: msg.message_id - 2,
+                reply_markup:{
+                    inline_keyboard:[
+                        [{
+                            text: 'Имя: ' + user_name,
+                            callback_data: changename_text
+                        },
+                        {
+                            text: 'Телефон: ' + user_phone,
+                            callback_data: changephone_text
+                        }],
+                        [{
+                            text: 'Адрес: ' + user_adress,
+                            callback_data: changeadress_text
+                        }],
+                        [{
+                            text: dataiscorrect_text,
+                            callback_data: dataiscorrect_text
+                        }]
+                    ]
+                }
+            }
+            ).catch(err => {
+                console.log('err ' + err)
+            })
+            
+        }
+        if (user_adress === '' || user_phone === '' || user_name === '')
+        {
+            console.log('LOL3 ' + msg.message_id + ', ' + (msg.message_id - 1))
+            bot.deleteMessage(chatId, msg.message_id)
+            bot.editMessageText(almostthere_text, {
+                chat_id: chatId,
+                message_id: msg.message_id - 1,
+                reply_markup:{
+                    inline_keyboard:[
+                        [{
+                            text: 'Имя: ' + user_name,
+                            callback_data: changename_text
+                        },
+                        {
+                            text: 'Телефон: ' + user_phone,
+                            callback_data: changephone_text
+                        }],
+                        [{
+                            text: 'Адрес: ' + user_adress,
+                            callback_data: changeadress_text
+                        }]
+                    ]
+                }
+            }
+            )
+        }
+    }
+
+    if (msg.text === order_status_button){
+        bot.deleteMessage(msg.chat.id, msg.message_id).then(() => {
+            console.log('Order name: "' + order_name + '"')
+            let userdata = fb.database().ref(order_name)
+            userdata.get().then((result) => {
+                order_status = result.val().order_status
+                console.log('order_status: ' + result.val().order_status)
+                console.log('order link: Delivery/bills/' + order_name)
+                bot.sendMessage(msg.chat.id, 'Статус вашего заказа: ' + order_status)
+            }) 
         })
     }
 
+    if (msg.text === finish_order_text){
+        bot.deleteMessage(chatId, msg.message_id - 1)
+        bot.deleteMessage(chatId, msg.message_id).then(() => {
+
+            user_coins = user_coins + (finalprice * cashback)
+            added_coins = (finalprice * cashback)
+            console.log('coins = '+ user_coins + '. Было начислено ' + added_coins)
+
+            order_status = 'unknown'
+            order_name = ''
+            finalbasket = ''
+            finalprice = 0
+            basket = []
+
+            if (user_email === 'unknown'){
+                
+                let tmp_text = `Вам было зачислено <b>` + added_coins + `</b> тенге. Ваш счет: ` + user_coins + ` тенге. Ими можно оплачивать следующие заказы. 
+                
+Кстати, если Вы привяжете к этому аккаунту свой email, то получите еще <b>` + (added_coins * percent_foremail) + `</b> тенге. 
+
+Не волнуйтесь, мы не будем слать Вам спам 😏 `
+                bot.sendMessage(chatId, tmp_text, {
+                    parse_mode: 'HTML',
+                    reply_markup:{
+                        inline_keyboard:[
+                            [{
+                                text: add_email,
+                                callback_data: add_email
+                            }],
+                            [{
+                                text: dont_add_email,
+                                callback_data: dont_add_email
+                            }]
+                        ]
+                    }
+                })
+            }
+
+            else if (user_email !== 'unknown'){
+                let updates = {};
+                updates['Delivery/clients/' + msg.chat.id + '/coins'] = user_coins
+                fb.database().ref().update(updates).then(() => {
+                    //тут отправить в главное меню
+                    for (let i=0; i<100; i++){
+                        bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+                            console.log(err)
+                        })
+                    }
+                    bot.sendMessage(chatId, 'Теперь ваш баланс: ' + user_coins + '. ' + emailalreadyadded_text).then(() => {
+                        anotherpoint_multiple = 2
+                        keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
+                    })
+                })
+            }
+        })
+    }
+
+    if (msg.text === dont_add_email){
+        isMakingChanges = 0
+        //теперь можно совершать новые покупки, но ты регистеред
+
+        let updates = {};
+        updates['Delivery/clients/' + msg.chat.id + '/coins'] = user_coins
+        fb.database().ref().update(updates).then(() => {
+            //тут отправить в главное меню
+            for (let i=0; i<100; i++){
+                bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+                    console.log(err)
+                })
+            }
+            bot.sendMessage(chatId, didntaddemail_text).then(() => {
+                anotherpoint_multiple = 2
+                keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
+            })
+        })
+
+    }
 })
 
 bot.on('callback_query', query => {
@@ -433,7 +1067,7 @@ bot.on('callback_query', query => {
 
     if (query.data === choosecity_text){
         userPoint = ''
-        bot.editMessageText(whereareyoufrom_text,
+        bot.editMessageText(hellomessage_text,
             {
                 parse_mode: 'HTML',
                 chat_id: chat.id,
@@ -449,34 +1083,6 @@ bot.on('callback_query', query => {
                             callback_data: 'Алматы'
                         }]*/
                     ]
-                }
-            })
-    }
-
-    if (query.data === 'Нур-Султан'){
-        userCity = 0
-        const textmsg = `Вы выбрали <b>` + query.data +`</b>. Выберите, в каком заведении хотите сделать заказ, или отправьте его локацию:`
-        bot.editMessageText(textmsg,
-            {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_id,
-                reply_markup:{
-                    inline_keyboard:NurSultan_keyboard
-                }
-            })
-    }
-
-    if (query.data === 'Алматы'){
-        userCity = 1
-        const textmsg = `Вы выбрали <b>` + query.data +`</b>. Выберите, в каком заведении хотите сделать заказ, или отправьте его локацию:`
-        bot.editMessageText(textmsg,
-            {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_id,
-                reply_markup:{
-                    inline_keyboard: Almaty_keyboard
                 }
             })
     }
@@ -558,40 +1164,14 @@ bot.on('callback_query', query => {
         //console.log(query.message.text)
         //bot.deleteMessage(chat.id, message_id-1)
         anotherpoint_multiple = 2
-        keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, userCity, userPoint, fb, bot, chat, message_id, anotherpoint_text, query, choosecategory_text)
+        keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
     }
 
-    for (let i = 0; i < NurSultan_adresses.length; i++){
-        if (query.data === NurSultan_adresses[i]){
-            userPoint = i
-            bot.deleteMessage(chat.id, message_id).then(
-                bot.sendLocation(chat.id, NurSultan_geo1[i], NurSultan_geo2[i]).then(() => {
-                    temp_message = message_id
-                    bot.sendMessage(chat.id, youchosecafe_text + `<b>` + NurSultan_adresses[i] + `</b>`, {
-                        parse_mode: 'HTML',
-                        reply_markup:{
-                            inline_keyboard:
-                                [
-                                    [{
-                                        text: choosepoint_text,
-                                        callback_data: choosepoint_text
-                                    },
-                                        {
-                                            text: anotherpoint_text,
-                                            callback_data: anotherpoint_text
-                                        }]
-                                ]
-                        }
-                    })
-            }))
-        }
-    }
     for (let i = 0; i < userCategories.length; i++){
 
         if (query.data === userCategories[i]){
             userCategory = i
-            console.log('Город: ' + userCity + '. Точка: ' + userPoint + '. Категория: ' + userCategory)
-            keyboards.FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCity, userPoint, userCategory, fb, bot, chat, message_id, anothercategory_text, query, choosefood_text)
+            keyboards.FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCategory, fb, bot, chat, message_id, anothercategory_text, query, choosefood_text)
         }
     }
     for (let i = 0; i < userFoodlist.length; i++){
@@ -602,7 +1182,7 @@ bot.on('callback_query', query => {
             let food_description = ''
             temp_food_price = ''
             bot.deleteMessage(chat.id, message_id).then(() => {
-                let food_photo = fb.database().ref('cities/'+ userCity +'/points/' + userPoint + '/categories/' + userCategory + '/food/' + i)
+                let food_photo = fb.database().ref('Delivery/ordering/categories/' + userCategory + '/food/' + i)
                 food_photo.get().then((snapshot) =>
                 {
                     food_photo_link = snapshot.val().photo
@@ -616,7 +1196,7 @@ bot.on('callback_query', query => {
 <b>Описание: </b>
 ` + food_description + `
 
-<b>💰 Цена: </b>` + temp_food_price + ` тенге`
+<b> 💰 Цена: </b>` + temp_food_price + ` тенге`
                             for (let i = 0; i < basket.length; i++){
                                 if (basket[i][0] === userFoodlist[userFood]){
                                     console.log('foundfood ' + i)
@@ -1202,7 +1782,7 @@ bot.on('callback_query', query => {
             }
             if (i === basket.length - 1 && basket[i][0] !== userFoodlist[userFood]) {
                 console.log(userFoodlist[userFood] + ' ' + temp_foodamount + ' ' + temp_food_price)
-                let newfood = [userFoodlist[userFood], temp_foodamount, temp_food_price]
+                let newfood = [userFoodlist[userFood], temp_foodamount, temp_food_price, userCategory]
                 basket.push(newfood)
                 temp_foodamount = 1
                 bot.deleteMessage(chat.id, message_id)
@@ -1222,22 +1802,89 @@ bot.on('callback_query', query => {
 ` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
                                 if (i === basket.length - 1){
                                     console.log('2Блюдо: ')
+                                    if (userstatus === 'registered'){
+                                        bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
+                                            parse_mode: 'HTML',
+                                            reply_markup: {
+                                                keyboard: registered_keyboard[0],
+                                                resize_keyboard: true
+            
+                                            }
+                                        }).then(() => {
+                                            bot.sendMessage(chat.id,  editmsg , {
+                                                reply_markup:{
+                                                    inline_keyboard: [
+                                                        [{
+                                                            text: anotherfood_text2,
+                                                            callback_data: anotherfood_text2
+                                                        }],
+                                                        [{
+                                                            text: editbasket_text,
+                                                            callback_data: editbasket_text
+                                                        }]
+                                                    ]
+                                                }
+                                            })
+                                        })
+                                    }
+                                    if (userstatus === 'unregistered' || userstatus === 'unknown'){
+                                        bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
+                                            parse_mode: 'HTML',
+                                            reply_markup: {
+                                                keyboard: unregistered_keyboard[0],
+                                                resize_keyboard: true
+            
+                                            }
+                                        }).then(() => {
+                                            bot.sendMessage(chat.id,  editmsg , {
+                                                reply_markup:{
+                                                    inline_keyboard: [
+                                                        [{
+                                                            text: anotherfood_text2,
+                                                            callback_data: anotherfood_text2
+                                                        }],
+                                                        [{
+                                                            text: editbasket_text,
+                                                            callback_data: editbasket_text
+                                                        }]
+                                                    ]
+                                                }
+                                            })
+                                        })
+                                    }
+        
+                                }
+                            }
+                        }
+                    }
+                })
+                break
+            }
+        }
+        if (basket.length === 0){
+            console.log('3')
+            let newfood = [userFoodlist[userFood], temp_foodamount, temp_food_price, userCategory]
+            basket.push(newfood)
+            bot.deleteMessage(chat.id, message_id)
+            bot.deleteMessage(chat.id, message_id - 1)
+            bot.deleteMessage(chat.id, message_id - 2).then(() => {
+                let editmsg = `Ваш заказ: `
+                let finalsum = 0 
+                    for (let i = 0; i < basket.length; i++){
+                        finalsum += (basket[i][2] * basket[i][1])
+                        for (let i = 0; i < basket.length; i++){
+                            console.log('1Блюдо: ' + basket[i][0] + '. Цена: ' + basket[i][2] + ' х ' + basket[i][1] + ' = ' + (basket[i][1] * basket[i][2]))
+                            editmsg += `
+` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
+                            if (i === basket.length - 1){
+                                console.log('2Блюдо: ')
+                                if (userstatus === 'registered'){
                                     bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
                                         parse_mode: 'HTML',
                                         reply_markup: {
-                                            keyboard: [
-                                                [{
-                                                    text: mybasket_text
-                                                }],
-                                                [{
-                                                    text: paybasket_text
-                                                }],
-                                                [{
-                                                    text: anotherpoint_text
-                                                }]
-                                            ],
+                                            keyboard: registered_keyboard[0],
                                             resize_keyboard: true
-        
+            
                                         }
                                     }).then(() => {
                                         bot.sendMessage(chat.id,  editmsg , {
@@ -1255,66 +1902,33 @@ bot.on('callback_query', query => {
                                             }
                                         })
                                     })
-        
                                 }
-                            }
-                        }
-                    }
-                })
-                break
-            }
-        }
-        if (basket.length === 0){
-            console.log('3')
-            let newfood = [userFoodlist[userFood], temp_foodamount, temp_food_price]
-            basket.push(newfood)
-            bot.deleteMessage(chat.id, message_id)
-            bot.deleteMessage(chat.id, message_id - 1)
-            bot.deleteMessage(chat.id, message_id - 2).then(() => {
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0 
-                    for (let i = 0; i < basket.length; i++){
-                        finalsum += (basket[i][2] * basket[i][1])
-                        for (let i = 0; i < basket.length; i++){
-                            console.log('1Блюдо: ' + basket[i][0] + '. Цена: ' + basket[i][2] + ' х ' + basket[i][1] + ' = ' + (basket[i][1] * basket[i][2]))
-                            editmsg += `
-` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
-                            if (i === basket.length - 1){
-                                console.log('2Блюдо: ')
-                                bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        keyboard: [
-                                            [{
-                                                text: mybasket_text
-                                            }],
-                                            [{
-                                                text: paybasket_text
-                                            }],
-                                            [{
-                                                text: anotherpoint_text
-                                            }]
-                                        ],
-                                        resize_keyboard: true
-        
-                                    }
-                                }).then(() => {
-                                    bot.sendMessage(chat.id,  editmsg , {
-                                        reply_markup:{
-                                            inline_keyboard: [
-                                                [{
-                                                    text: anotherfood_text2,
-                                                    callback_data: anotherfood_text2
-                                                }],
-                                                [{
-                                                    text: editbasket_text,
-                                                    callback_data: editbasket_text
-                                                }]
-                                            ]
+                                
+                                if (userstatus === 'unregistered' || userstatus === 'unknown'){
+                                    bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
+                                        parse_mode: 'HTML',
+                                        reply_markup: {
+                                            keyboard: unregistered_keyboard[0],
+                                            resize_keyboard: true
+            
                                         }
+                                    }).then(() => {
+                                        bot.sendMessage(chat.id,  editmsg , {
+                                            reply_markup:{
+                                                inline_keyboard: [
+                                                    [{
+                                                        text: anotherfood_text2,
+                                                        callback_data: anotherfood_text2
+                                                    }],
+                                                    [{
+                                                        text: editbasket_text,
+                                                        callback_data: editbasket_text
+                                                    }]
+                                                ]
+                                            }
+                                        })
                                     })
-                                })
-        
+                                }
                             }
                         }
                     }
@@ -1491,39 +2105,56 @@ bot.on('callback_query', query => {
 ` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
                             if (i === basket.length - 1){
                                 console.log('2Блюдо: ')
-                                bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        keyboard: [
-                                            [{
-                                                text: mybasket_text
-                                            }],
-                                            [{
-                                                text: paybasket_text
-                                            }],
-                                            [{
-                                                text: anotherpoint_text
-                                            }]
-                                        ],
-                                        resize_keyboard: true
-    
-                                    }
-                                }).then(() => {
-                                    bot.sendMessage(chat.id,  editmsg , {
-                                        reply_markup:{
-                                            inline_keyboard: [
-                                                [{
-                                                    text: anotherfood_text2,
-                                                    callback_data: anotherfood_text2
-                                                }],
-                                                [{
-                                                    text: editbasket_text,
-                                                    callback_data: editbasket_text
-                                                }]
-                                            ]
+                                if (userstatus === 'registered'){
+                                    bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
+                                        parse_mode: 'HTML',
+                                        reply_markup: {
+                                            keyboard: registered_keyboard[0],
+                                            resize_keyboard: true
+        
                                         }
+                                    }).then(() => {
+                                        bot.sendMessage(chat.id,  editmsg , {
+                                            reply_markup:{
+                                                inline_keyboard: [
+                                                    [{
+                                                        text: anotherfood_text2,
+                                                        callback_data: anotherfood_text2
+                                                    }],
+                                                    [{
+                                                        text: editbasket_text,
+                                                        callback_data: editbasket_text
+                                                    }]
+                                                ]
+                                            }
+                                        })
                                     })
-                                })
+                                }
+                                if (userstatus === 'unknown' || userstatus === 'unregistered'){
+                                    bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
+                                        parse_mode: 'HTML',
+                                        reply_markup: {
+                                            keyboard: unregistered_keyboard[0],
+                                            resize_keyboard: true
+        
+                                        }
+                                    }).then(() => {
+                                        bot.sendMessage(chat.id,  editmsg , {
+                                            reply_markup:{
+                                                inline_keyboard: [
+                                                    [{
+                                                        text: anotherfood_text2,
+                                                        callback_data: anotherfood_text2
+                                                    }],
+                                                    [{
+                                                        text: editbasket_text,
+                                                        callback_data: editbasket_text
+                                                    }]
+                                                ]
+                                            }
+                                        })
+                                    })
+                                }
     
                             }
                         }
@@ -1560,39 +2191,56 @@ bot.on('callback_query', query => {
 ` + (i+1) + `. ` + basket[i][0] + `. Цена: ` + basket[i][2] + `тг. х ` + basket[i][1] + ` = ` + (basket[i][1] * basket[i][2]) + `тг.`
                         if (i === basket.length - 1){
                             console.log('2Блюдо: ')
-                            bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    keyboard: [
-                                        [{
-                                            text: mybasket_text
-                                        }],
-                                        [{
-                                            text: paybasket_text
-                                        }],
-                                        [{
-                                            text: anotherpoint_text
-                                        }]
-                                    ],
-                                    resize_keyboard: true
-
-                                }
-                            }).then(() => {
-                                bot.sendMessage(chat.id,  editmsg , {
-                                    reply_markup:{
-                                        inline_keyboard: [
-                                            [{
-                                                text: anotherfood_text2,
-                                                callback_data: anotherfood_text2
-                                            }],
-                                            [{
-                                                text: editbasket_text,
-                                                callback_data: editbasket_text
-                                            }]
-                                        ]
+                            if (userstatus === 'unknown' || userstatus === 'unregistered'){
+                                bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
+                                    parse_mode: 'HTML',
+                                    reply_markup: {
+                                        keyboard: unregistered_keyboard[0],
+                                        resize_keyboard: true
+    
                                     }
+                                }).then(() => {
+                                    bot.sendMessage(chat.id,  editmsg , {
+                                        reply_markup:{
+                                            inline_keyboard: [
+                                                [{
+                                                    text: anotherfood_text2,
+                                                    callback_data: anotherfood_text2
+                                                }],
+                                                [{
+                                                    text: editbasket_text,
+                                                    callback_data: editbasket_text
+                                                }]
+                                            ]
+                                        }
+                                    })
                                 })
-                            })
+                            }
+                            if (userstatus === 'registered'){
+                                bot.sendMessage(chat.id, `<b>`+ basket[i][0] + `</b> добавлен в корзину`, {
+                                    parse_mode: 'HTML',
+                                    reply_markup: {
+                                        keyboard: registered_keyboard[0],
+                                        resize_keyboard: true
+    
+                                    }
+                                }).then(() => {
+                                    bot.sendMessage(chat.id,  editmsg , {
+                                        reply_markup:{
+                                            inline_keyboard: [
+                                                [{
+                                                    text: anotherfood_text2,
+                                                    callback_data: anotherfood_text2
+                                                }],
+                                                [{
+                                                    text: editbasket_text,
+                                                    callback_data: editbasket_text
+                                                }]
+                                            ]
+                                        }
+                                    })
+                                })
+                            }
 
                         }
                     }
@@ -1600,55 +2248,6 @@ bot.on('callback_query', query => {
             }
             
         })
-    }
-
-    for (let i = 0; i < times.length; i++){
-        if (query.data === times[i] + ' минут'){
-            finaltime_deelay = parseInt(query.data) 
-            bot.deleteMessage(chat.id, message_id).then(() => {
-                bot.sendMessage(chat.id, `Отлично! заказ будет готов через <b>` + finaltime_deelay + ` минут </b> после оплаты 😊`, {
-                    parse_mode: 'HTML',
-                    reply_markup:{
-                        inline_keyboard: [
-                            [{
-                                text: paybutton_text,
-                                callback_data: paybutton_text,
-                            }],
-                            [{
-                                text: chooseanothertime_text,
-                                callback_data: chooseanothertime_text
-                            }],
-                        ]
-                    }
-                })
-            })
-        }
-    }
-
-    if (query.data === chooseanothertime_text){
-        finaltime_deelay = 0
-        bot.deleteMessage(chat.id, message_id).then(() => {
-            bot.sendMessage(chat.id, choosetime_text, {
-                reply_markup:{
-                    inline_keyboard: [
-                        [{
-                            text: times[0].toString() + ' минут',
-                            callback_data: times[0].toString() + ' минут'
-                        },
-                        {
-                            text: times[1].toString() + ' минут',
-                            callback_data: times[1].toString() + ' минут'
-                        },
-                        {
-                            text: times[2].toString() + ' минут',
-                            callback_data: times[2].toString() + ' минут'
-                        },
-                    ]
-                    ]
-                }
-            })
-        })
-        
     }
     
     if (query.data === paybutton_text){
@@ -1692,7 +2291,7 @@ bot.on('callback_query', query => {
                 bot.deleteMessage(chat.id, message_id - i - 1).catch(err => {
                     console.log('Очистка закончена: ' + err)
                 }).then(() => {
-                    bot.sendMessage(chat.id, whereareyoufrom_text,
+                    bot.sendMessage(chat.id, hellomessage_text,
                         {
                                 reply_markup:{
                                     inline_keyboard:[
@@ -1713,146 +2312,673 @@ bot.on('callback_query', query => {
         }
         
     }
-})
 
-function GetPoints_NurSultan() {
-    //получаем инфу о том, сколько заведений есть в этом городе
-    let points_amount = 0
-    var points_data = fb.database().ref('cities/0/points_number')
-    points_data.on('value', (snapshot) => {
-        points_amount = snapshot.val() - 1 //оператор в firebase пишет число заведений, а мы начинаем счет с 0
-        console.log('points: ' + points_amount)
-        if (snapshot.exists()){
-            //получаем инфу о том, как они называются (их адреса)
-            for (let i = 0; i < points_amount + 1; i++){
-                //узнаем названия(адреса) заведений
-                let address_data = fb.database().ref('cities/0/points/' + i + '/point_name')
-                address_data.on('value', (snapshot) => {
-                    NurSultan_adresses[i] = snapshot.val()
-                    console.log('Adress #' + i + ' = ' + NurSultan_adresses[i])
-                    if (i === points_amount && snapshot.exists()){
-                        console.log('points: ' + points_amount)
-                        CreateNurSultanKeyBoard(points_amount)
-                    }
-                })
-
-                //узнаем latitude заведений
-                let latitude_data = fb.database().ref('cities/0/points/' + i + '/latitude')
-                latitude_data.on('value', (snapshot) => {
-                    NurSultan_geo1[i] = snapshot.val()
-                    console.log('latitude #' + i + ' = ' + NurSultan_geo1[i])
-                })
-
-                //узнаем longitude заведений
-                let longitude_data = fb.database().ref('cities/0/points/' + i + '/longitude')
-                longitude_data.on('value', (snapshot) => {
-                    NurSultan_geo2[i] = snapshot.val()
-                    console.log('longitude #' + i + ' = ' + NurSultan_geo2[i])
-                })
-            }
-        }
-    })
-}
-
-function CreateNurSultanKeyBoard(points_amount){
-    NurSultan_keyboard = []
-    //создаем из этих данных клавиатуру (массив)
-    NurSultan_keyboard[0] = [{      //первая кнопка всегда "Отправить свою локацию"
-        text: sendlocation,
-        callback_data: sendlocation
-    }, {
-        text: choosecity_text,
-        callback_data: choosecity_text
-    }]
-    let minuser = 0                  //+0
-    console.log('points_amount: ' + points_amount)
-    points_amount++
-    for (let i = 1; i < points_amount + 1; i=i+2){
-        console.log('func: ' + i)
-        if (i === points_amount){
-            console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + NurSultan_adresses[i-1])
-            NurSultan_keyboard[i-minuser] = [{
-                text: NurSultan_adresses[i-1],
-                callback_data: NurSultan_adresses[i-1]
-            }]
-        }
-        else {
-            console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + NurSultan_adresses[i-1] + '. Вторая кнопка: ' + NurSultan_adresses[i])
-            NurSultan_keyboard[i - minuser] = [{
-                text: NurSultan_adresses[i-1],
-                callback_data: NurSultan_adresses[i-1]
-            },
-            {
-                text: NurSultan_adresses[i],
-                callback_data: NurSultan_adresses[i]
-            }]
-
-            minuser++
-        }
+    if (query.data === changename_text){
+        isMakingChanges = 1
+        bot.editMessageText('🙂 Введите свое имя, так курьеру будет проще найти Вас:', {
+            chat_id: chat.id, 
+            message_id: message_id,
+        })
     }
-}
-
-function GetPoints_Almaty() {
-    //получаем инфу о том, сколько заведений есть в этом городе
-    let points_amount = 0
-    var points_data = fb.database().ref('cities/1/points_number')
-    points_data.on('value', (snapshot) => {
-        points_amount = snapshot.val() - 1 //оператор в firebase пишет число заведений, а мы начинаем счет с 0
-        console.log('points: ' + points_amount)
-        if (snapshot.exists()){
-            //получаем инфу о том, как они называются (их адреса)
-            for (let i = 0; i < points_amount + 1; i++){
-                let address_data = fb.database().ref('cities/1/points/' + i + '/point_name')
-                address_data.on('value', (snapshot) => {
-                    Almaty_adresses[i] = snapshot.val()
-                    console.log('Adress #' + i + ' = ' + Almaty_adresses[i])
-                    if (i === points_amount && snapshot.exists()){
-                        console.log('points: ' + points_amount)
-                        CreateAlmatyKeyBoard(points_amount)
-                    }
+    if (query.data === changephone_text){
+        isMakingChanges = 2
+        bot.editMessageText('📞 Введите свой номер, чтобы курьер мог связаться с Вами в случае необходимости:', {
+            chat_id: chat.id, 
+            message_id: message_id,
+        })
+    }
+    if (query.data === changeadress_text){
+        isMakingChanges = 3
+        bot.editMessageText('📍 Введите адрес доставки:', {
+            chat_id: chat.id, 
+            message_id: message_id,
+        })
+    }
+    if (query.data === dataiscorrect_text){
+        if (userstatus !== 'unregistered' && user_coins >= (finalprice * min_pay_percentage)){
+            if (user_coins <= (finalprice * max_pay_percentage)){
+                //тут можно оплатить всеми баллами.
+                skidka = user_coins
+                bot.sendMessage(chat.id, 'У вас есть ' + user_coins + ' тенге, которыми можно оплатить заказ. Сумма заказа с учетом скидки: ' + finalprice + ' тенге. Хотите потратить их сейчас?', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: spendmycoins,
+                                callback_data: spendmycoins
+                            },{
+                                text: dontspendmycoins,
+                                callback_data: dontspendmycoins
+                            }]
+                        ],
+                    },
+                })
+            }
+            else if (user_coins > (finalprice * max_pay_percentage)){
+                //тут оплачиваем максимальным количеством баллов
+                skidka = finalprice * max_pay_percentage
+                bot.sendMessage(chat.id, 'Ваш баланс: ' + user_coins + ' тенге. Вы можете потратить ' + finalprice * max_pay_percentage + 'тенге на оплату заказа. Сумма заказа с учетом скидки: ' + (finalprice - ( finalprice * max_pay_percentage)) + ' тенге. Хотите сделать это?', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: spendmycoins,
+                                callback_data: spendmycoins
+                            },{
+                                text: dontspendmycoins,
+                                callback_data: dontspendmycoins
+                            }]
+                        ],
+                    },
                 })
             }
         }
-    })
-}
-
-function CreateAlmatyKeyBoard(points_amount){
-    Almaty_keyboard = []
-    //создаем из этих данных клавиатуру (массив)
-    Almaty_keyboard[0] = [{      //первая кнопка всегда "Отправить свою локацию"
-        text: sendlocation,
-        callback_data: sendlocation
-    }, {
-        text: choosecity_text,
-        callback_data: choosecity_text
-    }]
-    let minuser = 0
-    console.log('points_amount: ' + points_amount)
-    points_amount++
-    for (let i = 1; i < points_amount + 1; i=i+2){
-        console.log('func: ' + i)
-        if (i === points_amount){
-            //console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + NurSultan_adresses[i-1])
-            Almaty_keyboard[i-minuser] = [{
-                text: Almaty_adresses[i-1],
-                callback_data: Almaty_adresses[i-1]
-            }]
-        }
         else {
-            //console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + NurSultan_adresses[i-1] + '. Вторая кнопка: ' + NurSultan_adresses[i])
-            Almaty_keyboard[i - minuser] = [{
-                text: Almaty_adresses[i-1],
-                callback_data: Almaty_adresses[i-1]
-            },
-                {
-                    text: Almaty_adresses[i],
-                    callback_data: Almaty_adresses[i]
+            bot.deleteMessage(chat.id, message_id - 1)
+            bot.deleteMessage(chat.id, message_id).then(() => {
+                order_status = order_statuses_text[0]
+                bot.sendMessage(chat.id, delivery_started, {
+                    reply_markup: {
+                        keyboard: unregistered_keyboard[2],
+                        resize_keyboard: true
+    
+                    }
+                })
+
+                let updates = {};
+
+                let newuser = {
+                    adress: user_adress,
+                    average_price: average_price,
+                    average_purchases: average_purchases,
+                    coins: user_coins,
+                    email: user_email,
+                    favourite_food: favourite_food,
+                    id: chat.id,
+                    name: user_name,
+                    phone: user_phone,
+                    username: chat.username.toString(),
+                    alltime_purchases_amount: alltime_purchases_amount + 1
+                }
+
+                let date_now = new Date()
+                //date_now = Date.now()
+                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
+                order_name = 'Delivery/bills/' + date_now.toString()
+                order_date = date_now.toString()
+                console.log('ORDER NAME: ' + order_name)
+
+                let newbill = {
+                    date_ordered: order_date,
+                    order_info: finalbasket,
+                    price: finalprice,
+                    client_id: chat.id,
+                    phone: user_phone,
+                    order_status: order_statuses_text[0],
+                    adress: user_adress,
+                    client_name: user_name
+                }
+
+                let clientsamount = fb.database().ref('Delivery/clients/clients_amount');
+                    clientsamount.get().then((snapshot) => {
+                    let count = snapshot.val();
+                    if (userstatus === 'unregistered'){
+                        count++
+                        updates['Delivery/clients/clients_amount'] = count
+                        userstatus = 'registered'
+                    }
+
+                    updates['Delivery/clients/' + chat.id] = newuser
+                    updates['Delivery/bills/' + date_now] = newbill
+
+                    fb.database().ref().update(updates)
+
+                    AddMailingData()
+                    StartCheckingOrder()
+                })
+
+                   ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
+    deliver_bill_topic = deliver_bill_topic_names[0]
+    deliver_bill_client_info = `
+
+<b>👤 Заказчик</b>
+├ ФИО: ` + user_name + `
+├ Адрес: ` + user_adress + `
+└ Номер: ` + user_phone + `
+
+`
+    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + finalbasket + `
+
+`
+    
+    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + finalprice + ` тг.
+
+`
+
+    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+└ Дата заказа: ` + order_date + `
+
+`
+    console.log('order_date! ' + order_date)
+
+    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+    console.log('last message id: ' + query.message.message_id)
+    bot.sendMessage(delivery_chat, delivers_bill, {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard:[
+                [{
+                    text: '✅ Принять заказ',
+                    callback_data: accept_order_callback + order_date
+                }],
+                [{
+                    text: '❌ Отклонить заказ',
+                    callback_data: refuse_order_callback + order_date
                 }]
-
-            minuser++
+            ]
         }
+    }).then(() => {
+        //bot.sendContact(delivery_chat, user_phone, user_name)
+        /* let update = {}
+        let bill_message_id = query.message.message_id
+        console.log('bills message id: ' + bill_message_id)
+        update['Delivery/bills/' + order_date/*  + '/bill_message_id' ] = bill_message_id
+        console.log('adding message id: ' + 'Delivery/bills/' + order_date) */
+    })
+
+    ////////////////////////////////////////////////////////////////////////
+
+                //console.log('Date: ' + date_now.getHours() + ':' + date_now.getMinutes())
+            })
+        }
+        
     }
-}
+
+    if (query.data === spendmycoins){
+        finalprice = finalprice - skidka
+        user_coins -= skidka
+        finalbasket += `
+
+Цена с учетом скидки: ` + finalprice + ' тг.'
+
+        bot.deleteMessage(chat.id, message_id - 1)
+            bot.deleteMessage(chat.id, message_id).then(() => {
+                order_status = order_statuses_text[0]
+                bot.sendMessage(chat.id, delivery_started, {
+                    reply_markup: {
+                        keyboard: unregistered_keyboard[2],
+                        resize_keyboard: true
+    
+                    }
+                })
+
+                let updates = {}
+
+                let newuser = {
+                    adress: user_adress,
+                    average_price: average_price,
+                    average_purchases: average_purchases,
+                    coins: user_coins,
+                    email: user_email,
+                    favourite_food: favourite_food,
+                    id: chat.id,
+                    name: user_name,
+                    phone: user_phone,
+                    username: chat.username.toString(),
+                    alltime_purchases_amount: alltime_purchases_amount + 1
+                }
+
+                let date_now = new Date()
+                order_name = 'Delivery/bills/' + date_now.toString()
+                order_date = date_now.toString()
+                console.log('ORDER NAME: ' + order_name)
+
+                //date_now = Date.now()
+                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
+                let newbill = {
+                    date_ordered: order_date,
+                    order_info: finalbasket,
+                    price: finalprice,
+                    client_id: chat.id,
+                    phone: user_phone,
+                    order_status: order_statuses_text[0],
+                    adress: user_adress,
+                    client_name: user_name
+                }
+
+                let clientsamount = fb.database().ref('Delivery/clients/clients_amount');
+                    clientsamount.get().then((snapshot) => {
+                    let count = snapshot.val();
+                    if (userstatus === 'unregistered'){
+                        count++
+                        updates['Delivery/clients/clients_amount'] = count
+                        userstatus = 'registered'
+                    }
+
+                    updates['Delivery/clients/' + chat.id] = newuser
+                    updates['Delivery/bills/' + date_now] = newbill
+
+                    fb.database().ref().update(updates)
+
+                    AddMailingData()
+                    StartCheckingOrder()
+                })
+
+                                ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
+    deliver_bill_topic = deliver_bill_topic_names[0]
+    deliver_bill_client_info = `
+
+<b>👤 Заказчик</b>
+├ ФИО: ` + user_name + `
+├ Адрес: ` + user_adress + `
+└ Номер: ` + user_phone + `
+
+`
+    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + finalbasket + `
+
+`
+    
+    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + finalprice + ` тг.
+
+`
+
+    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+└ Дата заказа: ` + order_date + `
+
+`
+    console.log('order_date! ' + order_date)
+    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+    console.log('last message id: ' + query.message.message_id)
+    bot.sendMessage(delivery_chat, delivers_bill, {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard:[
+                [{
+                    text: '✅ Принять заказ',
+                    callback_data: accept_order_callback + order_date
+                }],
+                [{
+                    text: '❌ Отклонить заказ',
+                    callback_data: refuse_order_callback + order_date
+                }]
+            ]
+        }
+    }).then(() => {
+        //bot.sendContact(delivery_chat, user_phone, user_name)
+        /* let update = {}
+        let bill_message_id = query.message.message_id
+        console.log('bills message id: ' + bill_message_id)
+        update['Delivery/bills/' + order_date/*  + '/bill_message_id' ] = bill_message_id
+        console.log('adding message id: ' + 'Delivery/bills/' + order_date) */
+    })
+
+    ////////////////////////////////////////////////////////////////////////
+
+                //console.log('Date: ' + date_now.getHours() + ':' + date_now.getMinutes())
+            })
+    }
+
+    if (query.data === dontspendmycoins){
+        skidka = 0
+        bot.deleteMessage(chat.id, message_id - 1)
+            bot.deleteMessage(chat.id, message_id).then(() => {
+                order_status = order_statuses_text[0]
+                bot.sendMessage(chat.id, delivery_started, {
+                    reply_markup: {
+                        keyboard: unregistered_keyboard[2],
+                        resize_keyboard: true
+    
+                    }
+                })
+                
+                let updates = {};
+
+                let newuser = {
+                    adress: user_adress,
+                    average_price: average_price,
+                    average_purchases: average_purchases,
+                    coins: user_coins,
+                    email: user_email,
+                    favourite_food: favourite_food,
+                    id: chat.id,
+                    name: user_name,
+                    phone: user_phone,
+                    username: chat.username.toString(),
+                    alltime_purchases_amount: alltime_purchases_amount + 1
+                }
+
+                let date_now = new Date()
+                order_name = 'Delivery/bills/' + date_now.toString()
+                console.log('ORDER NAME: ' + order_name)
+                order_date = date_now.toString()
+                
+                //date_now = Date.now()
+                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
+                let newbill = {
+                    date_ordered: order_date,
+                    order_info: finalbasket,
+                    price: finalprice,
+                    client_id: chat.id,
+                    phone: user_phone,
+                    order_status: order_statuses_text[0],
+                    adress: user_adress,
+                    client_name: user_name
+                }
+
+                let clientsamount = fb.database().ref('Delivery/clients/clients_amount');
+                    clientsamount.get().then((snapshot) => {
+                    let count = snapshot.val();
+                    if (userstatus === 'unregistered'){
+                        count++
+                        updates['Delivery/clients/clients_amount'] = count
+                        userstatus = 'registered'
+                    }
+
+                    updates['Delivery/clients/' + chat.id] = newuser
+                    updates['Delivery/bills/' + date_now] = newbill
+
+                    fb.database().ref().update(updates)
+
+                    AddMailingData()
+                    StartCheckingOrder()
+                })
+
+                                  ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
+    deliver_bill_topic = deliver_bill_topic_names[0]
+    deliver_bill_client_info = `
+
+<b>👤 Заказчик</b>
+├ ФИО: ` + user_name + `
+├ Адрес: ` + user_adress + `
+└ Номер: ` + user_phone + `
+
+`
+    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + finalbasket + `
+
+`
+    
+    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + finalprice + ` тг.
+
+`
+
+    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+└ Дата заказа: ` + order_date + `
+
+`
+    console.log('order_date! ' + order_date)
+    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+    console.log('last message id: ' + query.message.message_id)
+    bot.sendMessage(delivery_chat, delivers_bill, {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard:[
+                [{
+                    text: '✅ Принять заказ',
+                    callback_data: accept_order_callback + order_date
+                }],
+                [{
+                    text: '❌ Отклонить заказ',
+                    callback_data: refuse_order_callback + order_date
+                }]
+            ]
+        }
+    }).then(() => {
+        //bot.sendContact(delivery_chat, user_phone, user_name).then(() => {
+        
+        /* let update = {}
+        let bill_message_id = query.message.message_id
+        console.log('bills message id: ' + bill_message_id)
+        update['Delivery/bills/' + order_date/*  + '/bill_message_id' ] = bill_message_id
+        console.log('adding message id: ' + 'Delivery/bills/' + order_date) */
+    })
+
+    ////////////////////////////////////////////////////////////////////////
+
+                //console.log('Date: ' + date_now.getHours() + ':' + date_now.getMinutes())
+            })
+    }
+
+    if (query.data === add_email){
+        isMakingChanges = 4
+        bot.deleteMessage(chat.id, message_id)
+        bot.sendMessage(chat.id, '📩 Напишите ваш email:', {
+            reply_markup:{
+                keyboard:[
+                    [{
+                        text: dont_add_email,
+                    }]
+                ],
+                resize_keyboard: true
+            }
+        })
+    }
+
+    if (query.data === dont_add_email){
+        isMakingChanges = 0
+
+        let updates = {};
+        updates['Delivery/clients/' + chat.id + '/coins'] = user_coins
+        fb.database().ref().update(updates).then(() => {
+            //тут отправить в главное меню
+            for (let i=0; i<100; i++){
+                bot.deleteMessage(chat.id, message_id - i).catch(err => {
+                    console.log(err)
+                })
+            }
+            bot.sendMessage(chat.id, didntaddemail_text).then(() => {
+                anotherpoint_multiple = 2
+                keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chat.id, query.message.chat.id, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
+            })
+        })
+    }
+
+    let userdata = fb.database().ref('Delivery/bills/')
+    userdata.get().then((result) => {
+        let bills_array = Object.keys(result.val())
+        console.log('Вы нажимаете на кнопку callback для доставщиков: ' + query.data + ', array = ' + bills_array.length)
+        for(let i = 0; i < bills_array.length; i++){
+            //console.log(i + ' Processing... ' + query.data + ', ' + (accept_order_callback + bills_array[i]))
+            if (query.data === accept_order_callback + bills_array[i].toString()){
+                accepted_order_name = bills_array[i]
+                console.log('Вы приняли заказ: ' + accepted_order_name)
+                //сохранить в чеке айди доставщика чтобы только он мог нажимать на кнопки
+                let orderinfo = fb.database().ref('Delivery/bills/' + bills_array[i]);
+                orderinfo.get().then((snapshot) => 
+                {
+                    console.log(query)
+                    console.log('deliverer name2 : ' + query.message.from.first_name + ', ' + query.message.from.id)
+                    let accept_date = new Date().toString()
+                    //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
+                    let updates = {}
+                    let order_update = {
+                        adress: snapshot.val().adress,
+                        client_name: snapshot.val().client_name,
+                        date_ordered: snapshot.val().date_ordered,
+                        client_id: snapshot.val().client_id,
+                        order_info: snapshot.val().order_info,
+                        phone: snapshot.val().phone,
+                        price: snapshot.val().price,
+                        order_status: order_statuses_text[1],
+                        deliver_name: query.from.first_name.toString(),
+                        accept_date: accept_date,
+                        deliver_id: query.from.id.toString()
+                    }
+                    updates['Delivery/bills/' + bills_array[i]] = order_update
+                    //updates['Delivery/clients/CLIENTID/EGO_CHECK'] = order_update
+                    fb.database().ref().update(updates)
+
+                    /////ИЗМЕНЯЕМ ЧЕК///////////////
+                    deliver_bill_topic = deliver_bill_topic_names[1] + order_statuses_text[1]
+                    deliver_bill_client_info = `
+                
+<b>👤 Заказчик</b>
+├ ФИО: ` + snapshot.val().client_name + `
+├ Адрес: ` + snapshot.val().adress + `
+└ Номер: ` + snapshot.val().phone + `
+                
+`
+                    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + snapshot.val().order_info + `
+                
+`
+                    
+                    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + snapshot.val().price + ` тг.
+                
+`
+                
+                    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+├ Дата заказа: ` + snapshot.val().date_ordered + `
+├ Дата принятия заказа: ` + accept_date + `
+└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
+`
+delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+                    bot.editMessageText(delivers_bill, {
+                        parse_mode: 'HTML',
+                        chat_id: query.message.chat.id,
+                        message_id: query.message.message_id,
+                        reply_markup:{
+                            inline_keyboard:[
+                                [{
+                                    text: '✅ Заказ доставлен',
+                                    callback_data: isdelivered_callback + bills_array[i]
+                                }]
+                            ]
+                        }
+                    })
+                })
+            }
+            else if (query.data === refuse_order_callback + bills_array[i]){
+                console.log('Вы отклонили заказ: ' + bills_array[i])
+                let orderinfo = fb.database().ref('Delivery/bills/' + bills_array[i]);
+                orderinfo.get().then((snapshot) => 
+                {
+                    let refuse_date = new Date().toString()
+                    //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
+                    let updates = {}
+                    let order_update = {
+                        adress: snapshot.val().adress,
+                        client_name: snapshot.val().client_name,
+                        date_ordered: snapshot.val().date_ordered,
+                        client_id: snapshot.val().client_id,
+                        order_info: snapshot.val().order_info,
+                        phone: snapshot.val().phone,
+                        price: snapshot.val().price,
+                        order_status: order_statuses_text[3],
+                        deliver_name: query.from.first_name.toString(),
+                        accept_date: refuse_date,
+                        deliver_id: query.from.id.toString()
+                    }
+                    updates['Delivery/bills/' + bills_array[i]] = order_update
+                    //updates['Delivery/clients/CLIENTID/EGO_CHECK'] = order_update
+                    fb.database().ref().update(updates)
+
+                    /////ИЗМЕНЯЕМ ЧЕК///////////////
+                    deliver_bill_topic = deliver_bill_topic_names[2] + query.message.chat.first_name
+                    deliver_bill_client_info = `
+                    
+<b>👤 Заказчик</b>
+├ ФИО: ` + snapshot.val().client_name + `
+├ Адрес: ` + snapshot.val().adress + `
+└ Номер: ` + snapshot.val().phone + `
+                
+`
+                    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + snapshot.val().order_info + `
+                
+`
+                    
+                    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + snapshot.val().price + ` тг.
+                
+`
+                
+                    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+├ Дата заказа: ` + snapshot.val().date_ordered + `
+├ Дата отказа от заказа: ` + refuse_date + `
+└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
+`
+delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+                    bot.editMessageText(delivers_bill, {
+                        parse_mode: 'HTML',
+                        chat_id: query.message.chat.id,
+                        message_id: query.message.message_id,
+                    })
+                })
+                    
+            }
+            else if (query.data === isdelivered_callback + bills_array[i]){
+                accepted_order_name = bills_array[i]
+                console.log('Вы доставили заказ: ' + accepted_order_name)
+                //сохранить в чеке айди доставщика чтобы только он мог нажимать на кнопки
+                let orderinfo = fb.database().ref('Delivery/bills/' + bills_array[i]);
+                orderinfo.get().then((snapshot) => 
+                {
+                    if (query.from.id.toString() === snapshot.val().deliver_id){
+                        let delivered_date = new Date().toString()
+                        //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
+                        let updates = {}
+                        let order_update = {
+                            adress: snapshot.val().adress,
+                            client_name: snapshot.val().client_name,
+                            date_ordered: snapshot.val().date_ordered,
+                            client_id: snapshot.val().client_id,
+                            order_info: snapshot.val().order_info,
+                            phone: snapshot.val().phone,
+                            price: snapshot.val().price,
+                            order_status: order_statuses_text[2],
+                            deliver_name: query.from.first_name.toString(),
+                            accept_date: snapshot.val().accept_date,
+                            deliver_id: query.from.id.toString(),
+                            delivered_date: delivered_date,
+                        }
+                        updates['Delivery/bills/' + bills_array[i]] = order_update
+                        //updates['Delivery/clients/CLIENTID/EGO_CHECK'] = order_update
+                        fb.database().ref().update(updates)
+    
+                        /////ИЗМЕНЯЕМ ЧЕК///////////////
+                        deliver_bill_topic = deliver_bill_topic_names[1] + order_statuses_text[2]
+                        deliver_bill_client_info = `
+                        
+<b>👤 Заказчик</b>
+├ ФИО: ` + snapshot.val().client_name + `
+├ Адрес: ` + snapshot.val().adress + `
+└ Номер: ` + snapshot.val().phone + `
+                    
+`
+                        deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
+` + snapshot.val().order_info + `
+                    
+`
+                        
+                        deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
+` + snapshot.val().price + ` тг.
+                    
+`
+                    
+                        deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
+├ Дата заказа: ` + snapshot.val().date_ordered + `
+├ Дата принятия заказа: ` + snapshot.val().accept_date + `
+├ Дата доставки: ` + delivered_date + `
+└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
+`
+delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_order_details
+                        bot.editMessageText(delivers_bill, {
+                            parse_mode: 'HTML',
+                            chat_id: query.message.chat.id,
+                            message_id: query.message.message_id,
+                        })
+                    }
+                    
+                })
+            }
+        }
+    })
+})
 
 bot.onText(/Admin_controller:GetChatInfo/, msg =>
 {
@@ -1863,55 +2989,19 @@ bot.onText(/Admin_controller:GetChatInfo/, msg =>
 })
 bot.onText(/\/start/, msg => {
     const chatId = msg.chat.id
-    for (let i=0; i<100; i++){
-        bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
-            console.log(err)
-        })
-    }
-    bot.sendMessage(chatId, whereareyoufrom_text,
-        {
-            reply_markup:{
-                inline_keyboard:[
-                    [{
-                        text: 'Нур-Султан',
-                        callback_data: 'Нур-Султан'
-                    }]/*,
-                    [{
-                        text: 'Алматы',
-                        callback_data: 'Алматы'
-                    }]*/
-                ]
-            }
-        })
-})
-
-bot.onText(/\/point/, msg => {
-    const chatId = msg.chat.id
-    for (let i=0; i<100; i++){
-        bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
-            console.log(err)
-        })
-    }
-    if (userCity === 0){
-        const textmsg = `Вы выбрали <b>Нур-Султан</b>. Выберите, в каком заведении хотите сделать заказ, или отправьте его локацию:`
-        bot.sendMessage(chatId,textmsg,
-            {
-                parse_mode: 'HTML',
-                reply_markup:{
-                    inline_keyboard: NurSultan_keyboard
-                }
+    current_chat = chatId
+    if (chatId !== delivery_chat){
+        for (let i=0; i<100; i++){
+            bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+                console.log(err)
             })
+        }
+        bot.sendSticker(chatId, sticker_hello).then(() => {
+            anotherpoint_multiple = 2
+            keyboards.CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
+        })
     }
-
-    if (userCity === 1){
-        const textmsg = `Вы выбрали <b>Алматы</b>. Выберите, в каком заведении хотите сделать заказ, или отправьте его локацию:`
-        bot.sendMessage(chatId,textmsg,
-            {
-                parse_mode: 'HTML',
-                reply_markup:{
-                    inline_keyboard:Almaty_keyboard
-                }
-            })
+    if (chatId === delivery_chat){
+        bot.sendMessage(chatId, 'Привет! Я буду скидывать сюда заказы. Чтобы начать выполнять заказ, нажмите на кнопку "✅ Принять", под заказом. Так клиент поймет, что его заказ принят.')
     }
 })
-
