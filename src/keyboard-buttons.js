@@ -1,14 +1,22 @@
+process.on('uncaughtException', function (err) {
+    console.log(err);
+  });
 
 //создаем клавиатуру с категориями
 function CategoriesKeyboard(category_keyboard, userCategories, categories_count, fb, bot, chat, msg, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text){
     let keyboard_buttons = 0
-    //category_keyboard = []
+/*     category_keyboard = []
+    userCategories = []
+    categories_count = 0
+    //categories_count = []
     //userCategories = []
-    //categories_count = 0
+    userCategories = []
+    //category_keyboard = []
+    category_keyboard = [] */
     let categories_data = fb.database().ref('Delivery/ordering/categories/categories_number')
     categories_data.get().then((snapshot) => {
         categories_count = snapshot.val()
-        console.log('categories_count: ' + categories_count)
+        console.log('categories_count: ' + chat + ' ' + categories_count)
         if (snapshot.exists()){
             for(let i = 0; i < categories_count; i++){
                 let category_name_data = fb.database().ref('Delivery/ordering/categories/' + i + '/category_name')
@@ -25,11 +33,11 @@ function CategoriesKeyboard(category_keyboard, userCategories, categories_count,
                         }]*/
                         for (let i = 0; i < categories_count; i=i+2){
                             console.log('catr: ' + i)
-                            if (i === categories_count){
+                            if (i === categories_count - 1){
                                 console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userCategories[i-1])
                                 category_keyboard[i-minuser] = [{
-                                    text: userCategories[i-1],
-                                    callback_data: userCategories[i-1]
+                                    text: userCategories[i],
+                                    callback_data: userCategories[i]
                                 }]
                                 keyboard_buttons++
                                 console.log('keyboard_buttons: ' + keyboard_buttons)
@@ -144,6 +152,10 @@ function CategoriesKeyboard(category_keyboard, userCategories, categories_count,
 
 function FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCategory, fb, bot, chat, message_id, anothercategory_text, query, choosefood_text){
     let keyboard_buttons = 0
+    //userFoodlist = []
+    /*foodlist_keyboard = []
+    foodlist_count = []
+    userCategory = [] */
     let categories_data = fb.database().ref('Delivery/ordering/categories/' + userCategory + '/food/food_number')
     categories_data.get().then((snapshot) => {
         foodlist_count = snapshot.val()
@@ -155,6 +167,7 @@ function FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCateg
                     userFoodlist[i] = snapshot.val()
                     console.log('food #' + i + ' = ' + userFoodlist[i])
                     if (i === foodlist_count-1){
+                        foodlist_keyboard = []
                         let minuser = 0
                         console.log('food last = #' + i + ' = ' + userFoodlist[i])
                         // foodlist_count++
