@@ -559,6 +559,58 @@ const main_menu_keyboard = [
     }]
 ]
 
+const admin_menu_buttons = [['⚙️ Настройки', 'admeditbot_query'], ['📧 Рассылки', 'admeiling_cb'], ['🧠 Аналитика/Отчеты', 'adanlcs_cb'], ['🏬 Мой клуб','admclb_cb'], ['👨‍💻 Нужна помощь?', 'admgtcntcts_cb']]
+const admin_menu_keyboard = [
+    [{
+        text: admin_menu_buttons[0][0],
+        callback_data: admin_menu_buttons[0][1]
+    },
+    {
+        text: admin_menu_buttons[1][0],
+        callback_data: admin_menu_buttons[1][1]
+    }],
+    [{
+        text: admin_menu_buttons[4][0],
+        callback_data: admin_menu_buttons[4][1]
+    },
+    {
+        text: admin_menu_buttons[2][0],
+        callback_data: admin_menu_buttons[2][1]
+    }]
+]
+
+const admin_preferences_buttons = [['📍 Локация','admlcnprf_cb'], ['💳 Реквизиты','admcrddt_cb'], ['☎️ Контакты', 'admcntcts_cb'], ['🕓 Расписание','admtme_cb'], ['📈 Воронка','admvrnk_cb'], ['💵 Сис-ма лояльности','admsmlnst_cb'], ['◀️ Назад','admprfsbck_cb']]
+const admin_preferences_keyboard = [
+    [{
+        text: admin_preferences_buttons[6][0],
+        callback_data: admin_preferences_buttons[6][1]
+    }],
+    [{
+        text: admin_preferences_buttons[0][0],
+        callback_data: admin_preferences_buttons[0][1]
+    },
+    {
+        text: admin_preferences_buttons[1][0],
+        callback_data: admin_preferences_buttons[1][1]
+    }],
+    [{
+        text: admin_preferences_buttons[2][0],
+        callback_data: admin_preferences_buttons[2][1]
+    },
+    {
+        text: admin_preferences_buttons[3][0],
+        callback_data: admin_preferences_buttons[3][1]
+    }],
+    [{
+        text: admin_preferences_buttons[4][0],
+        callback_data: admin_preferences_buttons[4][1]
+    },
+    {
+        text: admin_preferences_buttons[5][0],
+        callback_data: admin_preferences_buttons[5][1]
+    }]
+]
+
 module.exports = {
     ProgramKeyboard,
     ProgramCategoriesKeyboard,
@@ -567,5 +619,9 @@ module.exports = {
     ShopCategoriesKeyboard,
     ShopItemsKeyboard,
     main_menu_keyboard,
-    main_menu_buttons
+    main_menu_buttons,
+    admin_menu_buttons,
+    admin_menu_keyboard,
+    admin_preferences_buttons,
+    admin_preferences_keyboard
 }
