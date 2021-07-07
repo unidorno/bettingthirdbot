@@ -1552,8 +1552,9 @@ async function GoogleChangePhone(chatId, guserdata){
     })
 } 
 
-async function GoogleCreateReport(chatId, name){
+async function GoogleCreateReport(chatId, name, lastreport){
 
+    console.log("241 " + lastreport)
     let date = new Date()
     let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     let timeOfffset = 6 //Astana GMT +6
@@ -1807,8 +1808,9 @@ async function GoogleCreateReport(chatId, name){
                                             console.log('1 ' + err)
                                         })
                     
-                                        let abonements_22 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/17_07_21/data/income/abonements/')
+                                        let abonements_22 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/'+ lastreport +'/data/income/abonements/')
                                         abonements_22.get().then(async ab_res_now => {
+                                            console.log("241 " + lastreport)
                                             let programs = Object.keys(ab_res_now.val())
                                             let mainsheet = doc.sheetsByIndex[0]
                     
@@ -1821,8 +1823,9 @@ async function GoogleCreateReport(chatId, name){
                         
                                                 let counter = 12
                                                 for (let i = 0; i < programs.length; i++){
-                                                    let abonements_2 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/17_07_21/data/income/abonements/' + programs[i])
+                                                    let abonements_2 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/'+ lastreport +'/data/income/abonements/' + programs[i])
                                                     abonements_2.get().then(async ab_res_now_2 => {
+                                                        console.log("241 " + lastreport)
                                                         if (ab_res_now_2.val().name !== undefined){
                         
                                                             let cell_val = resources_sheet.getCellByA1('C' + (counter+2))
@@ -1905,10 +1908,11 @@ async function GoogleCreateReport(chatId, name){
                                             console.log('1 ' + err)
                                         })
                     
-                                        let items_22 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/17_07_21/data/income/items/')
+                                        let items_22 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/'+lastreport+'/data/income/items/')
                                         items_22.get().then(async ab_res_now => {
                                             let programs = Object.keys(ab_res_now.val())
                                             let mainsheet = doc.sheetsByIndex[0]
+                                            console.log("241 " + lastreport)
                                             await mainsheet.loadCells('A1:Z1000').then(async function() {
                                                 let items_income_cell =  mainsheet.getCellByA1('I22')
                                                 items_income_cell.value = ab_res_now.val().items_income
@@ -1918,7 +1922,7 @@ async function GoogleCreateReport(chatId, name){
                         
                                                 let counter = 12
                                                 for (let i = 0; i < programs.length; i++){
-                                                    let items_2 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/17_07_21/data/income/items/' + programs[i])
+                                                    let items_2 = fb.database().ref('Fitness/' + club_name_fb[chatId] + '/analytics/reports/'+lastreport+'/data/income/items/' + programs[i])
                                                     items_2.get().then(async item_res_now_2 => {
                                                         if (item_res_now_2.val().name !== undefined){
                         
@@ -8223,11 +8227,17 @@ Email: `+ snapshot.val().email + `
                 }]
                 let msg_txt = ''
                 let allreports = Object.keys(snapshot.val().reports)
+                let lastreport = 0
+                for(let i = 0; i<allreports.length; i++){
+                    if (allreports[i] > lastreport) {
+                        lastreport = allreports[i]
+                    }
+                }
                 
                 if (time_now >= end_time){
                     kb[1] = [{
                         text: adminnewreport[0],
-                        callback_data: adminnewreport[1]
+                        callback_data: adminnewreport[1] + '_' + lastreport
                     }]
 
                     msg_txt = `Вам доступен отчет за месяц 🥳
@@ -8318,8 +8328,9 @@ ABONEMENTS.ME рады помогать Ваше бизнесу расти!
             })
     }
 
-    if (query.data === adminnewreport[1]){
-        GoogleCreateReport(chat.id, chat.first_name)
+    if (query.data.includes(adminnewreport[1] + '_')){
+        let reportvalue = query.data.split('_')
+        GoogleCreateReport(chat.id, chat.first_name, reportvalue[2])
         bot.sendChatAction(chat.id, 'upload_document')
         bot.editMessageText('<b>⏳ Подготавливаем отчет.</b> Это может занять несколько минут. Ничего не трогайте...', {
             parse_mode: 'HTML',
@@ -8991,7 +9002,7 @@ bot.onText(/\/start_training/, msg => {
 bot.onText(/\/im_admin/, msg => {
     const { chat, message_id, text } = msg
     for (let i=0; i<100; i++){
-        bot.deleteMessage(chatId, msg.message_id - i).catch(err => {
+        bot.deleteMessage(chat.id, message_id - i).catch(err => {
             //console.log(err)
         })
     }
