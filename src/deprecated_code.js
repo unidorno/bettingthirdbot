@@ -173,3 +173,294 @@ bot.onText(/\/start/, msg => {
         bot.sendMessage(chatId, 'Привет! Я буду скидывать сюда заказы. Чтобы начать выполнять заказ, нажмите на кнопку "✅ Принять", под заказом. Так клиент поймет, что его заказ принят.')
     }
 })
+
+function PointsKeyboard(points_keyboard, userPoints, UserDelCat, fb, bot, chat, change_delcat_text, choosepoint_text, user_mode, sendlocation){
+    let keyboard_buttons = 0
+
+    let isdelivery = 0
+    if (user_mode === 'delivery_menu') isdelivery = 1
+    let points_data = fb.database().ref('Delivery/' + UserDelCat)
+    points_data.get().then((snapshot) => {
+        let points_array = Object.keys(snapshot.val())
+        let userPointsNames = []
+        console.log('points_count: ' + chat + ' ' + points_array.length)
+        if (snapshot.exists()){
+            //userPoints = []
+            //userPointsNames = []
+            points_keyboard = []
+            keyboard_buttons = 0
+            if (isdelivery === 1){
+                console.log('!delivery')
+                let temp_var = 0
+                for(let i = 0; i < points_array.length; i++){
+                    console.log('!delivery_ ' + i)
+                    let point_name_data = fb.database().ref('Delivery/' + UserDelCat + '/' + points_array[i] /*  + '/point_name' */)
+                    point_name_data.get().then((res) => {
+                        console.log('i = ' + i + ', points_array.length-1: ' + (points_array.length-1))
+                        if (res.val().category_name === undefined || res.val().category_name === null && i < points_array.length - 1){
+                            if (res.val().point_name !== undefined){
+                                console.log('wge ' + res.val().point_name)
+                                userPoints[temp_var] = points_array[i]
+                                userPointsNames[temp_var] = res.val().point_name
+                                console.log('point #' + i + ' = ' + userPointsNames[temp_var])
+                                temp_var++
+                            }
+                        }
+                        if (/* res.val().category_name === undefined || res.val().category_name === null && */ i === points_array.length-1){
+                            let minuser = 0
+                            console.log('=')
+                            if ((res.val().category_name === undefined || res.val().category_name === null) && res.val().point_name !== undefined){
+                                userPoints[temp_var] = points_array[i]
+                                userPointsNames[temp_var] = res.val().point_name
+                                //console.log('city #' + i + ' = ' + userPointsNames[i+1])
+                                
+                                console.log('point last = #' + i + ' = ' + userPointsNames[temp_var])
+                                // points_count++
+                            }
+                                points_keyboard[0] = [{
+                                    text: change_delcat_text,
+                                    callback_data: change_delcat_text
+                                }]
+                                for (let i = 0; i < userPoints.length; i=i+2){
+                                    console.log('catr: ' + i)
+                                    if (i === userPoints.length - 1){
+                                        console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userPoints[i])
+                                        points_keyboard[i-minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        }]
+                                        keyboard_buttons++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text,
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                            
+        
+                                        }
+                                    }
+                                    else if (keyboard_buttons === userPoints.length - 1){
+                                        console.log('last element of points has be written, so lets send this keyboard')
+                                        bot.sendMessage(chat, choosepoint_text,
+                                            {
+                                                parse_mode: 'HTML',
+                                                reply_markup:{
+                                                inline_keyboard:points_keyboard
+                                                }
+                                            })
+                                    }
+                                    else {
+                                        console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userPoints[i] + '. Вторая кнопка: ' + userPoints[i+1])
+                                        points_keyboard[i - minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        },
+                                            {
+                                                text: userPointsNames[i+1],
+                                                callback_data: userPoints[i+1]
+                                            }]
+                                        keyboard_buttons = keyboard_buttons + 2
+                                        minuser++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length - 1){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text,
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                        }
+                                    }
+                                }
+                            
+                            
+                        }
+                    })
+                }
+            }
+
+            else if (isdelivery === 0){
+                console.log('!samovivoz')
+                let temp_var = 0
+                for(let i = 0; i < points_array.length; i++){
+                    let point_name_data = fb.database().ref('Delivery/cities/' + UserDelCat + '/points/' + points_array[i])
+                    point_name_data.get().then((snapshot) => {
+                        if (snapshot.val().is_waiter === true && i < points_array.length - 1){
+                            userPoints[temp_var] = points_array[i]
+                            userPointsNames[temp_var] = snapshot.val().point_name
+                            console.log('point #' + i + ' = ' + userPointsNames[temp_var])
+                            temp_var++
+                        }
+                        if (i === points_array.length-1){
+                            if (snapshot.val().is_waiter === true){
+                                userPoints[temp_var] = points_array[i]
+                                userPointsNames[temp_var] = snapshot.val().point_name
+                                //console.log('city #' + i + ' = ' + userPointsNames[i+1])
+                                let minuser = 0
+                                console.log('point last = #' + i + ' = ' + userPointsNames[temp_var])
+                                // points_count++
+                                points_keyboard[0] = [{
+                                    text: change_delcat_text,
+                                    callback_data: change_delcat_text
+                                },
+                                {
+                                    text: sendlocation,
+                                    callback_data: sendlocation
+                                }]
+                                for (let i = 1; i < userPoints.length; i=i+2){
+                                    console.log('catr: ' + i)
+                                    if (i === userPoints.length - 1){
+                                        console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userPoints[i])
+                                        points_keyboard[i-minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        }]
+                                        keyboard_buttons++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length - 1){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                            
+        
+                                        }
+                                    }
+                                    else if (keyboard_buttons === userPoints.length - 1){
+                                        console.log('last element of points has be written, so lets send this keyboard')
+                                        bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                            {
+                                                parse_mode: 'HTML',
+                                                reply_markup:{
+                                                inline_keyboard:points_keyboard
+                                                }
+                                            })
+                                    }
+                                    else {
+                                        console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userPoints[i] + '. Вторая кнопка: ' + userPoints[i+1])
+                                        points_keyboard[i - minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        },
+                                            {
+                                                text: userPointsNames[i+1],
+                                                callback_data: userPoints[i+1]
+                                            }]
+                                        keyboard_buttons = keyboard_buttons + 2
+                                        minuser++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length - 1){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                        }
+                                    }
+                                }
+                            }
+                            if (snapshot.val().is_waiter === false){
+                                if (userPoints.length < 2){
+                                    bot.sendMessage(chat, 'Нам очень жаль, но в этом городе нет возможности самовывоза 😕',
+                                    {
+                                        parse_mode: 'HTML',
+                                        reply_markup:{
+                                            inline_keyboard:[
+                                                [{
+                                                    text: change_delcat_text,
+                                                    callback_data: change_delcat_text
+                                                }]
+                                            ]
+                                        }
+                                    })
+                                }
+                                else {
+                                    let minuser = 0
+                                console.log('point last = #' + i + ' = ' + userPointsNames[temp_var])
+                                // points_count++
+                                points_keyboard[0] = [{
+                                    text: change_delcat_text,
+                                    callback_data: change_delcat_text
+                                }]
+                                for (let i = 1; i < userPoints.length; i=i+2){
+                                    console.log('catr: ' + i)
+                                    if (i === userPoints.length - 1){
+                                        console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userPoints[i])
+                                        points_keyboard[i-minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        }]
+                                        keyboard_buttons++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length - 1){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                            
+        
+                                        }
+                                    }
+                                    else if (keyboard_buttons === userPoints.length - 1){
+                                        console.log('last element of points has be written, so lets send this keyboard')
+                                        bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                            {
+                                                parse_mode: 'HTML',
+                                                reply_markup:{
+                                                inline_keyboard:points_keyboard
+                                                }
+                                            })
+                                    }
+                                    else {
+                                        console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userPoints[i] + '. Вторая кнопка: ' + userPoints[i+1])
+                                        points_keyboard[i - minuser] = [{
+                                            text: userPointsNames[i],
+                                            callback_data: userPoints[i]
+                                        },
+                                            {
+                                                text: userPointsNames[i+1],
+                                                callback_data: userPoints[i+1]
+                                            }]
+                                        keyboard_buttons = keyboard_buttons + 2
+                                        minuser++
+                                        console.log('keyboard_buttons: ' + keyboard_buttons)
+                                        if (keyboard_buttons === userPoints.length - 1){
+                                            console.log('last element of points has be written, so lets send this keyboard')
+                                            bot.sendMessage(chat, choosepoint_text + '. Вы также можете отправить свою геопозицию и мы найдем близжайшее заведение',
+                                                {
+                                                    parse_mode: 'HTML',
+                                                    reply_markup:{
+                                                        inline_keyboard:points_keyboard
+                                                    }
+                                                })
+                                        }
+                                    }
+                                }
+                                }
+                            }
+                            
+                        }
+                    })
+                }
+            }
+        }
+    })
+}
