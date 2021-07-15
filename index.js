@@ -119,7 +119,7 @@ const anotherusermode_text = '◀️ Выбрать другую услугу'
 const anothercategory_text = '◀️ Выбрать другую категорию'
 const choosecity_text = 'Для начала, найдите свой город:'
 const change_delcat_text = '◀️ Выбрать другой тип заведения'
-const hellomessage_text = `Привет! Я бот-доставщик Restify, с моей помощью ты можешь быстро и удобно заказать доставку из любимого места 🛒`
+const hellomessage_text = `Привет! Я бот-доставщик Resify, с моей помощью ты можешь быстро и удобно заказать доставку из любимого места 🛒`
 const youchosecafe_text = 'Вы выбрали заведение, которое находится по адресу: '
 const sendlocation = '📍 Отметить на карте'
 const choosecategory_text = 'Выберите категорию блюда, которое хотите заказать:'
@@ -379,7 +379,7 @@ function StartCheckingOrder(chatId){
                             }],
                             [{
                                 text: finish_order_text[0],
-                                callback_data: finish_order_text[1]
+                                callback_data: reallystartagain[1]
                             }]
                         ]
                     }
@@ -400,7 +400,7 @@ function StartCheckingOrder(chatId){
                             }],
                             [{
                                 text: finish_order_text[0],
-                                callback_data: finish_order_text[1]
+                                callback_data: reallystartagain[1]
                             }]
                         ]
                     }
@@ -1543,7 +1543,7 @@ bot.on('message', (msg) =>
                         })
                     }
                     bot.sendSticker(chatId, goodfeedback_text).then(() => {
-                        bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Restify. Закажем что-нибудь еще?').then(() => {
+                        bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Resify. Закажем что-нибудь еще?').then(() => {
                             //Reset(chatId)
                             anotherpoint_multiple[chatId] = 2
                             userPoint[chat.id] = 0
@@ -5802,7 +5802,7 @@ deliver_bill_help_info = `<b>📌 Доп. информация</b>`
                    /*  Reset(chat.id)
                     anotherpoint_multiple[chat.id] = 2 */
                     //keyboards.CategoriesKeyboard(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, choosecategory_text, location_text, phone_text, userCity[chat.id], userPoint[chat.id], user_mode[chat.id])
-                    bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Restify. Закажем что-нибудь еще?').then(() => {
+                    bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Resify. Закажем что-нибудь еще?').then(() => {
                         //Reset(chatId)
                         anotherpoint_multiple[chatId] = 2
                         userPoint[chat.id] = 0
@@ -6991,7 +6991,7 @@ deliver_bill_help_info += `
                 if (hours2 < 10) hours2 = '0' + hours2
                 let visible_date_refuse = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date_accept) + ' ' +  */hours2 + ':' + minutes2 + ', ' + Astana_date_accept.getDate() + '.' + (Astana_date_accept.getMonth() + 1)                                   
                 
-                                    deliver_bill_topic = deliver_bill_topic_names[2] + query.message.chat.first_name
+                                    deliver_bill_topic = deliver_bill_topic_names[2] + query.from.first_name.toString()
                                     deliver_bill_client_info = `
 
 <b>👤 Заказчик</b>

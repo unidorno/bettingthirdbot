@@ -471,7 +471,7 @@ function DeliveryCatKeyboard(cat_keyboard, userCategory, fb, bot, chat, mother_l
 function PointsKeyboard(points_keyboard, userPoints, UserDelCat, fb, bot, chat, change_delcat_text, choosepoint_text, user_mode, sendlocation, message_toedit, message_text){
     let keyboard_buttons = 0
 
-    let isdelivery = 0
+    let isdelivery = 1
     if (user_mode === 'delivery_menu') isdelivery = 1
     let points_data = fb.database().ref('Delivery/' + UserDelCat)
     points_data.get().then((snapshot) => {
