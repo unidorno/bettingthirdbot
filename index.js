@@ -3147,7 +3147,7 @@ bot.on('callback_query', query => {
         }
 
         if (query.data === business_cbcs[6]){
-            business_info[chat.id] === undefined
+            business_info[chat.id] = undefined
             Reset(chat.id)
             for (let i=0; i<100; i++){
                 bot.deleteMessage(chatId, message_id - i).catch(err => {
@@ -3212,15 +3212,7 @@ bot.on('callback_query', query => {
             business_info[chat.id][4] = chat.username
         }
 
-        bot.getUserProfilePhotos(chat.id).then(res => {
-            business_info[chat.id][5] = res.photos[0][0].file_id
-            console.log(res.photos[0][0].file_id)
-            /* for(let i = 0; i< res.photos[0].length; i++){
-                
-            } */
-            //business_info[chat.id][5] = res.photos[0]
-        }).catch(err => {console.log(err)})
-
+        
         business_info[chat.id][3] = chat.id
 
         let first_info = {
@@ -3246,11 +3238,22 @@ bot.on('callback_query', query => {
             let txt_me = `🥳 <b>Новый клиент</b>
 ├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
 └ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
-            bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
-                parse_mode: 'HTML',
-                caption: txt_me
+            
+            bot.getUserProfilePhotos(chat.id).then(res => {
+                business_info[chat.id][5] = res.photos[0][0].file_id
+                console.log(res.photos[0][0].file_id)
+               
+                bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
+                    parse_mode: 'HTML',
+                    caption: txt_me
+                }).then(res => {
+                    message_toedit[chat.id] = []
+                    message_toedit[chat.id][15] = res.message_id
+                    message_text[chat.id] = []
+                    message_text[chat.id][15] = res.caption
+                }) .catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
             }).catch(err => {
-                console.log('here ' + err.name + `\n\n ` + err.message)
+                console.log(err)
                 bot.sendMessage(result.val().chats.business_id, txt_me, {
                     parse_mode: 'HTML'
                 })
@@ -3263,12 +3266,7 @@ bot.on('callback_query', query => {
                 .catch(err => {
                     console.log('here ' + err.name + `\n\n ` + err.message)
                 })
-            }).then(res => {
-                message_toedit[chat.id] = []
-                message_toedit[chat.id][15] = res.message_id
-                message_text[chat.id] = []
-                message_text[chat.id][15] = res.caption
-            }) 
+            })
             
         })
 
@@ -3292,6 +3290,7 @@ bot.on('callback_query', query => {
                 }
             })
         })
+
 
     }
 
@@ -9243,6 +9242,7 @@ bot.onText(/\/start/, msg => {
         }
 
         else {
+            business_info[chat.id] = undefined
             if (buttons_message[chatId] === 0 || UserDelCats[chat.id] === undefined){
                 Reset(current_chat)
         
