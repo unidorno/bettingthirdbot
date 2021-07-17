@@ -9137,15 +9137,7 @@ bot.onText(/\/start/, msg => {
                 business_info[chat.id][4] = chat.username
             }
 
-            bot.getUserProfilePhotos(chat.id).then(res => {
-                business_info[chat.id][5] = res.photos[0][0].file_id
-                console.log(res.photos[0][0].file_id)
-                /* for(let i = 0; i< res.photos[0].length; i++){
-                    
-                } */
-                //business_info[chat.id][5] = res.photos[0]
-            }).catch(err => {console.log(err)})
-
+            
             business_info[chat.id][3] = chat.id
 
             let first_info = {
@@ -9171,11 +9163,22 @@ bot.onText(/\/start/, msg => {
                 let txt_me = `🥳 <b>Новый клиент</b>
 ├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
 └ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
-                bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
-                    parse_mode: 'HTML',
-                    caption: txt_me
+                
+                bot.getUserProfilePhotos(chat.id).then(res => {
+                    business_info[chat.id][5] = res.photos[0][0].file_id
+                    console.log(res.photos[0][0].file_id)
+                   
+                    bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
+                        parse_mode: 'HTML',
+                        caption: txt_me
+                    }).then(res => {
+                        message_toedit[chat.id] = []
+                        message_toedit[chat.id][15] = res.message_id
+                        message_text[chat.id] = []
+                        message_text[chat.id][15] = res.caption
+                    }) .catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
                 }).catch(err => {
-                    console.log('here ' + err.name + `\n\n ` + err.message)
+                    console.log(err)
                     bot.sendMessage(result.val().chats.business_id, txt_me, {
                         parse_mode: 'HTML'
                     })
@@ -9188,12 +9191,7 @@ bot.onText(/\/start/, msg => {
                     .catch(err => {
                         console.log('here ' + err.name + `\n\n ` + err.message)
                     })
-                }).then(res => {
-                    message_toedit[chat.id] = []
-                    message_toedit[chat.id][15] = res.message_id
-                    message_text[chat.id] = []
-                    message_text[chat.id][15] = res.caption
-                }) 
+                })
                 
             })
 
@@ -9356,6 +9354,7 @@ bot.onText(/\/im_admin/, msg => {
             }
             else {
                 bot.deleteMessage(chat.id, msg.message_id)
+                business_info[chat.id] = undefined
                 let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
 Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
                 bot.sendMessage(chat.id,  txty, {
@@ -9378,6 +9377,7 @@ bot.onText(/\/im_admin/, msg => {
         
         else {
             bot.deleteMessage(chat.id, msg.message_id)
+            business_info[chat.id] = undefined
             let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
 Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
                             bot.sendMessage(chat.id,  txty, {
