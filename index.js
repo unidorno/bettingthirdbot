@@ -3041,7 +3041,30 @@ bot.on('callback_query', query => {
 
                 }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
             
-            }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            }).catch(err => {
+                console.log('here ' + err.name + `\n\n ` + err.message)
+
+                bot.sendMessage(chat.id, 'Дайте нам узнать о Вас больше, а в обмен мы отправим Вам <b>тарифы нашего сервиса</b> 😇', {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                callback_data: business_cbcs[3]
+                            }],
+                            [{
+                                text: '📞 Номер: ' + business_info[chat.id][11],
+                                callback_data: business_cbcs[4]
+                            }]
+                        ]
+                    }
+                })
+                .then(res => {
+                    message_toedit[chat.id][16] = res.message_id
+                    message_text[chat.id][16] = res.text
+
+                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            })
         
         }
 
