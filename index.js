@@ -102,6 +102,7 @@ let keyboard_admin_phone = [['Телефон: ', 'dlvrcntcts_cb'], ['Коорд�
 let anotherpoint_multiple = []
 let restaurant_name = ' '
 
+const business_cbcs = ['htwrksrstf_cb', 'whryounthrs_cb', 'wrdlvrngtm', 'cgngcmpnm_cb', 'cngcmpph_cb', 'fnshflngnf_cb', 'strtchknrd_cb', 'abtnus_cb']
 const openadminpanel = ['👥 Войти как админ', 'imadmng_cb']
 const text_notadmin = ['Это был пранк, мы знаем что Вы не админ 🤣', 'Стоп, так Вы же не админ 😟', 'Написано же, кнопка для админа 😡']
 const backtodopblank = ['◀️ Назад', 'bcktdpblnk_cb']
@@ -279,6 +280,7 @@ const changeadress_text = 'Изменить адрес'
 let isMakingChanges = []
 let isMakingChanges_2 = []
 let isMakingChanges_3 = []
+let isWritingBusiness = []
 ///////////////////////////////////////////////////////
 
 const delivery_started = '✅ Заказ отправлен! Через несколько минут его увидит курьер и приступит к доставке. Мы уведомим Вас об изменении статуса вашего заказа.'
@@ -309,6 +311,8 @@ let buttons_message = []
 let message_toedit = []
 let message_text = []
 ///////////////////////////////////////////////////////
+let business_info = []
+
 let unregistered_keyboard = []
 unregistered_keyboard[1] = [
     [{
@@ -2575,6 +2579,229 @@ deliver_bill_help_info = `<b>📌 Доп. информация</b>`
         
     }
 
+    if (isWritingBusiness[chat.id] !== 0 && business_info[chat.id] !== undefined){
+        bot.deleteMessage(chat.id, msg.message_id)
+        if (isWritingBusiness[chat.id] === 1){
+            isWritingBusiness[chat.id] = 0
+            business_info[chat.id][10] = msg.text
+
+            if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
+                bot.editMessageText(message_text[chat.id][16], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][16],
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                callback_data: business_cbcs[3]
+                            }],
+                            [{
+                                text: '📞 Номер: ' + business_info[chat.id][11],
+                                callback_data: business_cbcs[4]
+                            }]
+                        ]
+                    }
+                })
+            }
+    
+            if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
+                bot.editMessageText(message_text[chat.id][16], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][16],
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                callback_data: business_cbcs[3]
+                            }],
+                            [{
+                                text: '📞 Номер: ' + business_info[chat.id][11],
+                                callback_data: business_cbcs[4]
+                            }],
+                            [{
+                                text: 'Продолжить ➡️',
+                                callback_data: business_cbcs[5]
+                            }]
+                        ]
+                    }
+                })
+            }
+        }
+
+        if (isWritingBusiness[chat.id] === 2){
+            if (msg.contact !== undefined){
+                isWritingBusiness[chat.id] = 0
+                business_info[chat.id][11] = msg.contact.phone_number
+
+                if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                    .then(() => {
+                        bot.sendMessage(chat.id, message_text[chat.id][16], {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                        callback_data: business_cbcs[3]
+                                    }],
+                                    [{
+                                        text: '📞 Номер: ' + business_info[chat.id][11],
+                                        callback_data: business_cbcs[4]
+                                    }]
+                                ]
+                            }
+                        })
+                        .then(res => {
+                            message_toedit[chat.id][16] = res.message_id
+                        })
+                    })
+                }
+        
+                if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                    .then(() => {
+                        bot.sendMessage(chat.id, message_text[chat.id][16], {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                        callback_data: business_cbcs[3]
+                                    }],
+                                    [{
+                                        text: '📞 Номер: ' + business_info[chat.id][11],
+                                        callback_data: business_cbcs[4]
+                                    }],
+                                    [{
+                                        text: 'Продолжить ➡️',
+                                        callback_data: business_cbcs[5]
+                                    }]
+                                ]
+                            }
+                        })
+                        .then(res => {
+                            message_toedit[chat.id][16] = res.message_id
+                        })
+                    })
+                    
+                }
+            }
+            else {
+                isWritingBusiness[chat.id] = 0
+                if (msg.text === '⬅️ Назад'){
+                    if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                        .then(() => {
+                            bot.sendMessage(chat.id, message_text[chat.id][16], {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{
+                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                            callback_data: business_cbcs[3]
+                                        }],
+                                        [{
+                                            text: '📞 Номер: ' + business_info[chat.id][11],
+                                            callback_data: business_cbcs[4]
+                                        }]
+                                    ]
+                                }
+                            })
+                            .then(res => {
+                                message_toedit[chat.id][16] = res.message_id
+                            })
+                        })
+                    }
+            
+                    if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                        .then(() => {
+                            bot.sendMessage(chat.id, message_text[chat.id][16], {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{
+                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                            callback_data: business_cbcs[3]
+                                        }],
+                                        [{
+                                            text: '📞 Номер: ' + business_info[chat.id][11],
+                                            callback_data: business_cbcs[4]
+                                        }],
+                                        [{
+                                            text: 'Продолжить ➡️',
+                                            callback_data: business_cbcs[5]
+                                        }]
+                                    ]
+                                }
+                            })
+                            .then(res => {
+                                message_toedit[chat.id][16] = res.message_id
+                            })
+                        })
+                        
+                    }
+                }
+                else {
+                    if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                        .then(() => {
+                            bot.sendMessage(chat.id, 'Вам нужно нажать на кнопку "📞 Отправить телефон". Не нужно вводить номер вручную', {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{
+                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                            callback_data: business_cbcs[3]
+                                        }],
+                                        [{
+                                            text: '📞 Номер: ' + business_info[chat.id][11],
+                                            callback_data: business_cbcs[4]
+                                        }]
+                                    ]
+                                }
+                            })
+                            .then(res => {
+                                message_toedit[chat.id][16] = res.message_id
+                            })
+                        })
+                    }
+            
+                    if (business_info[chat.id][10] !== ''){
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+                        .then(() => {
+                            bot.sendMessage(chat.id, 'Вам нужно нажать на кнопку "📞 Отправить телефон". Не нужно вводить номер вручную', {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{
+                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                            callback_data: business_cbcs[3]
+                                        }],
+                                        [{
+                                            text: '📞 Номер: ' + business_info[chat.id][11],
+                                            callback_data: business_cbcs[4]
+                                        }],
+                                        [{
+                                            text: 'Продолжить ➡️',
+                                            callback_data: business_cbcs[5]
+                                        }]
+                                    ]
+                                }
+                            })
+                            .then(res => {
+                                message_toedit[chat.id][16] = res.message_id
+                            })
+                        })
+                        
+                    }
+                }
+            }
+        }
+    }
+
     if (text === order_status_button){
         bot.deleteMessage(chatId, message_id).then(() => {
             console.log('Order name: "' + order_name[chatId] + '"')
@@ -2684,8 +2911,240 @@ bot.on('callback_query', query => {
     console.log(query.data)
     console.log('coupondata ' + coupondata[chat.id])
     console.log(query)
+
+    if (business_info[chat.id] !== undefined){
+        if (query.data === business_cbcs[0]){
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log(err)})
+            
+            bot.sendVideo(chat.id, business_info[chat.id][6], {
+                parse_mode: 'HTML',
+                caption: 'Мы упрощаем и улучшаем сервис, который вы оказываете своим клиентам. Это повышает число заказов, ведь чем лучше клиенту, тем лучше Вам!',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: 'Почему именно мы?',
+                            callback_data: business_cbcs[1]
+                        }]
+                    ]
+                }
+            })
+        }
+        if (query.data === business_cbcs[1]){
+            bot.editMessageCaption(query.message.caption, {
+                chat_id: chat.id,
+                message_id: message_id
+            }).catch(err => {console.log(err)})
+            
+            let txt = `У нас 3 фишки, которые выделяют нас среди конкурентов - агрегаторов, мобильных приложений и заказу по телефону. Об этом мы расскажем Вам на личной встрече, но если коротко: 
+
+1. Мы берем не % с продаж, а фиксированную цену вне зависимости от вашего дохода. Это в 7+ раз дешевле, чем при использовании агрегаторов (Wolt, Glovo, Яндекс и тд.), которые <b>берут 20% при Вашей рентабельности в 15-25%</b> 🤦‍♂️
+
+2. Вашим клиентам не нужно скачивать отдельное приложение, телеграм это топ-3 мессенджера страны, <b>он есть у всех</b>. Немного статистики: когда вы указываете ссылку на свой ресторан в агрегаторе, заказ делают 60-70% клиентов. <b>В нашем случае - 90%.</b> Про заказ через WhatsApp и телефон молчим - ниже 3%
+
+3. Мы даем инструменты аналитики и показываем, как ваши курьеры справляются с работой, как долго везут заказ и какие отзывы получают. Также наш сервис позволяет стимулировать доп. продажи через <b>рассылки, акции и скидки</b>`
+
+            bot.sendPhoto(chat.id, business_info[chat.id][7], {
+                parse_mode: 'HTML',
+                caption: txt
+            })
+            .then(() => {
+                bot.sendMessage(chat.id, `Скажите, что именно доставляет ваша компания?`, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'Еда 🍔',
+                                callback_data: business_cbcs[2] + '_FOOD'
+                            },
+                            {
+                                text: 'Продукты 🍏',
+                                callback_data: business_cbcs[2] + '_PRODUCTY'
+                            }],
+                            [{
+                                text: 'Цветы 🌹',
+                                callback_data: business_cbcs[2] + '_FLOWERS'
+                            },
+                            {
+                                text: 'Одежда 👕',
+                                callback_data: business_cbcs[2] + '_CLOTH'
+                            }],
+                            [{
+                                text: 'Алкоголь 🥃',
+                                callback_data: business_cbcs[2] + '_ALCOHOL'
+                            },
+                            {
+                                text: 'Табак/Вейпы 💨',
+                                callback_data: business_cbcs[2] + '_TOBACCO'
+                            }],
+                            [{
+                                text: 'Вода/Напитки 💦',
+                                callback_data: business_cbcs[2] + '_WATER'
+                            },
+                            {
+                                text: 'Другое ➡️',
+                                callback_data: business_cbcs[2] + '_OTHER'
+                            }]
+                        ]
+                    }
+                })
+            })
+        }
+
+        if (query.data.includes(business_cbcs[2])){
+            let type_text = query.data.split('_')
+            type_text = type_text[1]
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            message_text[chat.id][15] += `
+
+<b>Бизнес</b>
+├<b>Категория:</b> ` + type_text
+
+            let updates_second = {}
+            updates_second['Motherbase/customers/list/' + chat.id + '/firm_category'] = type_text
+            fb.database().ref().update(updates_second)
+
+            bot.editMessageCaption(message_text[chat.id][15], {
+                parse_mode: 'HTML',
+                chat_id: business_info[chat.id][8],
+                message_id: message_toedit[chat.id][15]
+            }).catch(err => {
+                console.log('here ' + err.name + `\n\n ` + err.message)
+                bot.editMessageText(message_text[chat.id][15], {
+                    parse_mode: 'HTML',
+                    chat_id: business_info[chat.id][8],
+                    message_id: message_toedit[chat.id][15]
+                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            })
+            business_info[chat.id][10] = ''
+            business_info[chat.id][11] = ''
+            isWritingBusiness[chat.id] = 0
+
+            bot.sendVideoNote(chat.id, business_info[chat.id][12]).then(() => {
+                bot.sendMessage(chat.id, 'Дайте нам узнать о Вас больше, а в обмен мы отправим Вам <b>тарифы нашего сервиса</b> 😇', {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
+                                callback_data: business_cbcs[3]
+                            }],
+                            [{
+                                text: '📞 Номер: ' + business_info[chat.id][11],
+                                callback_data: business_cbcs[4]
+                            }]
+                        ]
+                    }
+                })
+                .then(res => {
+                    message_toedit[chat.id][16] = res.message_id
+                    message_text[chat.id][16] = res.text
+
+                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            
+            }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+        
+        }
+
+        if (query.data === business_cbcs[3]){
+            isWritingBusiness[chat.id] = 1
+            bot.editMessageText('Как называется компания, в которой вы работаете? (напишите)', {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][16]
+            })
+        }
+
+        if (query.data === business_cbcs[4]){
+            isWritingBusiness[chat.id] = 2
+            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+            .then(() => {
+                bot.sendPhoto(chat.id, openkeyboard_pic, {
+                    parse_mode: 'HTML',
+                    caption: 'Нажмите на кнопку снизу, чтобы отправить телефон. Если Кнопки нет, найдите иконку справа от клавиатуры, как показано на картинке',
+                    reply_markup: {
+                        keyboard: [
+                            [{
+                                text: '📞 Отправить телефон',
+                                request_contact: true
+                            }],
+                            [{
+                                text: '⬅️ Назад',
+                            }]
+                        ],
+                        resize_keyboard: true
+                    }
+                }).then(res => {
+                    message_toedit[chat.id][16] = res.message_id
+                })
+            })
+        }
+
+        if (query.data === business_cbcs[5]){
+            message_text[chat.id][15] += `
+├<b>Название:</b> ` + business_info[chat.id][10] + `
+└<b>Номер:</b> ` + business_info[chat.id][11]
+
+            let updates_last = {}
+            updates_last['Motherbase/customers/list/' + chat.id + '/firm_name'] = business_info[chat.id][10]
+            updates_last['Motherbase/customers/list/' + chat.id + '/contact_phone'] = business_info[chat.id][11]
+            fb.database().ref().update(updates_last)
+            
+            bot.editMessageCaption(message_text[chat.id][15], {
+                parse_mode: 'HTML',
+                chat_id: business_info[chat.id][8],
+                message_id: message_toedit[chat.id][15]
+            }).catch(err => {
+                console.log('here ' + err.name + `\n\n ` + err.message)
+                bot.editMessageText(message_text[chat.id][15], {
+                    parse_mode: 'HTML',
+                    chat_id: business_info[chat.id][8],
+                    message_id: message_toedit[chat.id][15]
+                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+            })
+        
+            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
+
+            let tx = 'Спасибо, что проявляете интерес к Resify! Мы постараемся связаться с Вами сегодня и ответить на все Ваши вопросы. Вы можете опробовать бота прямо сейчас. Для этого нажмите на кнопку ниже. <b>Но только сохраните перед этим всю информацию, которую мы Вам отправили. </b>Это важно 😉'
+            bot.sendPhoto(chat.id, business_info[chat.id][9], {
+                parse_mode: 'HTML',
+                caption: tx,
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: 'Опробовать доставку',
+                            callback_data: business_cbcs[6]
+                        }],
+                        [{
+                            text: 'Больше информации',
+                            url: 'https://t.me/resifybusiness'
+                        }]
+                    ]
+                }
+            }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
+        }
+
+        if (query.data === business_cbcs[6]){
+            business_info[chat.id] === undefined
+            Reset(chat.id)
+            for (let i=0; i<100; i++){
+                bot.deleteMessage(chatId, message_id - i).catch(err => {
+                    //console.log(err)
+                })
+            }
+            bot.sendSticker(chatId, sticker_hello).then(() => {
+                anotherpoint_multiple[chatId] = 2
+                //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], categories_count[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, choosecategory_text, location_text, phone_text)
+                bot.sendMessage(chatId, hellomessage_text, {
+                    parse_mode: 'HTML',
+                })
+                keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
+                //keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], userCity[chat.id], fb, bot, chat.id, change_city_text, choosepoint_text, user_mode[chat.id], sendlocation)
+                //keyboards.CitiesKeyboard(cities_keyboard[chatId], userCities[chatId], fb, bot, chatId, choosecity_text, hellomessage_text)
+            })
+        }
+    }
     
-    if (chat.type === 'private'  && UserDelCats[chat.id] === undefined){
+    if (chat.type === 'private'  && UserDelCats[chat.id] === undefined && business_info[chat.id] === undefined){
         Reset(chat.id)
         for (let i=0; i<100; i++){
             bot.deleteMessage(chatId, message_id - i).catch(err => {
@@ -2704,12 +3163,113 @@ bot.on('callback_query', query => {
         })
     }
 
-    if (chat.type === 'private'  && chat.id !== admin_id && UserDelCats[chat.id] !== undefined){
+    if (chat.type === 'private'  && chat.id !== admin_id && UserDelCats[chat.id] !== undefined && business_info[chat.id] === undefined){
         current_chat = chat.id
         
 
     if (query.data === query_deletethismessage){
         bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
+    }
+
+    if (query.data === business_cbcs[7]){
+        business_info[chat.id] = []
+        business_info[chat.id][0] = 0 //message_id который прилетит мне
+        business_info[chat.id][1] = chat.first_name
+        if (chat.last_name === undefined){
+            business_info[chat.id][2] = 'Не указано'
+        }
+        if (chat.last_name !== undefined){
+            business_info[chat.id][2] = chat.last_name
+        }
+
+        if (chat.username === undefined){
+            business_info[chat.id][4] = 'Не указано'
+        }
+        if (chat.username !== undefined){
+            business_info[chat.id][4] = chat.username
+        }
+
+        bot.getUserProfilePhotos(chat.id).then(res => {
+            business_info[chat.id][5] = res.photos[0][0].file_id
+            console.log(res.photos[0][0].file_id)
+            /* for(let i = 0; i< res.photos[0].length; i++){
+                
+            } */
+            //business_info[chat.id][5] = res.photos[0]
+        }).catch(err => {console.log(err)})
+
+        business_info[chat.id][3] = chat.id
+
+        let first_info = {
+            id: business_info[chat.id][3],
+            first_name: business_info[chat.id][1],
+            last_name: business_info[chat.id][2],
+            username: business_info[chat.id][4]
+        }
+                 
+        let updates_first = {}
+        updates_first['Motherbase/customers/list/' + chat.id] = first_info
+        fb.database().ref().update(updates_first)
+
+        let mb_data = fb.database().ref('Motherbase/')
+        mb_data.get().then((result) => {
+
+            business_info[chat.id][6] = result.val().customers.links.media.howitworks
+            business_info[chat.id][7] = result.val().customers.links.media.comparison
+            business_info[chat.id][8] = result.val().chats.business_id
+            business_info[chat.id][9] = result.val().customers.links.media.pricing
+            business_info[chat.id][12] = result.val().customers.links.media.videonote
+
+            let txt_me = `🥳 <b>Новый клиент</b>
+├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
+└ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
+            bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
+                parse_mode: 'HTML',
+                caption: txt_me
+            }).catch(err => {
+                console.log('here ' + err.name + `\n\n ` + err.message)
+                bot.sendMessage(result.val().chats.business_id, txt_me, {
+                    parse_mode: 'HTML'
+                })
+                .then(res => {
+                    message_toedit[chat.id] = []
+                    message_toedit[chat.id][15] = res.message_id
+                    message_text[chat.id] = []
+                    message_text[chat.id][15] = res.text
+                })
+                .catch(err => {
+                    console.log('here ' + err.name + `\n\n ` + err.message)
+                })
+            }).then(res => {
+                message_toedit[chat.id] = []
+                message_toedit[chat.id][15] = res.message_id
+                message_text[chat.id] = []
+                message_text[chat.id][15] = res.caption
+            }) 
+            
+        })
+
+        for (let i=0; i<100; i++){
+            bot.deleteMessage(chatId, message_id - i).catch(err => {
+                //console.log(err)
+            })
+        }
+        bot.sendSticker(chatId, sticker_hello).then(() => {
+            let txt = `👋 Здравствуйте, ` +  chat.first_name + `. Я - Resify, еще один агрегатор доставки. 
+Но в отличие от конкурентов, <b>мы не берем % от продажи</b>. За небольшую ежемесячную плату вы сможете организовать онлайн-доставку, увеличить поток клиентов и их удержание`
+            bot.sendMessage(chat.id, txt, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: 'Как это работает?',
+                            callback_data: business_cbcs[0]
+                        }]
+                    ]
+                }
+            })
+        })
+
     }
 
     if (query.data === reallystartagain[1]){
@@ -8557,6 +9117,110 @@ bot.onText(/\/start/, msg => {
             
         }
 
+        if (text.includes('_forbuyer')){
+            bot.deleteMessage(chatId, message_id)
+
+            business_info[chat.id] = []
+            business_info[chat.id][0] = 0 //message_id который прилетит мне
+            business_info[chat.id][1] = chat.first_name
+            if (chat.last_name === undefined){
+                business_info[chat.id][2] = 'Не указано'
+            }
+            if (chat.last_name !== undefined){
+                business_info[chat.id][2] = chat.last_name
+            }
+
+            if (chat.username === undefined){
+                business_info[chat.id][4] = 'Не указано'
+            }
+            if (chat.username !== undefined){
+                business_info[chat.id][4] = chat.username
+            }
+
+            bot.getUserProfilePhotos(chat.id).then(res => {
+                business_info[chat.id][5] = res.photos[0][0].file_id
+                console.log(res.photos[0][0].file_id)
+                /* for(let i = 0; i< res.photos[0].length; i++){
+                    
+                } */
+                //business_info[chat.id][5] = res.photos[0]
+            }).catch(err => {console.log(err)})
+
+            business_info[chat.id][3] = chat.id
+
+            let first_info = {
+                id: business_info[chat.id][3],
+                first_name: business_info[chat.id][1],
+                last_name: business_info[chat.id][2],
+                username: business_info[chat.id][4]
+            }
+                     
+            let updates_first = {}
+            updates_first['Motherbase/customers/list/' + chat.id] = first_info
+            fb.database().ref().update(updates_first)
+
+            let mb_data = fb.database().ref('Motherbase/')
+            mb_data.get().then((result) => {
+
+                business_info[chat.id][6] = result.val().customers.links.media.howitworks
+                business_info[chat.id][7] = result.val().customers.links.media.comparison
+                business_info[chat.id][8] = result.val().chats.business_id
+                business_info[chat.id][9] = result.val().customers.links.media.pricing
+                business_info[chat.id][12] = result.val().customers.links.media.videonote
+
+                let txt_me = `🥳 <b>Новый клиент</b>
+├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
+└ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
+                bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
+                    parse_mode: 'HTML',
+                    caption: txt_me
+                }).catch(err => {
+                    console.log('here ' + err.name + `\n\n ` + err.message)
+                    bot.sendMessage(result.val().chats.business_id, txt_me, {
+                        parse_mode: 'HTML'
+                    })
+                    .then(res => {
+                        message_toedit[chat.id] = []
+                        message_toedit[chat.id][15] = res.message_id
+                        message_text[chat.id] = []
+                        message_text[chat.id][15] = res.text
+                    })
+                    .catch(err => {
+                        console.log('here ' + err.name + `\n\n ` + err.message)
+                    })
+                }).then(res => {
+                    message_toedit[chat.id] = []
+                    message_toedit[chat.id][15] = res.message_id
+                    message_text[chat.id] = []
+                    message_text[chat.id][15] = res.caption
+                }) 
+                
+            })
+
+            for (let i=0; i<100; i++){
+                bot.deleteMessage(chatId, message_id - i).catch(err => {
+                    //console.log(err)
+                })
+            }
+            bot.sendSticker(chatId, sticker_hello).then(() => {
+                let txt = `👋 Здравствуйте, ` +  chat.first_name + `. Я - Resify, еще один агрегатор доставки. 
+Но в отличие от конкурентов, <b>мы не берем % от продажи</b>. За небольшую ежемесячную плату вы сможете организовать онлайн-доставку, увеличить поток клиентов и их удержание`
+                bot.sendMessage(chat.id, txt, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'Как это работает?',
+                                callback_data: business_cbcs[0]
+                            }]
+                        ]
+                    }
+                })
+            })
+
+            
+        }
+
         else {
             if (buttons_message[chatId] === 0 || UserDelCats[chat.id] === undefined){
                 Reset(current_chat)
@@ -8691,12 +9355,46 @@ bot.onText(/\/im_admin/, msg => {
                 })
             }
             else {
-                bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
+                bot.deleteMessage(chat.id, msg.message_id)
+                let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
+Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
+                bot.sendMessage(chat.id,  txty, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: 'О нас',
+                                callback_data: business_cbcs[7]
+                            }],
+                            [{
+                                text: '⬅️ Назад',
+                                callback_data: query_deletethismessage
+                            }]
+                        ]
+                    }
+                })
             }
         }
         
         else {
-            bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
+            bot.deleteMessage(chat.id, msg.message_id)
+            let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
+Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
+                            bot.sendMessage(chat.id,  txty, {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    inline_keyboard: [
+                                        [{
+                                            text: 'О нас',
+                                            callback_data: business_cbcs[7]
+                                        }],
+                                        [{
+                                            text: '⬅️ Назад',
+                                            callback_data: query_deletethismessage
+                                        }]
+                                    ]
+                                }
+                            })
         }
     })
 })
