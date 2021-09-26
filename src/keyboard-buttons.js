@@ -1,376 +1,11 @@
+
+//В этом скрипте создаются клавиатуры
+
 process.on('uncaughtException', function (err) {
     console.log('here: ' + err);
-  });
+});
 
-function CitiesKeyboard(cities_keyboard, userCities, fb, bot, chat, choosecity_text, anotherusermode_text, user_mode){
-    let keyboard_buttons = 0
-/*     category_keyboard = []
-    userCategories = []
-    categories_count = 0
-    //categories_count = []
-    //userCategories = []
-    userCategories = []
-    //category_keyboard = []
-    category_keyboard = [] */
-    let isdelivery = 0
-    if (user_mode === 'delivery_menu') isdelivery = 1
-    let cities_data = fb.database().ref('Basement/cities/')
-    cities_data.get().then((snapshot) => {
-        let cities_array = Object.keys(snapshot.val())
-        let userCitiesNames = []
-        console.log('categories_count: ' + chat + ' ' + cities_array.length)
-        if (snapshot.exists()){
-            //userCities = []
-            //userCitiesNames = []
-            cities_keyboard = []
-            keyboard_buttons = 0
-            if (isdelivery === 1){
-                console.log('!delivery')
-                let temp_var = 0
-                for(let i = 0; i < cities_array.length; i++){
-                    let city_name_data = fb.database().ref('Basement/cities/' + cities_array[i]/*  + '/city_name' */)
-                    city_name_data.get().then((snapshot) => {
-                        if (snapshot.val().is_deliver === true && i < cities_array.length - 1){
-                            userCities[temp_var+1] = cities_array[i]
-                            userCitiesNames[temp_var+1] = snapshot.val().city_name
-                            console.log('city #' + i + ' = ' + userCitiesNames[temp_var+1])
-                            temp_var++
-                        }
-                        if (i === cities_array.length-1){
-                            if (snapshot.val().is_deliver === true){
-                                userCities[temp_var+1] = cities_array[i]
-                                userCitiesNames[temp_var+1] = snapshot.val().city_name
-                                //console.log('city #' + i + ' = ' + userCitiesNames[i+1])
-                                let minuser = 0
-                                console.log('city last = #' + i + ' = ' + userCitiesNames[temp_var+1])
-                                // categories_count++
-                                cities_keyboard[0] = [{
-                                    text: anotherusermode_text,
-                                    callback_data: anotherusermode_text
-                                }]
-                                for (let i = 1; i < userCities.length; i=i+2){
-                                    console.log('catr: ' + i)
-                                    if (i === userCities.length - 1){
-                                        console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userCities[i])
-                                        cities_keyboard[i-minuser] = [{
-                                            text: userCitiesNames[i],
-                                            callback_data: userCities[i]
-                                        }]
-                                        keyboard_buttons++
-                                        console.log('keyboard_buttons: ' + keyboard_buttons)
-                                        if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                        inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                            
-        
-                                        }
-                                    }
-                                    else if (keyboard_buttons === userCities.length - 1){
-                                        console.log('last element of cities has be written, so lets send this keyboard')
-                                        bot.sendMessage(chat, choosecity_text,
-                                            {
-                                                parse_mode: 'HTML',
-                                                reply_markup:{
-                                                inline_keyboard:cities_keyboard
-                                                }
-                                            })
-                                    }
-                                    else {
-                                        console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userCities[i] + '. Вторая кнопка: ' + userCities[i+1])
-                                        cities_keyboard[i - minuser] = [{
-                                            text: userCitiesNames[i],
-                                            callback_data: userCities[i]
-                                        },
-                                            {
-                                                text: userCitiesNames[i+1],
-                                                callback_data: userCities[i+1]
-                                            }]
-                                        keyboard_buttons = keyboard_buttons + 2
-                                        minuser++
-                                        console.log('keyboard_buttons: ' + keyboard_buttons)
-                                        if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                        inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                        }
-                                    }
-                                }
-                            }
-                            if (snapshot.val().is_deliver === false){
-                                if (userCities.length < 2){
-                                    bot.sendMessage(chat, 'Нам очень жаль, но в этом городе нет доставки 😕',
-                                    {
-                                        parse_mode: 'HTML',
-                                        reply_markup:{
-                                            inline_keyboard:[
-                                                [{
-                                                    text: anotherusermode_text,
-                                                    callback_data: anotherusermode_text
-                                                }]
-                                            ]
-                                        }
-                                    })
-                                }
-                                else {
-                                    let minuser = 0
-                                    //console.log('city last = #' + i + ' = ' + userCitiesNames[temp_var+1])
-                                    // categories_count++
-                                    cities_keyboard[0] = [{
-                                        text: anotherusermode_text,
-                                        callback_data: anotherusermode_text
-                                    }]
-                                    for (let i = 1; i < userCities.length; i=i+2){
-                                        console.log('catr: ' + i)
-                                        if (i === userCities.length - 1){
-                                            console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userCities[i])
-                                            cities_keyboard[i-minuser] = [{
-                                                text: userCitiesNames[i],
-                                                callback_data: userCities[i]
-                                            }]
-                                            keyboard_buttons++
-                                            console.log('keyboard_buttons: ' + keyboard_buttons)
-                                            if (keyboard_buttons === userCities.length - 1){
-                                                console.log('last element of cities has be written, so lets send this keyboard')
-                                                bot.sendMessage(chat, choosecity_text,
-                                                    {
-                                                        parse_mode: 'HTML',
-                                                        reply_markup:{
-                                                            inline_keyboard:cities_keyboard
-                                                        }
-                                                    })
-                                                
-            
-                                            }
-                                        }
-                                        else if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                    inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                        }
-                                        else {
-                                            console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userCities[i] + '. Вторая кнопка: ' + userCities[i+1])
-                                            cities_keyboard[i - minuser] = [{
-                                                text: userCitiesNames[i],
-                                                callback_data: userCities[i]
-                                            },
-                                                {
-                                                    text: userCitiesNames[i+1],
-                                                    callback_data: userCities[i+1]
-                                                }]
-                                            keyboard_buttons = keyboard_buttons + 2
-                                            minuser++
-                                            console.log('keyboard_buttons: ' + keyboard_buttons)
-                                            if (keyboard_buttons === userCities.length - 1){
-                                                console.log('last element of cities has be written, so lets send this keyboard')
-                                                bot.sendMessage(chat, choosecity_text,
-                                                    {
-                                                        parse_mode: 'HTML',
-                                                        reply_markup:{
-                                                            inline_keyboard:cities_keyboard
-                                                        }
-                                                    })
-                                            }
-                                        }
-                                    }
-                                    }
-                            }
-                            
-                        }
-                    })
-                }
-            }
-
-            else if (isdelivery === 0){
-                console.log('!samovivoz')
-                let temp_var = 0
-                for(let i = 0; i < cities_array.length; i++){
-                    let city_name_data = fb.database().ref('Basement/cities/' + cities_array[i]/*  + '/city_name' */)
-                    city_name_data.get().then((snapshot) => {
-                        if (snapshot.val().is_waiter === true && i < cities_array.length - 1){
-                            userCities[temp_var+1] = cities_array[i]
-                            userCitiesNames[temp_var+1] = snapshot.val().city_name
-                            console.log('city #' + i + ' = ' + userCitiesNames[temp_var+1])
-                            temp_var++
-                        }
-                        if (i === cities_array.length-1){
-                            if (snapshot.val().is_waiter === true){
-                                userCities[temp_var+1] = cities_array[i]
-                                userCitiesNames[temp_var+1] = snapshot.val().city_name
-                                //console.log('city #' + i + ' = ' + userCitiesNames[i+1])
-                                let minuser = 0
-                                console.log('city last = #' + i + ' = ' + userCitiesNames[temp_var+1])
-                                // categories_count++
-                                cities_keyboard[0] = [{
-                                    text: anotherusermode_text,
-                                    callback_data: anotherusermode_text
-                                }]
-                                for (let i = 1; i < userCities.length; i=i+2){
-                                    console.log('catr: ' + i)
-                                    if (i === userCities.length - 1){
-                                        console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userCities[i])
-                                        cities_keyboard[i-minuser] = [{
-                                            text: userCitiesNames[i],
-                                            callback_data: userCities[i]
-                                        }]
-                                        keyboard_buttons++
-                                        console.log('keyboard_buttons: ' + keyboard_buttons)
-                                        if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                        inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                            
-        
-                                        }
-                                    }
-                                    else if (keyboard_buttons === userCities.length - 1){
-                                        console.log('last element of cities has be written, so lets send this keyboard')
-                                        bot.sendMessage(chat, choosecity_text,
-                                            {
-                                                parse_mode: 'HTML',
-                                                reply_markup:{
-                                                inline_keyboard:cities_keyboard
-                                                }
-                                            })
-                                    }
-                                    else {
-                                        console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userCities[i] + '. Вторая кнопка: ' + userCities[i+1])
-                                        cities_keyboard[i - minuser] = [{
-                                            text: userCitiesNames[i],
-                                            callback_data: userCities[i]
-                                        },
-                                            {
-                                                text: userCitiesNames[i+1],
-                                                callback_data: userCities[i+1]
-                                            }]
-                                        keyboard_buttons = keyboard_buttons + 2
-                                        minuser++
-                                        console.log('keyboard_buttons: ' + keyboard_buttons)
-                                        if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                        inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                        }
-                                    }
-                                }
-                            }
-                            if (snapshot.val().is_waiter === false){
-                                if (userCities.length < 2){
-                                    bot.sendMessage(chat, 'Нам очень жаль, но в этом городе нет самовывоза 😕',
-                                    {
-                                        parse_mode: 'HTML',
-                                        reply_markup:{
-                                            inline_keyboard:[
-                                                [{
-                                                    text: anotherusermode_text,
-                                                    callback_data: anotherusermode_text
-                                                }]
-                                            ]
-                                        }
-                                    })
-                                }
-                                else {
-                                    let minuser = 0
-                                    //console.log('city last = #' + i + ' = ' + userCitiesNames[temp_var+1])
-                                    // categories_count++
-                                    cities_keyboard[0] = [{
-                                        text: anotherusermode_text,
-                                        callback_data: anotherusermode_text
-                                    }]
-                                    for (let i = 1; i < userCities.length; i=i+2){
-                                        console.log('catr: ' + i)
-                                        if (i === userCities.length - 1){
-                                            console.log('Ряд #: ' + (i-minuser) + ' (1 кнопка ПОСЛЕДНЯЯ): ' + userCities[i])
-                                            cities_keyboard[i-minuser] = [{
-                                                text: userCitiesNames[i],
-                                                callback_data: userCities[i]
-                                            }]
-                                            keyboard_buttons++
-                                            console.log('keyboard_buttons: ' + keyboard_buttons)
-                                            if (keyboard_buttons === userCities.length - 1){
-                                                console.log('last element of cities has be written, so lets send this keyboard')
-                                                bot.sendMessage(chat, choosecity_text,
-                                                    {
-                                                        parse_mode: 'HTML',
-                                                        reply_markup:{
-                                                            inline_keyboard:cities_keyboard
-                                                        }
-                                                    })
-                                                
-            
-                                            }
-                                        }
-                                        else if (keyboard_buttons === userCities.length - 1){
-                                            console.log('last element of cities has be written, so lets send this keyboard')
-                                            bot.sendMessage(chat, choosecity_text,
-                                                {
-                                                    parse_mode: 'HTML',
-                                                    reply_markup:{
-                                                    inline_keyboard:cities_keyboard
-                                                    }
-                                                })
-                                        }
-                                        else {
-                                            console.log('Ряд #: ' + (i-minuser) + ' (2 кнопки). Первая кнопка: ' + userCities[i] + '. Вторая кнопка: ' + userCities[i+1])
-                                            cities_keyboard[i - minuser] = [{
-                                                text: userCitiesNames[i],
-                                                callback_data: userCities[i]
-                                            },
-                                                {
-                                                    text: userCitiesNames[i+1],
-                                                    callback_data: userCities[i+1]
-                                                }]
-                                            keyboard_buttons = keyboard_buttons + 2
-                                            minuser++
-                                            console.log('keyboard_buttons: ' + keyboard_buttons)
-                                            if (keyboard_buttons === userCities.length - 1){
-                                                console.log('last element of cities has be written, so lets send this keyboard')
-                                                bot.sendMessage(chat, choosecity_text,
-                                                    {
-                                                        parse_mode: 'HTML',
-                                                        reply_markup:{
-                                                            inline_keyboard:cities_keyboard
-                                                        }
-                                                    })
-                                            }
-                                        }
-                                    }
-                                    }
-                            }
-                            
-                        }
-                    })
-                }
-            }
-        }
-    })
-} 
-
+//Клавиатура с категориями доставок
 function DeliveryCatKeyboard(cat_keyboard, userCategory, fb, bot, chat, mother_link, choosecat_text, message_toedit, message_text){
     let keyboard_buttons = 0
     let delcat_data = fb.database().ref('Delivery/')
@@ -390,7 +25,7 @@ function DeliveryCatKeyboard(cat_keyboard, userCategory, fb, bot, chat, mother_l
                         console.log('category last = #' + i + ' = ' + userCatNames[i])
                         // categories_count++
                         cat_keyboard[0] = [{
-                            text: '🛍 Получить скидку 10%',
+                            text: '🛍 Наше сообщество',
                             url: mother_link
                         }]
                         for (let i = 1; i < cats_array.length + 1; i=i+2){
@@ -468,6 +103,7 @@ function DeliveryCatKeyboard(cat_keyboard, userCategory, fb, bot, chat, mother_l
     })
 }
 
+//Клавиатура с заведениями
 function PointsKeyboard(points_keyboard, userPoints, UserDelCat, fb, bot, chat, change_delcat_text, choosepoint_text, user_mode, sendlocation, message_toedit, message_text){
     let keyboard_buttons = 0
 
@@ -771,6 +407,7 @@ function PointsKeyboard(points_keyboard, userPoints, UserDelCat, fb, bot, chat, 
     })
 }
 
+//Клавиатура с категориями еды в заведении
 function CategoriesKeyboard(category_keyboard, userCategories, fb, bot, chat, msg, anotherpoint_text, choosecategory_text, location_text, phone_text, userDelCat, userPoint, user_mode, message_toedit, message_text){
     let keyboard_buttons = 0
 /*     category_keyboard = []
@@ -877,6 +514,7 @@ function CategoriesKeyboard(category_keyboard, userCategories, fb, bot, chat, ms
     })
 }
 
+//Клавиатура с едой из категории
 function FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCategory, fb, bot, chat, message_id, anothercategory_text, query, choosefood_text, userDelCat, userPoint, user_mode){
     let keyboard_buttons = 0
     //userFoodlist = []
@@ -973,6 +611,7 @@ function FoodKeyboard(foodlist_keyboard, userFoodlist, foodlist_count, userCateg
     })
 }
 
+//Клавиатура с категориями еды в заведении (для админа заведения)
 function CategoriesKeyboardAdmin(category_keyboard, userCategories, fb, bot, chat, msg, anotherpoint_text, choosecategory_text, location_text, phone_text, userDelCat, userPoint, user_mode, message_toedit, message_text, openadminpanel){
     let keyboard_buttons = 0
 /*     category_keyboard = []
@@ -1079,6 +718,7 @@ function CategoriesKeyboardAdmin(category_keyboard, userCategories, fb, bot, cha
     })
 }
 
+//Клавиатура с едой из категории (для админа заведения)
 function FoodKeyboardAdmin(foodlist_keyboard, userFoodlist, foodlist_count, userCategory, fb, bot, chat, message_id, anothercategory_text, query, choosefood_text, userDelCat, userPoint, user_mode, message_toedit, message_text){
     let keyboard_buttons = 0
     //userFoodlist = []
@@ -1191,6 +831,7 @@ function FoodKeyboardAdmin(foodlist_keyboard, userFoodlist, foodlist_count, user
     })
 }
 
+//Шаблон клавиатуры (для админа заведения)
 const admin_menu_buttons = [['⚙️ Настройки', 'admeditbot_query'], ['📧 Рассылка', 'admeiling_cb'], ['🚫 Стоп-лист', 'mtms_cb'], ['🎟 Промокоды', 'pmcds_cb'], ['👨‍💻 Нужна помощь?', 'admgtcntcts_cb']]
 const admin_menu_keyboard = [
     [{
@@ -1215,6 +856,7 @@ const admin_menu_keyboard = [
     }]
 ]
 
+//Шаблон клавиатуры настроек заведения (для админа заведения)
 const admin_preferences_buttons = [['📦 Доставка','admndlvrst_cb'], ['🕓 Время работы','admtme_cb'], ['☎️ Контакты','admvrnk_cb'], ['◀️ Назад','admprfsbck_cb'], ['➕ Новый купон','crtncpn_cb']]
 const admin_preferences_keyboard = [
     [{
@@ -1238,7 +880,6 @@ const admin_preferences_keyboard = [
 module.exports = {
     CategoriesKeyboard,
     FoodKeyboard,
-    CitiesKeyboard,
     PointsKeyboard,
     DeliveryCatKeyboard,
     CategoriesKeyboardAdmin,
