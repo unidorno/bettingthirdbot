@@ -2,6 +2,26 @@ const TelegramBot = require('node-telegram-bot-api')
 const config = require('./config')
 const keyboards = require('./src/keyboard-buttons')
 
+const QiwiBillPaymentsAPI = require('@qiwi/bill-payments-node-js-sdk');
+const qiwiApi = new QiwiBillPaymentsAPI(config.SECRET_KEY);
+const publicKey = config.PUBLIC_KEY;
+
+const { P2P, Personal, Recipients, Detector, Currency } = require("qiwi-sdk")
+const qiwi = new Personal(config.QIWI_ACESSTOKEN, config.QIWI_WALLET)
+const detector = new Detector()
+
+const postpone = require('node-postpone');
+
+/* const params = {
+    publicKey,
+    amount: 200,
+    billId: '893794793973',
+    successUrl: 'https://merchant.com/payment/success?billId=893794793973'
+};
+
+const link = qiwiApi.createPaymentForm(params);
+console.log(link) */
+
 //====================INITIALIZE FIREBASE==============================
 const firebase_connect = require('firebase')
 const { reset } = require('nodemon')
@@ -29,9221 +49,3980 @@ const bot = new TelegramBot(config.TOKEN,
     }
 })
 
-let delivery_chat = []
-let temp_message = []
-let userCities = []
-let userPoint = []
-let userPoints = []
-let points_keyboard = []
-
-let delcat_keyboard = []
-let UserDelCats = []
-let UserDelCat = []
-let mother_link = 'https://t.me/ctos_deliverybot'
-let choosecat_text = 'Выбери категорию заведения в котором ты хочешь сделать заказ:'
-
-let cities_count = []
-let points_count = []
-//
-let userCategory = []
-let userCategories = []
-let category_keyboard = []
-let categories_count = []
-//
-let userFood = []
-let userFoodlist = []
-let foodlist_keyboard = []
-let foodlist_count = []
-
-let help_phone = []
-let delivery_min_price = []
-let delivery_price = []
-let point_location = []
-let point_adress = []
-let point_disclaimer = []
-let point_pplamount = []
-let point_workingtime = []
-let point_payment_options = []
-let point_rating = []
-let point_delivery_time = []
-
-let isChangingPhone = []
-let isChangingTime = []
-let isChangingDelivery = []
-let isCreatingCoupon = []
-let isWritingCoupon = []
-
-let isMailingMessage = []
-let mailing_text = []
-const sendmessage_cb = 'sndmlngmsg_cb'
-let isAdmin = []
-let coupondata = []
-
-let keyboard_admin_delset = [['Мин. сумма заказа: ', 'chngdmcrd_cb'], ['Цена доставки: ', 'cngmcfio_cb'], ['Способы оплаты: ','cngkspnmbg_cb'], ['◀️ Назад', 'bcktopll_cb']]
-let keyboard_admin_times = [['Часы работы: ', 'chngdmcrdwgg_cb'], ['◀️ Назад', 'bcktoplwefl_cb']]
-let keyboard_admin_phone = [['Телефон: ', 'dlvrcntcts_cb'], ['Координаты ', 'dlvrpntadrs_cb'], ['Адрес: ', 'dlvrglctndt_cb'],['◀️ Назад', 'bcktopeglwefl_cb']]
-
-/////////////////////////////////////////////////////////////////
-let anotherpoint_multiple = []
-let restaurant_name = ' '
-
-//Здесь указаны заготовки ответов с их callback'ами в ввиде массивов. 
-const business_cbcs = ['htwrksrstf_cb', 'whryounthrs_cb', 'wrdlvrngtm', 'cgngcmpnm_cb', 'cngcmpph_cb', 'fnshflngnf_cb', 'strtchknrd_cb', 'abtnus_cb']
-const openadminpanel = ['👥 Войти как админ', 'imadmng_cb']
-const text_notadmin = ['Это был пранк, мы знаем что Вы не админ 🤣', 'Стоп, так Вы же не админ 😟', 'Написано же, кнопка для админа 😡']
-const backtodopblank = ['◀️ Назад', 'bcktdpblnk_cb']
-const sendphone_point = ['📞 Позвонить', 'sndphnpt_cb']
-const sendadress_point = ['📍 Адрес', 'sndadrss_cb']
-const loadcategories = ['🛒 Сделать заказ', 'ldctgrs_cb']
-const reallystartagain = ['Да, уверен', 'ysurewntstrtag_cb']
-const backtoaskinfo = ['◀️ Назад', 'bcktsknf_cb']
-const backtomyorder = ['◀️ Назад', 'bcktmrdr_cb']
-const writecoupon = ['🛍 Ввести промокод', 'wrtprmcvd_cb']
-const choosepoint_text = 'Выберите заведение, в котором хотите сделать заказ'
-const youchosepoint_text = '🛒 Заказать здесь'
-const anotherpoint_text = '◀️ Выбрать другое заведение'
-const anotherusermode_text = '◀️ Выбрать другую услугу'
-const anothercategory_text = '◀️ Выбрать другую категорию'
-const change_delcat_text = '◀️ Выбрать другой тип заведения'
-const hellomessage_text = `Привет! Я бот-доставщик Resify, с моей помощью ты можешь быстро и удобно заказать доставку из любимого места 🛒`
-const sendlocation = '📍 Отметить на карте'
-const choosecategory_text = 'Выберите категорию блюда, которое хотите заказать:'
-const choosefood_text = 'Выберите блюдо, которое хотите заказать:'
-const addto_basket_text = '✅ Добавить в корзину'
-const changefoodamount_basket_text = '✏️ Изменить количество'
-const addto_basket_text2 = 'Готово'
-const addto_basket_text3 = 'Готово.'
-const dont_addto_basket_text2 = '🗑 Удалить'
-const anotherfood_text = '◀️ Назад к списку '
-const anotherfood_text2 = ['➕ Добавить', 'reqstsmthmr_cb']
-const chooseamountoffood_text = 'Введите нужное количество: '
-const editbasket_text = '✏️ Изменить'
-const paybasket_text = ['✅ Сделать заказ', 'paybskttxt_cb']
-const query_deletethismessage = 'Нет, не хочу'
-const choosefoodtoedit_text = 'Выберите номер блюда, которое нужно отредактировать:'
-const delete_basketfood = '🗑  Удалить'
-const basketisempty_text = 'Теперь корзина пустая. Давай наполним ее 😏'
-const mybasket_text = '🛒 Моя корзина'
-const myorder_text = '🧾 Мой заказ'
-const location_text = '📍 Где мы находимся?'
-const phone_text = '📞 Позвонить нам'
-const yesigotorder_text = 'Да, заказ получен'
-const almostthere_text = '🤗 Почти готово! Осталось только указать свой номер и адрес доставки. При необходимости курьер позвонит Вам и уточнит детали'
-const dataiscorrect_text = '✔️ Продолжить'
-const order_status_button = '🚴‍♂️ Статус заказа'
-const finish_order_text = ['✔️ Завершить', 'fnshrdrtxt_cb']
-const add_email = '🔗 Добавить email'
-const dont_add_email = 'Нет, спасибо'
-const declineorder_button = ['❌ Отменить заказ', 'dclnrdrbtn_cb']
-const didntaddemail_text = '😕 Жаль, что вы не хотите указать свой email. Это еще одна возможность быть в курсе акций и уникальных предложений'
-const badfeedback_text = '🙁 Нам жаль, что Вы недовольны доставкой. Скажите, как мы можем это исправить?'
-const goodfeedback_text = '👍 Отлично! Мы рады, что вам все понравилось'
-const dopblank_text = 'Указав информацию ниже, вы ускорите процесс доставки 👇'
-const no_sdacha_text = 'Без сдачи 👍'
-const no_howtocome_text = 'Не указывать'
-
-const changeamountof_persons = 'Изменить количество персон'
-const changepaying_method = 'Изменить способ оплаты'
-const changedeliver_date = 'Изменить дату доставки'
-const dataiscorrect2_text = 'Информация введена верно'
-
-const leavecomment = '✏️ Написать отзыв'
-const dontleavecomment = 'Завершить заказ'
-
-/////////////////////////////////////////////////////////////////
-//Здесь указаны id используемых стикеров
-const sticker_hello = 'CAACAgIAAxkBAAIRSmDvAUTpAQABWFdBhIj3i-e5owJFvQACbwAD29t-AAGZW1Coe5OAdCAE'
-const sticker_indeliver = 'CAACAgIAAxkBAAIRS2DvAWDzsy4hZzwmGako8vqPx9nGAAJsAAPb234AAQJocymo-yvBIAQ'
-const sticker_baddeliver = 'CAACAgIAAxkBAAIRTWDvAap8s0prOFF5df16YtUgm83IAAJjAAPb234AAYydBT3nQoPnIAQ'
-const sticker_gooddeliver = 'CAACAgIAAxkBAAIRTGDvAXkkSdFxAy1piRH5NP2NXTydAAJmAAPb234AAZPMw9ANLY9sIAQ'
-const openkeyboard_pic = 'https://storage.googleapis.com/upperrestaurant.appspot.com/Standards/howtoopen.jpg'
-
-/////////////////////////////////////////////////////////////////
-let basket = [] //корзина (массив массивов)
-let decrease_foodcount = '-'
-let increase_foodcount = '+'
-let decrease_foodcount2 = '.-.'
-let increase_foodcount2 = '.+.'
-let temp_foodamount = []
-let food_categories = []
-let temp_food_price = [] //
-let temp_food_text = [] //
-let temp_backet_food = [] //
-let finalbasket = [] //
-let finalprice = [] //
-
-//Настройки для системы лояльности (Возможность подключения в будущем)
-let skidka = []
-
-///////////////Данные о пользователе//////////////////
-let user_mode = [] //Нужно для создания отдельного меню "На вынос"
-let usermodes = [['Доставка', 'delivery_menu'], ['Заказ на вынос', 'default_menu']]
-let user_phone = []
-let user_adress = []
-let user_name = []
-let user_username = []
-let user_id = []
-let average_purchases = []
-let user_coins = []
-let added_coins = []
-let alltime_purchases_amount = []
-let userstatus = []
-let order_name = []
-let order_date = []
-let order_status = []
-
-let user_personsamount = []
-let user_payingmethod = []
-let user_deliverdate = []
-let user_howtocome = []
-let user_sdachainfo = []
-
-let order_statuses_text = ['В обработке ⏳', '🚴‍♂️ Доставляется', '✅ Доставлен', '❌ Отклонен']
-let feedback_options = ['🤩', '😌', '😒']
-let answered_feedback = []
-let isAnswered_feedback = []
-
-//////////////////Переменные, используемые при заполнении данных//////////////////////
-const changename_text = 'Изменить имя'
-const changephone_text = 'Изменить номер'
-const changeadress_text = 'Изменить адрес'
-let isMakingChanges = []
-let isMakingChanges_2 = []
-let isMakingChanges_3 = []
-let isWritingBusiness = []
-///////////////////////////////////////////////////////
-
-const delivery_started = '✅ Заказ отправлен! Через несколько минут его увидит курьер и приступит к доставке. Мы уведомим Вас об изменении статуса вашего заказа.'
-
-var userlocation = []
-var nearest_place = [] //номер ближайшего заведения(в массиве)
-var min_distance = []
-
-//////////////////DATA FOR DELIVERS//////////////////////
-let deliver_bill_topic_names = ['🎉 Новый заказ!', '⚙️ Заказ принят. Статус: ', '❌ Заказ отклонен работником: ']
-let accept_order_callback = 'acc_n'
-let refuse_order_callback = 'ref_n'
-let isdelivered_callback = 'del_c'
-let delivers_bill = ''
-let deliver_bill_topic = ''
-let deliver_bill_client_info = ''
-let deliver_bill_order_info = ''
-let deliver_bill_finalprice = 0
-let deliver_bill_order_details = ''
-let accepted_order_name = ''
-let deliver_bill_help_info = ''
-///////////////////////////////////////////////////////
-
-////////////////////MESSAGES_COUNTER////////////////////
-let add_info_msg = []
-let buttons_message = []
-
+//////////      ПЕРЕМЕННЫЕ_ПОЛЬЗОВАТЕЛЯ     ///////////////
 let message_toedit = []
-let message_text = []
-///////////////////////////////////////////////////////
-let business_info = []
+let messagetext_toedit = []
+let message_todelete = []
+let addmoney = []
 
-//Шаблоны клавиатур
-let unregistered_keyboard = []
-unregistered_keyboard[1] = [
-    [{
-        text: finish_order_text
-    },{
-        text: myorder_text
-    }],
-    [{
-        text: location_text
-    },{
-        text: phone_text
-    }]
-]
-unregistered_keyboard[2] = [
-    [{
-        text: order_status_button
-    },{
-        text: myorder_text
-    }],
-    [{
-        text: location_text
-    },{
-        text: phone_text
-    }]
-]
+let isWritingBlank = []
+let isWritingBlank2 = []
+let isWritingContacts = []
+let isWritingContacts2 = []
 
-unregistered_keyboard[3] = [
-    [{
-        text: declineorder_button[0],
-        callback_data: declineorder_button[1]
-    }],
-    [{
-        text: sendphone_point[0],
-        callback_data: sendphone_point[1]
-    }]
-]
+let users_name = []
+let users_realname = []
+let userage = []
+let userdescription = []
+let userinsta = []
+let userphone = []
+let username = []
+let userpic = []
+let usercoins = []
+let current_mode = []
+let ischeckingmails = []
+let user_donationlink = []
 
-let registered_keyboard = []
+let isAddingcardinfo = []
 
-//Здесь скрипт отслеживает статус заказа клиента
-function StartCheckingOrder(chatId){
-    let order_data = fb.database().ref(order_name[chatId])
-    order_data.on('value', (result) => 
-    {
-        order_status[chatId] = result.val().order_status
-        console.log('ORDER STATUS: ' + result.val().order_status + ', name: "' + order_name[chatId] + '"')
-        
-        if (order_status[chatId] === order_statuses_text[3]){
-            let temp_text = 'Нам жаль, но мы были вынуждены отклонить Ваш заказ. Вы можете связаться с нами, нажав на кнопку <b>' + sendphone_point[0] + '</b>'
+let donateregisterstep = []
+let donate_name = []
+let donate_money = []
+let donate_minmoney = []
+let donate_duration = []
+let donate_sendduration = []
+let donate_private = []
+let donate_photo = []
+let donate_duration_secs = []
+let donate_sendduration_secs = []
+let donate_materials = []
+let donate_editmaterials = []
+let donate_editpreview = []
+let donate_tempdonateid = []
 
-            if (message_toedit[chatId][5] !== undefined){
-                bot.deleteMessage(chatId, message_toedit[chatId][5])
-                bot.sendMessage(chatId, temp_text, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: sendphone_point[0],
-                                callback_data: sendphone_point[1]
-                            }],
-                            [{
-                                text: finish_order_text[0],
-                                callback_data: reallystartagain[1]
-                            }]
-                        ]
-                    }
-                }) 
-                .then(res => {
-                    message_toedit[chatId][5] = res.message_id
-                    message_text[chatId][5] = res.text
-                })
-            }
-            else {
-                bot.sendMessage(chatId, temp_text, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: sendphone_point[0],
-                                callback_data: sendphone_point[1]
-                            }],
-                            [{
-                                text: finish_order_text[0],
-                                callback_data: reallystartagain[1]
-                            }]
-                        ]
-                    }
-                }) 
-                .then(res => {
-                    message_toedit[chatId][5] = res.message_id
-                    message_text[chatId][5] = res.text
-                })
-            }
-        }
-        
-        if (order_status[chatId] === order_statuses_text[2]){
-            //мы получили заказ. На клаве вместо статус заказа поставить "заказ получен". Также написать сообщение мол ваш заказ был успешно доставлен. Нажмите на кнопку "готово", чтобы получить баллы или заказать еще раз. 
-            //После нажатия на кнопку готово, мы очищаем все данные связывающие аккаунт с чеком доставки, чтобы если в чате доставщиков поменяют статус, клиент не получал опевещений. 
-            let temp_text = `<b>✅ Ваш заказ был успешно доставлен!</b>
-` + finalbasket[chatId] + `
+let user_donations = []
+let user_participants = []
+let donationnames = []
+let participantsnames = []
 
-Для завершение заказа  нажмите кнопку <b>"` + finish_order_text[0] + `". </b>
-Если вы столкнулись с проблемой при заказе, нажмите на кнопку <b>"` + sendphone_point[0] + `".</b> Мы будем рады помочь.`
-            if (message_toedit[chatId][5] !== undefined){
-                bot.deleteMessage(chatId, message_toedit[chatId][5]).then(() => {
-                    bot.sendMessage(chatId, temp_text, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: sendphone_point[0],
-                                    callback_data: sendphone_point[1]
-                                }],
-                                [{
-                                    text: finish_order_text[0],
-                                    callback_data: finish_order_text[1]
-                                }]
-                            ]
-                        }
-                    }) .then(res => {
-                        message_toedit[chatId][5] = res.message_id
-                        message_text[chatId][5] = res.text
-                    })
-                })
-                
-            }
-            else {
-                bot.sendMessage(chatId, temp_text, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: sendphone_point[0],
-                                callback_data: sendphone_point[1]
-                            }],
-                            [{
-                                text: finish_order_text[0],
-                                callback_data: finish_order_text[1]
-                            }]
-                        ]
-                    }
-                }) .then(res => {
-                    message_toedit[chatId][5] = res.message_id
-                    message_text[chatId][5] = res.text
-                })
-            }
-        
-        }
+let participating_data = []
 
-        if (order_status[chatId] === order_statuses_text[1]){
-            //в этом случае выводить клавиатуру как после успешного заказа. Вдруг кто-то по ошибке нажмет что заказ доставлен. Тогда клиент звонит в кафе и после разговора статус снова меняют на "доставляется" и продолжают работать. 
-            
-            bot.sendSticker(chatId, sticker_indeliver).then(() => {
-                let txt = '<b>Статус заказа изменен на "' +  order_status[chatId] + `"</b>
-` + finalbasket[chatId]
-console.log('msg5 id: ' + message_toedit[chatId][5])
-                if (message_toedit[chatId][5] !== undefined){
-                    bot.deleteMessage(chatId, message_toedit[chatId][5])
-                    console.log('msg54 id: ' + message_toedit[chatId][5])
-                    bot.sendMessage(chatId, txt, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: sendphone_point[0],
-                                    callback_data: sendphone_point[1]
-                                }]
-                            ]
-                        }
-                    }) 
-                    .then(res => {
-                        message_toedit[chatId][5] = res.message_id
-                        message_text[chatId][5] = res.text
-                    })
-                }
-                else {
-                    console.log('msg56 id: ' + message_toedit[chatId][5])
-                    bot.sendMessage(chatId, txt, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: sendphone_point[0],
-                                    callback_data: sendphone_point[1]
-                                }]
-                            ]
-                        }
-                    }).then(res => {
-                        message_toedit[chatId][5] = res.message_id
-                        message_text[chatId][5] = res.text
-                    })
-                }
-                
-            }) 
-        
-        }
-    }
-)
+///////////////////     СООБЩЕНИЯ       //////////////////////////
+let hellomessage = 'Привет. Этот бот позволит прозрачно собирать деньги на покупку цифрового контента. Автором сбора может выступать абсолютно любой пользователь, поэтому система работает одинаково <b>прозрачно для всех</b>.\n\nℹ️ <b>Работает сбор следующим образом:</b>\n\n1. Организатор создает сбор и отправляет ссылку другим участникам, которые оплачивают часть сбора и становятся участниками\n\n2. У каждого сбора есть дедлайн, после которого сбор либо завершается (участники получают обещанный контент, а автор - вырученные деньги), либо отменяется (участники получают деньги обратно)'
+let newdonationsteps = [
+'Привет. С этим ботом Вы можете организовать сборы и зарабатывать на этом деньги. \n\nДля начала скажите, <b>на что будем собирать?</b> Эту информацию увидят все пользователи (макс. 100 символов):', 
+'<b>Сколько денег нужно собрать?</b>\n\nПользователи не увидят сумму, они будут видеть лишь прогресс в процентах (напр. 50%).\n\n<b>Укажите сумму в рублях (мин. 500 руб, макс. 300.000 руб):</b>', 
+'<b>Сколько стоит участие в сборе?</b>\n\nПользователи смогут отправить эту сумму или больше.\n\n<b>Укажите сумму в рублях (мин. 50 руб, макс. 10.000 руб):</b>', 
+'<b>Сколько дней будет идти сбор?</b>\n\nКогда сбор закончится, у Вас будет 3 дня, чтобы прикрепить материалы. Если материалы прикреплены, они отправятся участникам сбора автоматически\n\n<b>Введите количество дней (макс. 30 дней):</b>', 
+'Есть превью материала (напр. заблюренное изображение)?\n\nСборы с картинками привлекают больше внимания.\n\nЕсли у Вас есть фотография для превью, отправьте ее сюда картинкой, с сжатием:', 
+'<b>Вы уже приобрели материал?</b>\n\nВы можете отправить ссылку на него позже, но если Вы не сделаете этого <b>в течение 3-х дней после окончания своего дедлайна, сбор будет автоматически отменен</b> и вы не получите вырученные деньги',
+'<b>Отправьте ссылку на материал</b>\n\nЭто может быть закрытый канал в ТГ или ссылка на сайт-хранилище с материалом (ссылка должна содержать https://):']
+
+/////////////////////       КНОПКИ     /////////////////////////////////////
+let backtostart = ['◀️ Назад', 'gotostart_cb']
+let checkchannelfollow = ['Продолжить', 'channelfollw_cb']
+let backtonewdonate = ['donatestep0_cb', 'donatestep1_cb', 'donatestep2_cb', 'donatestep3_cb', 'donatestep4_cb', 'donatestep5_cb']
+let ihavematerials = ['📷 У меня есть материалы', 'ihavecontent_cb', 'Приложу позже', 'illsendlatermat_cb']
+let sborprivacy = ['✅ Для всех', 'falseprivacy_cb', '🔒 Закрытый (по ссылке)', 'trueprivacy_cb']
+let previewimg = ['📷 Загрузить превью', 'uploadpreview_cb', '❌ Без превью' , 'dontupload_preview']
+let createdonation = ['🌐 Создать сбор', 'publishdonation_cb']
+let backtomain = ['◀️ Назад', 'showadminpanel_cb']
+let editmaterial = ['✏️ Доб./Изменить материал', 'editmaterials']
+let editpreview = ['📷 Доб./Изменить превью', 'editphotopreview']
+let checkparticipantsbutton = ['🧾 Список участников', 'checkparticipantsbtn']
+let backeditmaterial = ['◀️ Назад', 'backerditmaterials_cb']
+let backeditpreview = ['◀️ Назад', 'backerditpreview_cb']
+
+let canceldonation = ['❌ Отменить сбор', 'canceldonationcb']
+let finishdonation = ['✅ Завершить сбор', 'finishdonationcb']
+
+let mybalancebutton = ['💸 Баланс', 'mybalance_cb']
+let addmoneybutton = ['💳 Пополнить', 'addmoneybt_cb']
+let addmoneyparticipant = ['💳 Пополнить', 'addmoneybt_cb']
+let balancehistory = ['🧾 История', 'historybalance_cb']
+let withdrawbutton = ['📤 Вывести', 'withdrawbutton_cb']
+let cardinfobutton = ['💳 Доб./Изм. реквизиты', 'addwithdrawinfo']
+let withdrawallbutton = ['🤑 Вывести все', 'withdrawall']
+let withdrawcustombutton = ['💲 Вывести часть', 'withdrawcustom']
+let acceptwithdrawal = ['✅ Принять', 'acceptwithdrawal']
+let declinewithdrawal = ['❌ Отклонить', 'declinewithdrawal']
+
+let participatebutton = ['Участвовать ', 'partcptbtncb']
+let opendonationparticipant = 'opendonpartc_cb'
+
+let alldonationslist = ['🎛 Все сборы', 'alldonations_cb']
+let mydonationslist = ['🗄 Созданные сборы', 'mydonationslist_cb']
+let myparticipantslist = ['👤 Участие в сборах', 'myparticipantslist_cb']
+let publicdonationlist = ['🌍 Открытые сборы', 'myparticipantslist_cb']
+
+let backtoblank = ['◀️ Назад', 'bcktblnk_cb']
+let backtocontacts = ['◀️ Назад', 'bcktcntcs_cb']
+let contactsbuttons = [['Как добавить ник?', 'hwtaddncknm_cb'], ['Телефон: ', 'usrnpnnmb_cb'], ['Инстаграм: ','instgrms_cb']]
+let contactsbuttons2 = [['Телефон: ', 'usrnpnnmb2_cb'], ['Инстаграм: ','instgrms2_cb']]
+const aboutyoublank_text = [['Ваше имя: ','aboutblank1_cb'], ['Возраст: ','aboutblank2_cb'], ['Предпочтения в сексе: ','aboutblank3_cb'], ['Контакты','aboutblank4_cb'], ['Найти пару','findpairblank_cb']]
+const aboutyoublank_text2 = [['Ваше имя: ','aboutblank21_cb'], ['Возраст: ','aboutblank22_cb'], ['Предпочтения в сексе: ','aboutblank23_cb'], ['Контакты','aboutblank24_cb'], ['Найти пару','findpairblank2_cb']]
+let sharenumber = ['Поделиться', '◀️ Назад']
+let openmenubutton = ['Открыть меню', 'openmenu_cb']
+let deleteaccount = ['❌ Удалить аккаунт', 'dltacctn_cb']
+let addmoneyamount = 'addmnbs1_' // + amount of money added
+let checkmoneyaddbutton = ['🔍 Проверить оплату', 'chckmnadd_', 'chckmnbckck_']
+let deleteaccountbutton = ['Продолжить', 'continuedltn_cb', '◀️ Назад', 'bckfrmdltcn_cb']
+let answermessage = ['✅ Да!', 'yesanswermsg_']
+let getpartnerscontacts = ['📞 Написать партнеру', 'getparntncns_cb', '❌ Заблокировать партнера', 'blcmprntc_cb']
+let whoareyoubutton = ['Я - организатор', 'createdonation_cb', 'Я - участник сбора', 'showdonations_cb']
+let billid = []
+
+/////////////////////       ОГРАНИЧЕНИЯ         //////////////////////////////
+let userdescription_maxsymbols = 0
+
+////////////////////    СТИКЕРЫ     //////////////////////////////
+//Здесь указаны id используемых стикеров
+let sticker_hello  /* = 'CAACAgIAAxkBAAIRSmDvAUTpAQABWFdBhIj3i-e5owJFvQACbwAD29t-AAGZW1Coe5OAdCAE' */
+let openkeyboard_pic = 'https://storage.googleapis.com/upperrestaurant.appspot.com/Standards/howtoopen.jpg'
+
+const deelay = ms => {
+    return new Promise(r => setTimeout(() => r(), ms))
 }
 
-//Здесь мы проверяем, зарегистрироан ли пользователь. Если да, то вводим данные с прошлой покупки
-function CheckUser(userid, username, chatId){
-    
-    console.log('checking user: ' + userid + ' ' + username)
-    let userdata = fb.database().ref('Delivery/'+ UserDelCat[chatId] + '/' + userPoint[chatId] +'/clients/' + userid)
-    userdata.get().then((result) => 
-    {
-        console.log('Пользователь зарегистрирован. ID: ' + userid + ' ' + result.val().id)
-        user_adress[chatId] = result.val().adress
-        user_name[chatId] = result.val().name
-        user_username[chatId] = result.val().username
-        user_phone[chatId] = result.val().phone
-        user_id[chatId] = result.val().id
-        alltime_purchases_amount[chatId] = result.val().alltime_purchases_amount
-        user_coins[chatId] = result.val().coins
+CheckDeadlinesList(true)
 
-        userstatus[chatId] = 'registered'
+let stickers_presets = fb.database().ref('Grindr/presets/stickers')
+stickers_presets.on('value', (result) => {
+    sticker_hello = result.val().sticker_hello
+})
 
-        bot.sendMessage(chatId, almostthere_text, {
-            reply_markup:{
-                inline_keyboard:[
-                    [{
-                        text: 'Имя: ' + user_name[chatId],
-                        callback_data: changename_text
-                    },
-                    {
-                        text: 'Телефон: ' + user_phone[chatId],
-                        callback_data: changephone_text
-                    }],
-                    [{
-                        text: 'Адрес: ' + user_adress[chatId],
-                        callback_data: changeadress_text
-                    }],
-                    [{
-                        text: backtomyorder[0],
-                        callback_data: backtomyorder[1]
-                    },{
-                        text: dataiscorrect_text,
-                        callback_data: dataiscorrect_text
-                    }]
-                ]
-            }
-        }).then(res => {
-            message_toedit[chatId][1] = res.message_id
-            message_text[chatId][1] = res.text
-        })
+let pricelists = fb.database().ref('Grindr/presets/payments/pricelist/')
+pricelists.on('value', (result) => {
+    pricelist_delete_account = result.val().delete_account
+    pricelist_sharecontact = result.val().sharecontact
+})
 
-    }).catch(error => {
-        console.log('Пользователь не зарегистрирован. ' + error)
-        console.log('Данные о незареганном пользователе: ' + user_phone[chatId] + ', ' + user_adress[chatId])
-        userstatus[chatId] = 'unregistered'
-        user_name[chatId] = username
-        bot.sendMessage(chatId, almostthere_text, {
-            reply_markup:{
-                inline_keyboard:[
-                    [{
-                        text: 'Имя: ' + user_name[chatId],
-                        callback_data: changename_text
-                    },
-                    {
-                        text: 'Телефон: ',
-                        callback_data: changephone_text
-                    }],
-                    [{
-                        text: 'Адрес: ',
-                        callback_data: changeadress_text
-                    }],
-                    [{
-                        text: backtomyorder[0],
-                        callback_data: backtomyorder[1]
-                    }]
-                ]
-            }
-        }).then(res => {
-            message_toedit[chatId][1] = res.message_id
-            message_text[chatId][1] = res.text
-        })
-    })
-}
-
-//Здесь мы добавляем данные для рассылки (после покупки)
-function AddMailingData(chatId){
-    let userdata = fb.database().ref('Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/mailing/all')
-    userdata.get().then((result) => {
-        let count = result.val().user_amount
-        count++
-        let user_ids_string = ''
-        user_ids_string = result.val().user_ids
-        let user_ids = user_ids_string.split(',')
-        for (let i = 0; i < user_ids.length; i++){
-            console.log('all, user ids list: ' + user_ids[i] + ' ' + chatId)
-            if (user_ids[i] === chatId.toString()){
-                console.log('found user_id. BREAK! "' + user_ids[i] + '" "' + chatId + '"')
-                break
-            }
-            if (i === user_ids.length - 1 && user_ids[i] !== chatId.toString()){
-                console.log('users length = "' + user_ids.length + '", i = "' + i + '". (user_ids[i] !== chatId): ' + user_ids[i] + ' !== ' + chatId)
-                let updates = {}
-                updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/mailing/all/user_amount'] = count
-
-                if (user_ids_string !== ''){
-                    user_ids_string += ',' + chatId
-                }
-
-                else if (user_ids_string === ''){
-                    user_ids_string += chatId
-                }
-
-                updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/mailing/all/user_ids'] = user_ids_string
-
-                fb.database().ref().update(updates)
-            }
-        }
-       
-    })
-}
-
-//Функция для рассылки
-function StartMailing(text, chatId) {
-    let mail = fb.database().ref('Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/mailing/all/user_ids')
-        mail.get().then(result => {
-            let arr = result.val()
-            arr = arr.split(',')
-            for(let i = 0; i<arr.length; i++){
-                bot.sendMessage(arr[i], text, {
-                    parse_mode:'HTML'
-                })
-                .catch(err => {console.log('! ' + err)})
-            }
-        })
-}
-
-bot.on('polling_error', console.log)
-
-//Здесь скрипт реагирует на фитбэк от пользователя и предлагает оставить комментарий
-bot.on('poll_answer', poll_answer => {
-    answered_feedback[poll_answer.user.id] = poll_answer.option_ids
-    console.log('^^ ' + isAnswered_feedback[poll_answer.user.id])
-    if (isAnswered_feedback[poll_answer.user.id] === 0){
-        console.log('answered!')
-        isAnswered_feedback[poll_answer.user.id] = 1
-        let userdata = fb.database().ref('Delivery/' + UserDelCat[poll_answer.user.id] + '/' + userPoint[poll_answer.user.id] + '/other_info/stats')
-        userdata.get().then((result) => {
-
-            let rate = (result.val().rating + parseInt(answered_feedback[poll_answer.user.id]))
-            console.log('rate: ' + rate + ', fb: ' + answered_feedback[poll_answer.user.id])
-            rate = rate / 2
-            console.log('rate: ' + rate)
-            let updates = {}
-
-            updates['Delivery/' + UserDelCat[poll_answer.user.id] + '/' + userPoint[poll_answer.user.id] + '/other_info/stats/feedbacks_amount'] = result.val().feedbacks_amount + 1
-
-            updates['Delivery/' + UserDelCat[poll_answer.user.id] + '/' + userPoint[poll_answer.user.id] + '/other_info/stats/rating'] = rate
-            fb.database().ref().update(updates)
-            
-        })
-        if (answered_feedback[poll_answer.user.id] > 1){
-            bot.sendSticker(poll_answer.user.id, sticker_baddeliver).then(() => {
-                bot.sendMessage(poll_answer.user.id, badfeedback_text, {
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: leavecomment,
-                                callback_data: leavecomment
-                            }],
-                            [{
-                                text: dontleavecomment,
-                                callback_data: dontleavecomment
-                            }]
-                        ]
-                    }
-                })
-            })
-        }
-        if (answered_feedback[poll_answer.user.id] <= 1){
-            bot.sendSticker(poll_answer.user.id, sticker_gooddeliver).then(() => {
-                bot.sendMessage(poll_answer.user.id, goodfeedback_text, {
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: leavecomment,
-                                callback_data: leavecomment
-                            }],
-                            [{
-                                text: dontleavecomment,
-                                callback_data: dontleavecomment
-                            }]
-                        ]
-                    }
-                })
-            })
-        }
-        
-        
-    }
+let restrictions = fb.database().ref('Grindr/presets/restrictions')
+restrictions.on('value', (result) => {
+    userdescription_maxsymbols = result.val().userdescription_maxsymbols
 })
 
 //Здесь мы реагируем на весь текст, который отправил пользователь боту, в том числе и на стандартную клавиатуру
 bot.on('message', (msg) =>
 {
     const { chat, message_id, text } = msg
-    console.log(msg)
-    const chatId = chat.id
 
-    if (text === '🔃 Заказать снова'){
-        for (let i=0; i<100; i++){
-            bot.deleteMessage(chatId, message_id - i).catch(err => {
-                //console.log(err)
-            })
-        }
-        bot.sendSticker(chatId, sticker_hello).then(() => {
-            Reset(chatId)
-            anotherpoint_multiple[chatId] = 2
-        })
-    }
-
-    //Показываем нашу корзину (Deprecated)
-    if (text === myorder_text){
-        bot.deleteMessage(chatId, message_id).catch(err => {console.log('! ' + err)})
-            let editmsg = `Ваш заказ: `
-            let finalsum = 0
-            for (let i = 0; i < basket[chatId].length; i++){
-                            finalsum += (basket[chatId][i][2] * basket[chatId][i][1])
-                            if (i === basket[chatId].length - 1){
-                                editmsg += finalsum + 'тг. +' + delivery_price[chat.id] + 'тг. (доставка)'
-                                console.log(finalsum + ' ' + i)
-                                for (let i = 0; i < basket[chatId].length; i++){
-                                    console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                    editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                        if (skidka[chatId] !== 0) {
-                                            editmsg += `
-
-Цена с учетом скидки: ` + finalprice[chatId] + ' тенге.'
-                                        }
-                                        if (i === basket[chatId].length - 1){
-                                        bot.sendMessage(chatId,  editmsg)
-                                    }
-                                }
-                            }
-            }
-        
-    }
-
-    //Начинаем оплачивать заказ (Deprecated)
-    if (text === paybasket_text){
-        console.log('!!!' + (finalprice[chatId] - 1000))
-        if (finalprice[chatId] - 1000 < delivery_min_price){
-            bot.sendMessage(chatId, 'Минимальная сумма заказа: ' + delivery_min_price + '. Закажите что-нибудь еще 😇')
-        }
-        else {
-            bot.deleteMessage(chatId, message_id - 1).catch(err => {console.log('! ' + err)})
-            bot.deleteMessage(chatId, message_id).catch(err => {console.log('! ' + err)})
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0
-                for (let i = 0; i < basket[chatId].length; i++){
-                                finalsum += (basket[chatId][i][2] * basket[chatId][i][1])
-                                if (i === basket[chatId].length - 1){
-                                    editmsg += finalsum + 'тг. +' + delivery_price[chat.id] + 'тг. (доставка)'
-                                    console.log(finalsum + ' ' + i)
-                                    finalprice[chatId] = finalsum + delivery_price[chat.id]
-                                    for (let i = 0; i < basket[chatId].length; i++){
-                                        console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                        editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                        if (i === basket[chatId].length - 1){
-                                            finalbasket[chatId] = editmsg
-                                            bot.sendMessage(chatId,  editmsg).then(() => {
-                                                CheckUser(chatId, chat.first_name, chatId, message_id)
-                                            })
-                
-                                        }
-                                    }
-                                }
-                }
-
-        }
-        
-    }
-
-    //Отобразить геолокацию точки (Deprecated)
-    if (text === location_text){
-        bot.sendLocation(chatId, point_location[0], point_location[1]).then(() => {
-            bot.sendMessage(chatId, '📍 Мы находимся по адресу: ' + point_adress[chatId])
-        })
-        
-    }
-
-    //Отобразить контакты точки (Deprecated)
-    if (text === phone_text){
-        bot.sendContact(chatId, help_phone, restaurant_name)
-    }
-
-    //Здесь работает с рассылками (для админов заведений)
-    if (isMailingMessage[chatId] !== 0 && isMailingMessage[chatId] !== undefined){
-        bot.deleteMessage(chatId, msg.message_id)
-        //утро
-        if (isMailingMessage[chatId] === 1){
-            isMailingMessage[chatId] = 0
-            mailing_text[chatId] = `📧 Сообщение от <b>` + userPoint[chatId] + `:</b>
-` + msg.text
-            let info = fb.database().ref('Delivery/' + UserDelCat[chatId] + '/' + userPoint[chat.id] + '/mailing/all/user_ids')
-            info.get().then((result) => {
-                if (result.exists()){
-                    let num = result.val().split(',')
-
-                    bot.editMessageText('Вы уверены, что хотите отправить это сообщение всем <b>клиентам</b>? Это сообщение получат <b>' + num.length + ' человек </b>.', {
-                        parse_mode: 'HTML',
-                        chat_id: chatId,
-                        message_id: message_toedit[chatId][7],
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: 'Отменить',
-                                    callback_data: keyboards.admin_preferences_buttons[3][1]
-                                }],
-                                [{
-                                    text: 'Да, отправить',
-                                    callback_data: sendmessage_cb
-                                }]
-                            ]
-                        }
-                    })
-                }
-
-                else {
-                    bot.editMessageText('К сожалению у Вас нет клиентов для рассылки', {
-                        parse_mode: 'HTML',
-                        chat_id: chatId,
-                        message_id: message_toedit[chatId][7],
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: '◀️ Назад',
-                                    callback_data: keyboards.admin_preferences_buttons[3][1]
-                                }]
-                            ]
-                        }
-                    })
-                }
-            })
-        }
-    }
-
-    //Здесь меняем время работы ресторана (для админов заведений)
-    if (isChangingTime[chatId] !== 0 && isChangingTime[chatId] !== undefined){
-        bot.deleteMessage(chatId, msg.message_id)
-        let fnl_txt = 'Установите время работы доставки (напр. 8:00-22:00). Время должно быть в формате 24 ч.'
-        if (isChangingTime[chatId] === 1){
-            isChangingTime[chatId] = 0
-            if (msg.text.includes('-') && msg.text.includes(':')){
-                point_workingtime[chatId] = (msg.text).split('-')
-                point_workingtime[chatId][0] = point_workingtime[chatId][0].split(':')
-                point_workingtime[chatId][1] = point_workingtime[chatId][1].split(':')
-
-                let updates = {}
-                updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/delivery_info/working_time'] = msg.text
-                fb.database().ref().update(updates)
-            }
-            else {
-                fnl_txt = '<b>Вы ввели неверное значение.</b> Рекомендуем не менять эти настройки или связаться с службой поддрежки'
-            }
-            
-        }
-        bot.editMessageText(fnl_txt, {
-            parse_mode: 'HTML',
-            chat_id: chatId,
-            message_id: message_toedit[chatId][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_times[1][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_times[0][0] + ' c ' + point_workingtime[chat.id][0][0] + ':' + point_workingtime[chat.id][0][1] + ' по ' + point_workingtime[chat.id][1][0] + ':' + point_workingtime[chat.id][1][1],
-                        callback_data: keyboard_admin_times[0][1]
-                    }]
-                ]
-            }
-        })
-    }
-
-    //Прочая информация по доставке (для админов заведений)
-    if (isChangingDelivery[chatId] !== 0 && isChangingDelivery[chatId] !== undefined){
-        bot.deleteMessage(chatId, msg.message_id)
-        let fnl_txt = 'Введите информацию о доставке. Это облегчит процесс заказа для ваших клиентов.'
-        if (isChangingDelivery[chatId] === 1){
-            isChangingDelivery[chatId] = 0
-            delivery_min_price[chatId] = parseInt(msg.text)
-            let updates = {}
-            updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/delivery_info/delivery_min_price'] = delivery_min_price[chatId]
-            fb.database().ref().update(updates)
-        }
-        if (isChangingDelivery[chatId] === 2){
-            isChangingDelivery[chatId] = 0
-            delivery_price[chatId] = parseInt(msg.text)
-            let updates = {}
-            updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/delivery_info/delivery_price'] = delivery_price[chatId]
-            fb.database().ref().update(updates)
-        }
-        bot.editMessageText(fnl_txt, {
-            parse_mode: 'HTML',
-            chat_id: chatId,
-            message_id: message_toedit[chatId][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    },
-                    {
-                        text: keyboard_admin_delset[0][0] + delivery_min_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[0][1]
-                    }],
-                    [{
-                        text: keyboard_admin_delset[1][0] + delivery_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[1][1]
-                    },
-                    {
-                        text: keyboard_admin_delset[2][0],
-                        callback_data: keyboard_admin_delset[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-
-    //Добавить контакт для связи с клиентами (для админов заведений)
-    if (isChangingPhone[chatId] !== 0 && isChangingPhone[chatId] !== undefined){
-        bot.deleteMessage(chatId, msg.message_id)
-        let fnl_txt = 'Укажите данные для связи с вами. Клиент увидит их когда выберет ваше заведение'
-        if (isChangingPhone[chatId] === 1){
-            isChangingPhone[chatId] = 0
-            help_phone[chatId] = msg.text
-            let updates = {}
-            updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/place_info/contact_phone'] = help_phone[chatId]
-            fb.database().ref().update(updates)
-        }
-        if (isChangingPhone[chatId] === 2){
-            if (msg.location !== undefined){
-                isChangingPhone[chatId] = 0
+    if (!text.includes('/')){
+        if (donateregisterstep[chat.id] !== undefined && donateregisterstep[chat.id] > 0){
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
     
-                point_location[chatId][0] = msg.location.latitude
-                point_location[chatId][1] = msg.location.longitude
-    
-                let updates = {}
-                updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/place_info/latitude'] = point_location[chatId][0]
-                updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/place_info/longitude'] = point_location[chatId][1]
-                fb.database().ref().update(updates)
-            }
-            else {
-                fnl_txt = 'Вы не отправили геопозицию. Изменения не были внесены.'
-            }
-    
-        }
-        if (isChangingPhone[chatId] === 3){
-            isChangingPhone[chatId] = 0
-            point_adress[chatId] = msg.text
-            let updates = {}
-            updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/place_info/adress_text'] = point_adress[chatId]
-            fb.database().ref().update(updates)
-        }
-        bot.editMessageText(fnl_txt, {
-            parse_mode: 'HTML',
-            chat_id: chatId,
-            message_id: message_toedit[chatId][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_phone[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_phone[0][0] + help_phone[chat.id],
-                        callback_data: keyboard_admin_phone[0][1]
-                    },
-                    {
-                        text: keyboard_admin_phone[1][0] + point_location[chat.id][0] + ', ' + point_location[chat.id][1],
-                        callback_data: keyboard_admin_phone[1][1]
-                    }],
-                    [{
-                        text: keyboard_admin_phone[2][0] + point_adress[chat.id],
-                        callback_data: keyboard_admin_phone[2][1]
-                    }]
-                ]
-            }
-        })
-    } 
-
-    //Запись купона
-    if (isWritingCoupon[chatId] !== 0 && isWritingCoupon[chatId] !== undefined){
-        isWritingCoupon[chatId] = 0
-        bot.deleteMessage(chatId, message_id)
-        let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons')
-        point_info.get().then((snapshot) => {
-            isWritingCoupon[chatId] = 0
-            if (snapshot.exists()){
-                let coupons = Object.keys(snapshot.val())
-                for (let i = 0; i < coupons.length; i++){
-                    let gett = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                    gett.get().then((res) => {
-                        if (msg.text === res.val().name){
-                            if (res.val().activ_left > 0){
-                                clients = res.val().clients 
-                                if (!clients.includes(chatId.toString())) {
-                                    coupondata[chatId] = []
-                                    coupondata[chatId][0] = res.val().name
-                                    coupondata[chatId][1] = res.val().percent
-    
-                                   /*  let updates = {}
-                                    updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i] + '/activ_left'] = res.val().activ_left - 1
-                                    updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i] + '/activated'] = res.val().activated + 1
-                                    
-
-                                    fb.database().ref().update(updates) */
-    
-                                    bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                    bot.sendMessage(chatId, `Промокод успешно активирован 🥳 
-Вы получаете скидку ` + res.val().percent + `%. Бегом тратить!` , {
-                                        parse_mode: 'HTML',
-                                        reply_markup: {
-                                            inline_keyboard: [
-                                                [{
-                                                    text: 'Продолжить',
-                                                    callback_data: mybasket_text
-                                                }]
-                                            ]
-                                        }
-                                    })
-                                    .then(res => {
-                                        message_toedit[chatId][2] = res.message_id
-                                    })
-                                }
-                                else if (clients.includes(chatId.toString())){
-                                    bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                    bot.sendMessage(chatId, 'Вы уже использовали этот промокод', {
-                                        parse_mode: 'HTML',
-                                        reply_markup: {
-                                            inline_keyboard: [
-                                                [{
-                                                    text: '◀️ Назад',
-                                                    callback_data: mybasket_text
-                                                }]
-                                            ]
-                                        }
-                                    })
-                                    .then(res => {
-                                        message_toedit[chatId][2] = res.message_id
-                                    })
-                                }
-                            }
-                            else {
-                                bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                bot.sendMessage(chatId, 'О нет, Вы не успели. Промокод уже ввели 😢', {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: '◀️ Назад',
-                                                callback_data: mybasket_text
-                                            }]
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chatId][2] = res.message_id
-                                })
-                            }
-                        }
-                        if (i === coupons.length - 1 && msg.text !== res.val().name){
-                            bot.deleteMessage(chatId, message_toedit[chatId][2])
-                            bot.sendMessage(chatId, 'Промокод не подходит 😕', {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{
-                                            text: '◀️ Назад',
-                                            callback_data: mybasket_text
-                                        }]
-                                    ]
-                                }
-                            })
-                            .then(res => {
-                                message_toedit[chatId][2] = res.message_id
-                            })
-                        }
-                    })
+            if (donateregisterstep[chat.id] === 6){
+                if (msg.text.includes('https://')){
+                    donate_materials[chat.id] = text
+                    CreateDonation(chat)
                 }
             }
-            else {
-                isWritingCoupon[chatId] = 0
-                bot.deleteMessage(chatId, message_toedit[chatId][2])
-                bot.sendMessage(chatId, 'Промокод не подходит 😕', {
+    
+            if (donateregisterstep[chat.id] === 5 && msg.photo !== undefined){
+                donate_photo[chat.id] = msg.photo[0].file_id
+                bot.editMessageText(newdonationsteps[5], {
                     parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
                     reply_markup: {
                         inline_keyboard: [
                             [{
-                                text: '◀️ Назад',
-                                callback_data: mybasket_text
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[3]
+                            }],
+                            [{
+                                text: ihavematerials[0],
+                                callback_data: ihavematerials[1]
+                            },
+                            {
+                                text: ihavematerials[2],
+                                callback_data: ihavematerials[3]
                             }]
                         ]
                     }
                 })
-                .then(res => {
-                    message_toedit[chatId][2] = res.message_id
-                })
             }
-        })
-    }
-
-    //Создание купона
-    if (isCreatingCoupon[chatId] !== 0 && isCreatingCoupon[chatId] !== undefined){
-        bot.deleteMessage(chatId, msg.message_id)
-        console.log('startEDDD')
-        let fnl_txt = 'Введите код купона. Он может быть любым, но клиенту нужно будет точь-в-точь его скопировать:'
-        switch (isCreatingCoupon[chat.id]){
-            case 1: 
-            console.log('case 1')
-            coupondata[chat.id][0] = msg.text
-            fnl_txt = 'Введите максимальное число активаций купона (не более ' + coupondata[chat.id][1] + ')'
-            bot.editMessageText(fnl_txt, {
-                parse_mode: 'HTML',
-                chat_id: chatId,
-                message_id: message_toedit[chatId][7],
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'Не создавать',
-                            callback_data: 'backtoalldata_cb'
-                        }]
-                    ]
-                }
-            })
-            isCreatingCoupon[chat.id] = 2
-            break
-
-            case 2: 
-            console.log('case 2')
-            if (parseInt(msg.text) <= coupondata[chat.id][1]) {
-                coupondata[chat.id][1] = parseInt(msg.text)
-            }
-
-            fnl_txt = 'Сколько процентов скидки получат клиенты, когда введут этот промокод? Введите число:'
-            bot.editMessageText(fnl_txt, {
-                parse_mode: 'HTML',
-                chat_id: chatId,
-                message_id: message_toedit[chatId][7],
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'Не создавать',
-                            callback_data: 'backtoalldata_cb'
-                        }]
-                    ]
-                }
-            })
-            isCreatingCoupon[chat.id] = 3
-            break
-
-            case 3: 
-            console.log('case 3')
-            if (parseInt(msg.text) > 100) {
-                coupondata[chat.id][2] = 100
-            }
-            if (parseInt(msg.text) <= 100) {
-                coupondata[chat.id][2] = parseInt(msg.text)
-            }
-            let updates = {}
-            updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/name'] = coupondata[chat.id][0]
-            updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = coupondata[chat.id][1]
-            updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/percent'] = coupondata[chat.id][2]
-            updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = 0
-            updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = chatId + ','
-
-            fb.database().ref().update(updates)
-            fnl_txt = 'Купон <b>'+ coupondata[chat.id][0] +'</b> создан! Вы можете поделиться им в своих соц. сетях, либо использовать рассылку. Это простимулирует дополнительные продажи 😎'
-            bot.editMessageText(fnl_txt, {
-                parse_mode: 'HTML',
-                chat_id: chatId,
-                message_id: message_toedit[chatId][7],
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'На главную',
-                            callback_data: keyboards.admin_preferences_buttons[3][1]
-                        }]
-                    ]
-                }
-            })
-            isCreatingCoupon[chat.id] = 0
-            break
-        }
-        
-    }
-
-    //Добавление информации для доставки
-    if (isMakingChanges[chatId] !== 0  && user_mode[chatId] !== undefined && isMakingChanges[chatId] !== undefined){
-        let answ_text = almostthere_text
-        if (isMakingChanges[chatId] === 1){
-            isMakingChanges[chatId] = 0
-            user_name[chatId] = text
-        }
-
-        if (isMakingChanges[chatId] === 2){
-            isMakingChanges[chatId] = 0
-            if (msg.contact !== undefined){
-                user_phone[chatId] = msg.contact.phone_number
-            }
-            else if (msg.contact === undefined){
-                if (text !== '◀️ Назад'){
-                    answ_text = `Вы не отправили номер телефона! Чтобы это сделать, нажмите на кнопку снизу`
-                    bot.deleteMessage(chat.id, message_toedit[chat.id][1])
-                    bot.sendMessage(chat.id,answ_text, {
+    
+            if (donateregisterstep[chat.id] === 4){
+                if (parseInt(text) >= 1 && parseInt(text) <= 30){
+                    donate_duration[chat.id] = parseInt(text)
+                    donateregisterstep[chat.id] = 5
+                    bot.editMessageText(newdonationsteps[4], {
                         parse_mode: 'HTML',
-                        reply_markup:{
-                            inline_keyboard:[
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
                                 [{
-                                    text: 'Имя: ' + user_name[chatId],
-                                    callback_data: changename_text
-                                },
-                                {
-                                    text: 'Телефон: ' + user_phone[chatId],
-                                    callback_data: changephone_text
+                                    text: backtostart[0],
+                                    callback_data: backtonewdonate[2]
                                 }],
                                 [{
-                                    text: 'Адрес: ' + user_adress[chatId],
-                                    callback_data: changeadress_text
-                                }],
-                                [{
-                                    text: backtomyorder[0],
-                                    callback_data: backtomyorder[1]
-                                },{
-                                    text: dataiscorrect_text,
-                                    callback_data: dataiscorrect_text
+                                    text: previewimg[2],
+                                    callback_data: previewimg[3]
                                 }]
                             ]
                         }
-                    }).then(res => {
-                        message_toedit[chat.id][1] = res.message_id
-                        message_text[chat.id][1] = res.text
                     })
                 }
             }
+    
+            if (donateregisterstep[chat.id] === 3){
+                if (parseInt(text) >= 50 && parseInt(text) <= 10000){
+                    donateregisterstep[chat.id] = 4
+                    donate_minmoney[chat.id] = parseInt(text)
+                    bot.editMessageText(newdonationsteps[3], {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: backtostart[0],
+                                    callback_data: backtonewdonate[1]
+                                }]
+                            ]
+                        }
+                    })
+                }
+            }
+    
+            if (donateregisterstep[chat.id] === 2){
+                if (parseInt(text) >= 500 && parseInt(text) <= 300000){
+                    donateregisterstep[chat.id] = 3
+                    donate_money[chat.id] = parseInt(text)
+                    bot.editMessageText(newdonationsteps[2], {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: backtostart[0],
+                                    callback_data: backtonewdonate[0]
+                                }]
+                            ]
+                        }
+                    })
+                }
+            }
+            
+            if (donateregisterstep[chat.id] === 1){
+                if (text.length < 100){
+                    donateregisterstep[chat.id] = 2
+                    donate_name[chat.id] = text
+    
+                    bot.editMessageText(newdonationsteps[1], {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: backtostart[0],
+                                    callback_data: whoareyoubutton[1]
+                                }]
+                            ]
+                        }
+                    })
+                }
+                
+            }
         }
-
-        if (isMakingChanges[chatId] === 3){
-            isMakingChanges[chatId] = 0
-            user_adress[chatId] = text
-        }
-
-        if (isMakingChanges[chatId] === 5){
-            isMakingChanges[chatId] = undefined
-            let orderinfo = fb.database().ref(order_name[chatId]);
-            orderinfo.get().then((snapshot) => 
-            {
+    
+        if (donate_editmaterials[chat.id] !== undefined && donate_editmaterials[chat.id] === true){
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
+            if (msg.text.includes('https://')){
+                donate_materials[chat.id] = text
+    
                 let updates = {}
-                updates[order_name[chat.id] + '/feedback'] = feedback_options[answered_feedback[chat.id]]
-                updates[order_name[chat.id] + '/feedback_message'] = msg.text
-                bot.deleteMessage(chat.id, message_toedit[chatId][5]).catch(err => {console.log('hr: ' + err)})
-                bot.deleteMessage(chat.id, message_id).catch(err => {console.log('hr: ' + err)})
-                fb.database().ref().update(updates).then(() => {
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chatId, message_id - i).catch(err => {console.log('hr: ' + err)})
-                    }
-                    bot.sendSticker(chatId, sticker_hello).then(() => {
-                        bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Resify. Закажем что-нибудь еще?').then(() => {
-                            //Reset(chatId)
-                            anotherpoint_multiple[chatId] = 2
-                            userPoint[chat.id] = 0
-                            userCategory[chat.id] = ''
-                            userFood[chat.id] = ''
-                            userFoodlist[chat.id] = []
-                            order_name[chatId] = 0
-                            coupondata[chat.id] = undefined
-                            
-                            basket[chat.id] = []
-                            finalprice[chatId] = 0
-                            finalbasket[chatId] = ''
-                            temp_backet_food[chatId] = 0
-                            temp_food_text[chatId] = ''
-                            temp_food_price[chatId] = 0
-                            temp_foodamount[chatId] = 1
-                            skidka[chatId] = 0
-                            order_status[chatId] = undefined
-                            keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], UserDelCat[chat.id], fb, bot, chat.id, change_delcat_text, choosepoint_text, user_mode[chat.id], sendlocation, message_toedit[chat.id], message_text[chat.id])
-                            //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, location_text, phone_text, UserDelCat[chatId], userPoint[chatId], user_mode[chatId], message_toedit[chat.id], message_text[chat.id])
-                        }).catch(err => {console.log('hr: ' + err)})
-    
-                    }).catch(err => {console.log('hr: ' + err)})
-                    
-                    let temp_bill = snapshot.val().bill_text + `
-<b>💬 Отзыв о доставке:</b>                    
-├ Оценка клиента: ` + feedback_options[answered_feedback[chatId]] + `
-└ Сообщение: ` + text
-                    bot.editMessageText(temp_bill, {
-                        parse_mode: 'HTML',
-                        chat_id: delivery_chat[chatId],
-                        message_id: snapshot.val().message_id
-                    }).catch(err => {console.log('hr: ' + err)})
-                }).catch(err => {console.log('hr: ' + err)})
-            }) 
-        }
-
-        if (user_adress[chatId] !== '' && user_phone[chatId] !== '' && user_name[chatId] !== '' && isMakingChanges[chatId] !== 4 && isMakingChanges[chatId] !== 5 && isMakingChanges[chatId] !== undefined){
-            //order_status = order_statuses_text[0]
-            console.log('LOL ' + message_id + ', ' + (message_id - 1))
-            bot.deleteMessage(chatId, message_id).then(() => {
-                console.log('LOL2 ' + message_id + ', ' + (message_id - 1))
-            })
-            if (msg.contact === undefined){
-                bot.editMessageText(answ_text, {
-                    chat_id: chatId,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: 'Имя: ' + user_name[chatId],
-                                callback_data: changename_text
-                            },
-                            {
-                                text: 'Телефон: ' + user_phone[chatId],
-                                callback_data: changephone_text
-                            }],
-                            [{
-                                text: 'Адрес: ' + user_adress[chatId],
-                                callback_data: changeadress_text
-                            }],
-                            [{
-                                text: backtomyorder[0],
-                                callback_data: backtomyorder[1]
-                            },{
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect_text
-                            }]
-                        ]
-                    }
-                }
-                ).catch(err => {
-                    console.log(err)
-                })
-                if (msg.text === '◀️ Назад'){
-                    bot.deleteMessage(chatId,  message_toedit[chat.id][1])
-                    bot.sendMessage(chatId, answ_text, {
-                        parse_mode: 'HTML',
-                        reply_markup:{
-                            inline_keyboard:[
-                                [{
-                                    text: 'Имя: ' + user_name[chatId],
-                                    callback_data: changename_text
-                                },
-                                {
-                                    text: 'Телефон: ' + user_phone[chatId],
-                                    callback_data: changephone_text
-                                }],
-                                [{
-                                    text: 'Адрес: ' + user_adress[chatId],
-                                    callback_data: changeadress_text
-                                }],
-                                [{
-                                    text: backtomyorder[0],
-                                    callback_data: backtomyorder[1]
-                                },{
-                                    text: dataiscorrect_text,
-                                    callback_data: dataiscorrect_text
-                                }]
-                            ]
-                        }
-                    }).then(res => {
-                        message_toedit[chat.id][1] = res.message_id
-                        message_text[chat.id][1] = res.text
-                    }).catch(err => {
-                        console.log('1235 ' + err)
-                    })
-                }
-            }
-            if (msg.contact !== undefined) {
-                bot.deleteMessage(chatId,  message_toedit[chat.id][1])
-                bot.sendMessage(chatId, answ_text, {
-                    parse_mode: 'HTML',
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: 'Имя: ' + user_name[chatId],
-                                callback_data: changename_text
-                            },
-                            {
-                                text: 'Телефон: ' + user_phone[chatId],
-                                callback_data: changephone_text
-                            }],
-                            [{
-                                text: 'Адрес: ' + user_adress[chatId],
-                                callback_data: changeadress_text
-                            }],
-                            [{
-                                text: backtomyorder[0],
-                                callback_data: backtomyorder[1]
-                            },{
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][1] = res.message_id
-                    message_text[chat.id][1] = res.text
-                }).catch(err => {
-                    console.log('1235 ' + err)
-                })
-            }
-            
-            
-        }
-        if (user_adress[chatId] === '' || user_phone[chatId] === '' || user_name[chatId] === '' && isMakingChanges[chatId] !== 4 && isMakingChanges[chatId] !== 5 && isMakingChanges[chatId] !== undefined)
-        {
-            console.log('LOL3 ' + message_id + ', ' + (message_id - 1) + ', save_msgid: ' + add_info_msg[chatId])
-            bot.deleteMessage(chatId, message_id)
-            
-            if (text !== '◀️ Назад' && msg.contact === undefined){
-                bot.editMessageText(answ_text, {
-                    chat_id: chatId,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: 'Имя: ' + user_name[chatId],
-                                callback_data: changename_text
-                            },
-                            {
-                                text: 'Телефон: ' + user_phone[chatId],
-                                callback_data: changephone_text
-                            }],
-                            [{
-                                text: 'Адрес: ' + user_adress[chatId],
-                                callback_data: changeadress_text
-                            }],
-                            [{
-                                text: backtomyorder[0],
-                                callback_data: backtomyorder[1]
-                            },{
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect_text
-                            }]
-                        ]
-                    }
-                }
-                ).catch(err => {
-                    console.log('214 ' + err)
-                })
-            }
-            
-            if (msg.contact !== undefined) {
-                bot.deleteMessage(chatId,  message_toedit[chat.id][1])
-                bot.sendMessage(chatId, answ_text, {
-                    parse_mode: 'HTML',
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: 'Имя: ' + user_name[chatId],
-                                callback_data: changename_text
-                            },
-                            {
-                                text: 'Телефон: ' + user_phone[chatId],
-                                callback_data: changephone_text
-                            }],
-                            [{
-                                text: 'Адрес: ' + user_adress[chatId],
-                                callback_data: changeadress_text
-                            }],
-                            [{
-                                text: backtomyorder[0],
-                                callback_data: backtomyorder[1]
-                            },{
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][1] = res.message_id
-                    message_text[chat.id][1] = res.text
-                }).catch(err => {
-                    console.log('1235 ' + err)
-                })
-            }
-            
-            if (msg.text === '◀️ Назад'){
-                bot.deleteMessage(chatId,  message_toedit[chat.id][1])
-                bot.sendMessage(chatId, answ_text, {
-                    parse_mode: 'HTML',
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: 'Имя: ' + user_name[chatId],
-                                callback_data: changename_text
-                            },
-                            {
-                                text: 'Телефон: ' + user_phone[chatId],
-                                callback_data: changephone_text
-                            }],
-                            [{
-                                text: 'Адрес: ' + user_adress[chatId],
-                                callback_data: changeadress_text
-                            }],
-                            [{
-                                text: backtomyorder[0],
-                                callback_data: backtomyorder[1]
-                            },{
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][1] = res.message_id
-                    message_text[chat.id][1] = res.text
-                }).catch(err => {
-                    console.log('1235 ' + err)
-                })
-            }
-        }
-    }
-
-
-    if (isMakingChanges_3[chatId] === 1  && user_mode[chatId] !== undefined && isMakingChanges_3[chatId] !== undefined){
-        isMakingChanges_3[chatId] = 0
-        isMakingChanges_2[chatId] = 0
-
-        user_howtocome[chatId] = text
-        if (userstatus[chat.id] !== 'unregistered'){
-            skidka[chat.id] = 0
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-                
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
-                }
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-            
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
-                        }
-                        
-                    })
-                }
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-                
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
-                        }
-                        
-                    })
-                }
-
-                                  ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
-    
-let minutes = time_now.getMinutes()
-if (minutes < 10) minutes = '0' + minutes
-let hours = time_now.getHours()
-if (hours < 10) hours = '0' + hours
-let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
-    
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-    if (coupondata[chat.id] !== undefined){
-        deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-    }
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-    deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + message_id)
-    console.log('delivery_chat: ' + delivery_chat[chat.id])
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
-        }
-    })
-
-            })
-        }
-        else {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
-                }
-                
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-               
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/average_purchases'] = average_purchases[chat.id]
-                
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-            
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
-                        }
-                        
-                    })
-                }
-
-                   ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
-    let minutes = time_now.getMinutes()
-    if (minutes < 10) minutes = '0' + minutes
-    let hours = time_now.getHours()
-    if (hours < 10) hours = '0' + hours
-    let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-    
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
-    
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-if (coupondata[chat.id] !== undefined){
-    deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-}
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + message_id)
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
-        }
-    })
-    
-            }).catch(err => {
-                console.log('error: ' + err)
-            })
-        }
-    }
-
-    if (isMakingChanges_2[chatId] !== 0 && user_mode[chatId] !== undefined && isMakingChanges_2[chatId] !== undefined){
-        console.log('!#!@%$ ' + user_mode[chatId])
-        if (isMakingChanges_2[chatId] === 1){
-            isMakingChanges_2[chatId] = 0
-            user_personsamount[chatId] = text
-        }
-
-        if (isMakingChanges_2[chatId] === 2){
-            isMakingChanges_2[chatId] = 0
-            user_deliverdate[chatId] = text
-        }
-
-        if (isMakingChanges_2[chatId] === 3){
-            console.log('isMakingChanges_2!')
-            isMakingChanges_3[chatId] = 1
-            user_sdachainfo[chatId] = text
-            bot.deleteMessage(chatId, message_id).catch(err => {
-                console.log(err)
-            })
-            bot.editMessageText('Уточните, как курьер может до вас добраться: ', {
-                chat_id: chatId, 
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: no_howtocome_text,
-                            callback_data: no_howtocome_text
-                        }]
-                    ]
-                }
-            }).catch(err => {
-                console.log(add_info_msg[chatId] + ' | ' + message_id + ' | ' + err)
-            })
-        }
-
-        if (isMakingChanges_2[chatId] === 4){
-            isMakingChanges_2[chatId] = 0
-            user_howtocome[chatId] = text
-            console.log('!HERE!')
-if (userstatus[chat.id] !== 'unregistered'){
-            skidka[chat.id] = 0
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-                
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
-                }
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-            
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-                
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
-                        }
-                        
-                    })
-                }
-
-                                  ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
-    
-let minutes = time_now.getMinutes()
-if (minutes < 10) minutes = '0' + minutes
-let hours = time_now.getHours()
-if (hours < 10) hours = '0' + hours
-let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
-    
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-
-if (coupondata[chat.id] !== undefined){
-    deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-}
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-    deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + message_id)
-    console.log('delivery_chat: ' + delivery_chat[chat.id])
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
-        }
-    })
-
-            })
-        }
-        else {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
-                }
-                
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-               
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/average_purchases'] = average_purchases[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-            
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
-                        }
-                        
-                    })
-                }
-
-                   ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
-    let minutes = time_now.getMinutes()
-    if (minutes < 10) minutes = '0' + minutes
-    let hours = time_now.getHours()
-    if (hours < 10) hours = '0' + hours
-    let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-    
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
-    
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-if (coupondata[chat.id] !== undefined){
-    deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-}
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + message_id)
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
-        }
-    })
-    
-            }).catch(err => {
-                console.log('error: ' + err)
-            })
-        }
-        }
-
-        if (isMakingChanges_2[chatId] !== 3 && isMakingChanges_2[chatId] !== 4){
-            bot.deleteMessage(chatId, message_id).catch(err => {
-                console.log(add_info_msg[chatId] + ' | ' + message_id + ' | ' + err)
-            })
-            
-            if (point_pplamount[chat.id] !== false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: '👥: ' + user_personsamount[chat.id],
-                                callback_data: changeamountof_persons
-                            },
-                            {
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
-            }
-            
-            if (point_pplamount[chat.id] === false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            },
-                            {
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
-            }
-        }
         
-    }
-
-    //получаем данные заинтересованного бизнеса
-    if (isWritingBusiness[chat.id] !== 0 && business_info[chat.id] !== undefined){
-        bot.deleteMessage(chat.id, msg.message_id)
-        if (msg.text !== '/im_admin' && msg.text !== '/start' && msg.text !== '/my_order'){
-            if (isWritingBusiness[chat.id] === 1){
-                isWritingBusiness[chat.id] = 0
-                business_info[chat.id][10] = msg.text
+                updates['Kickstarter/users/' + chat.id + '/donations/' + donate_tempdonateid[chat.id] + '/materials'] = text
+                fb.database().ref().update(updates)
+                .then(() => {
+                    OpenDonation(chat, donate_tempdonateid[chat.id])
+                    donate_editmaterials[chat.id] = false
+                    donate_tempdonateid[chat.id] = '/error/'
     
-                if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
-                    bot.editMessageText(message_text[chat.id][16], {
-                        parse_mode: 'HTML',
-                        chat_id: chat.id,
-                        message_id: message_toedit[chat.id][16],
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                    callback_data: business_cbcs[3]
-                                }],
-                                [{
-                                    text: '📞 Номер: ' + business_info[chat.id][11],
-                                    callback_data: business_cbcs[4]
-                                }],
-                                [{
-                                    text: 'Протестировать бота',
-                                    callback_data: business_cbcs[6]
-                                }]
-                            ]
-                        }
-                    })
-                }
-        
-                if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
-                    bot.editMessageText(message_text[chat.id][16], {
-                        parse_mode: 'HTML',
-                        chat_id: chat.id,
-                        message_id: message_toedit[chat.id][16],
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                    callback_data: business_cbcs[3]
-                                }],
-                                [{
-                                    text: '📞 Номер: ' + business_info[chat.id][11],
-                                    callback_data: business_cbcs[4]
-                                }],
-                                [{
-                                    text: 'Продолжить ➡️',
-                                    callback_data: business_cbcs[5]
-                                }]
-                            ]
-                        }
-                    })
-                }
-            }
-    
-            if (isWritingBusiness[chat.id] === 2){
-                if (msg.contact !== undefined){
-                    isWritingBusiness[chat.id] = 0
-                    business_info[chat.id][11] = msg.contact.phone_number
-    
-                    if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
-                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                        .then(() => {
-                            bot.sendMessage(chat.id, message_text[chat.id][16], {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{
-                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                            callback_data: business_cbcs[3]
-                                        }],
-                                        [{
-                                            text: '📞 Номер: ' + business_info[chat.id][11],
-                                            callback_data: business_cbcs[4]
-                                        }],
-                                        [{
-                                            text: 'Протестировать бота',
-                                            callback_data: business_cbcs[6]
-                                        }]
-                                    ]
-                                }
-                            })
-                            .then(res => {
-                                message_toedit[chat.id][16] = res.message_id
-                            })
-                        })
-                    }
-            
-                    if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
-                        bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                        .then(() => {
-                            bot.sendMessage(chat.id, message_text[chat.id][16], {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{
-                                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                            callback_data: business_cbcs[3]
-                                        }],
-                                        [{
-                                            text: '📞 Номер: ' + business_info[chat.id][11],
-                                            callback_data: business_cbcs[4]
-                                        }],
-                                        [{
-                                            text: 'Продолжить ➡️',
-                                            callback_data: business_cbcs[5]
-                                        }]
-                                    ]
-                                }
-                            })
-                            .then(res => {
-                                message_toedit[chat.id][16] = res.message_id
-                            })
-                        })
-                        
-                    }
-                }
-                else {
-                    isWritingBusiness[chat.id] = 0
-                    if (msg.text === '⬅️ Назад'){
-                        if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
-                            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                            .then(() => {
-                                bot.sendMessage(chat.id, message_text[chat.id][16], {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                                callback_data: business_cbcs[3]
-                                            }],
-                                            [{
-                                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                                callback_data: business_cbcs[4]
-                                            }],
-                                            [{
-                                                text: 'Протестировать бота',
-                                                callback_data: business_cbcs[6]
-                                            }]
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][16] = res.message_id
-                                })
-                            })
-                        }
-                
-                        if (business_info[chat.id][11] !== '' && business_info[chat.id][10] !== ''){
-                            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                            .then(() => {
-                                bot.sendMessage(chat.id, message_text[chat.id][16], {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                                callback_data: business_cbcs[3]
-                                            }],
-                                            [{
-                                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                                callback_data: business_cbcs[4]
-                                            }],
-                                            [{
-                                                text: 'Продолжить ➡️',
-                                                callback_data: business_cbcs[5]
-                                            }]
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][16] = res.message_id
-                                })
-                            })
-                            
-                        }
-                    }
-                    else {
-                        if (business_info[chat.id][11] === '' || business_info[chat.id][10] === ''){
-                            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                            .then(() => {
-                                bot.sendMessage(chat.id, 'Вам нужно нажать на кнопку "📞 Отправить телефон". Не нужно вводить номер вручную', {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                                callback_data: business_cbcs[3]
-                                            }],
-                                            [{
-                                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                                callback_data: business_cbcs[4]
-                                            }],
-                                            [{
-                                                text: 'Протестировать бота',
-                                                callback_data: business_cbcs[6]
-                                            }]
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][16] = res.message_id
-                                })
-                            })
-                        }
-                
-                        if (business_info[chat.id][10] !== ''){
-                            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-                            .then(() => {
-                                bot.sendMessage(chat.id, 'Вам нужно нажать на кнопку "📞 Отправить телефон". Не нужно вводить номер вручную', {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                                callback_data: business_cbcs[3]
-                                            }],
-                                            [{
-                                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                                callback_data: business_cbcs[4]
-                                            }],
-                                            [{
-                                                text: 'Продолжить ➡️',
-                                                callback_data: business_cbcs[5]
-                                            }]
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][16] = res.message_id
-                                })
-                            })
-                            
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            bot.editMessageText(message_text[chat.id][16], {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][16],
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                            callback_data: business_cbcs[3]
-                        }],
-                        [{
-                            text: '📞 Номер: ' + business_info[chat.id][11],
-                            callback_data: business_cbcs[4]
-                        }],
-                        [{
-                            text: 'Протестировать бота',
-                            callback_data: business_cbcs[6]
-                        }]
-                    ]
-                }
-            })
-        }
-    }
-
-    //статус заказа (Deprecated)
-    if (text === order_status_button){
-        bot.deleteMessage(chatId, message_id).then(() => {
-            console.log('Order name: "' + order_name[chatId] + '"')
-            let userdata = fb.database().ref(order_name[chatId])
-            userdata.get().then((result) => {
-                order_status[chatId] = result.val().order_status
-                console.log('order_status: ' + result.val().order_status)
-                console.log('order link: Basement/bills/' + order_name[chatId])
-                bot.sendMessage(chatId, 'Статус вашего заказа: ' + order_status[chatId])
-            }) 
-        })
-    }
-
-    if (text === finish_order_text){
-        bot.deleteMessage(chatId, message_id - 1)
-        bot.deleteMessage(chatId, message_id).then(() => {
-
-            let poll_text = 'Спасибо за заказ! Пожалуйста, оцените качество доставки: '
-            bot.sendMessage(chatId, poll_text).then(() => {
-                bot.sendPoll(chatId, 'Как оцените наш сервис?', feedback_options, {
-                    is_anonymous: false
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
                 })
-            })
-        })
+            }
+        }
+    
+        if (donate_editpreview[chat.id] !== undefined && donate_editpreview[chat.id] === true){
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
+            if (msg.photo !== undefined){
+                let updates = {}
+                updates['Kickstarter/users/' + chat.id + '/donations/' + donate_tempdonateid[chat.id] + '/photo'] = msg.photo[0].file_id
+                fb.database().ref().update(updates)
+                .then(() => {
+                    OpenDonation(chat, donate_tempdonateid[chat.id])
+                    donate_editpreview[chat.id] = false
+                    donate_tempdonateid[chat.id] = '/error/'
+    
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                })
+            }
+        }
+    
+        if (isAddingcardinfo[chat.id] !== undefined && isAddingcardinfo[chat.id] !== null){
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
+    
+            if (isAddingcardinfo[chat.id] === 'qiwi'){
+                if (text.length >= 11 && text.length <= 12 && !isNaN(text)) {
+                    let updates = {}
+                    updates['Kickstarter/users/' + chat.id + '/balance/card'] = 'qiwi:' + text
+                    fb.database().ref().update(updates).then(() => {
+                        WithDrawInfo(chat)
+                        isAddingcardinfo[chat.id] = undefined
+                    })
+                }
+            }
+
+            if (isAddingcardinfo[chat.id] === 'yoomoney'){
+                if (text.length === 16 && !isNaN(text)) {
+                    let updates = {}
+                    updates['Kickstarter/users/' + chat.id + '/balance/card'] = 'yoomoney:' + text
+                    fb.database().ref().update(updates).then(() => {
+                        WithDrawInfo(chat)
+                        isAddingcardinfo[chat.id] = undefined
+                    })
+                }
+            }
+        }
+    
+        if (participating_data[chat.id] !== undefined && participating_data[chat.id][0] !== undefined && participating_data[chat.id][0] === true) {
+            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
+            if (parseInt(text) >= participating_data[chat.id][1] && parseInt(text) <= participating_data[chat.id][2]){
+                ParticipateDonation(chat, text)
+            }
+        }
     }
+    
 })
 
 //Здесь мы отслеживаем все действия с инлайн-клавиатурой
 bot.on('callback_query', query => {
     const { chat, message_id, text } = query.message
-    const chatId = query.message.chat.id
-    console.log(query.data)
-    console.log('coupondata ' + coupondata[chat.id])
-    console.log(query)
 
-    //Здесь мы принимаем ответы от заинтересованного бизнеса
-    if (business_info[chat.id] !== undefined){
-        if (query.data === business_cbcs[0]){
-            bot.deleteMessage(chat.id, message_id).catch(err => {console.log(err)})
-            
-            bot.sendVideo(chat.id, business_info[chat.id][6], {
-                parse_mode: 'HTML',
-                caption: 'Мы создадим для Вашего заведения мини-приложение, через которое клиенты смогут быстро и удобно заказать доставку, а ваши курьеры - доставить этот заказ без Вашего участия',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'Почему именно мы?',
-                            callback_data: business_cbcs[1]
-                        }]
-                    ]
-                }
-            })
+    //удалить заданное сообщение
+    if (query.data.includes('deletemessage')){
+        for (let i = 0; i< message_todelete[chat.id].length; i++){
+            bot.deleteMessage(chat.id, message_todelete[chat.id][i]).catch(err => {console.log('here: ' + err)})
         }
-        if (query.data === business_cbcs[1]){
-            bot.editMessageCaption(query.message.caption, {
-                chat_id: chat.id,
-                message_id: message_id
-            }).catch(err => {console.log(err)})
-            
-            let txt = `Сейчас Вы наверняка осуществляете доставку по телефону или WhatsApp, <b>получая 10-15% от тех заказов</b>, которые могли бы получать через агрегаторы (Wolt, Glovo) или через свое собственное приложение. Но отдавать 20% агрегатору с каждого заказа - не для Вас! <b>Мы даем такой же качественный сервис, при этом не берем % с заказов.</b> Да и приложение скачивать не нужно, телеграм есть у всех`
-
-            bot.sendPhoto(chat.id, business_info[chat.id][7], {
-                parse_mode: 'HTML',
-                caption: txt
-            })
-            .then(() => {
-                bot.sendMessage(chat.id, `Мы подключаем следующие виды доставки. Что именно Вас интересует?`, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: 'Еда 🍔',
-                                callback_data: business_cbcs[2] + '_FOOD'
-                            },
-                            {
-                                text: 'Продукты 🍏',
-                                callback_data: business_cbcs[2] + '_PRODUCTY'
-                            }],
-                            [{
-                                text: 'Цветы 🌹',
-                                callback_data: business_cbcs[2] + '_FLOWERS'
-                            },
-                            {
-                                text: 'Одежда 👕',
-                                callback_data: business_cbcs[2] + '_CLOTH'
-                            }],
-                            [{
-                                text: 'Алкоголь 🥃',
-                                callback_data: business_cbcs[2] + '_ALCOHOL'
-                            },
-                            {
-                                text: 'Табак/Вейпы 💨',
-                                callback_data: business_cbcs[2] + '_TOBACCO'
-                            }],
-                            [{
-                                text: 'Вода/Напитки 💦',
-                                callback_data: business_cbcs[2] + '_WATER'
-                            },
-                            {
-                                text: 'Другое ➡️',
-                                callback_data: business_cbcs[2] + '_OTHER'
-                            }],
-                            [{
-                                text: 'Протестировать бота',
-                                callback_data: business_cbcs[6]
-                            }]
-                        ]
-                    }
-                })
-            })
-        }
-
-        if (query.data.includes(business_cbcs[2])){
-            let type_text = query.data.split('_')
-            type_text = type_text[1]
-            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            message_text[chat.id][15] += `
-
-<b>Бизнес</b>
-├<b>Категория:</b> ` + type_text
-
-            let updates_second = {}
-            updates_second['Motherbase/customers/list/' + chat.id + '/firm_category'] = type_text
-            fb.database().ref().update(updates_second)
-
-            bot.editMessageCaption(message_text[chat.id][15], {
-                parse_mode: 'HTML',
-                chat_id: business_info[chat.id][8],
-                message_id: message_toedit[chat.id][15]
-            }).catch(err => {
-                console.log('here ' + err.name + `\n\n ` + err.message)
-                bot.editMessageText(message_text[chat.id][15], {
-                    parse_mode: 'HTML',
-                    chat_id: business_info[chat.id][8],
-                    message_id: message_toedit[chat.id][15]
-                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            })
-            business_info[chat.id][10] = ''
-            business_info[chat.id][11] = ''
-            isWritingBusiness[chat.id] = 0
-
-            bot.sendVideoNote(chat.id, business_info[chat.id][12]).then(() => {
-                bot.sendMessage(chat.id, 'Если Вы заинтересованы в удобной и выгодной доставке, оставьте свои контакты - мы создадим страницу Вашей доставки и продемонстрируем ее. <b>Это бесплатно</b>', {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                callback_data: business_cbcs[3]
-                            }],
-                            [{
-                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                callback_data: business_cbcs[4]
-                            }],
-                            [{
-                                text: '◀️ Назад',
-                                callback_data: business_cbcs[4]
-                            },{
-                                text: 'Протестировать бота',
-                                callback_data: business_cbcs[6]
-                            }]
-                            
-                        ]
-                    }
-                })
-                .then(res => {
-                    message_toedit[chat.id][16] = res.message_id
-                    message_text[chat.id][16] = res.text
-
-                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            
-            }).catch(err => {
-                console.log('here ' + err.name + `\n\n ` + err.message)
-
-                bot.sendMessage(chat.id, 'Если Вы заинтересованы в удобной и выгодной доставке, оставьте свои контакты - мы создадим страницу Вашей доставки и продемонстрируем ее. <b>Это бесплатно</b>', {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{
-                                text: 'ℹ️ Название компании: ' + business_info[chat.id][10],
-                                callback_data: business_cbcs[3]
-                            }],
-                            [{
-                                text: '📞 Номер: ' + business_info[chat.id][11],
-                                callback_data: business_cbcs[4]
-                            }],
-                            [{
-                                text: 'Протестировать бота',
-                                callback_data: business_cbcs[6]
-                            }]
-                        ]
-                    }
-                })
-                .then(res => {
-                    message_toedit[chat.id][16] = res.message_id
-                    message_text[chat.id][16] = res.text
-
-                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            })
         
-        }
-
-        if (query.data === business_cbcs[3]){
-            isWritingBusiness[chat.id] = 1
-            bot.editMessageText('Как называется компания, в которой вы работаете? (напишите)', {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][16]
-            })
-        }
-
-        if (query.data === business_cbcs[4]){
-            isWritingBusiness[chat.id] = 2
-            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-            .then(() => {
-                bot.sendPhoto(chat.id, openkeyboard_pic, {
-                    parse_mode: 'HTML',
-                    caption: 'Нажмите на кнопку снизу, чтобы отправить телефон. Если Кнопки нет, найдите иконку справа от клавиатуры, как показано на картинке',
-                    reply_markup: {
-                        keyboard: [
-                            [{
-                                text: '📞 Отправить телефон',
-                                request_contact: true
-                            }],
-                            [{
-                                text: '⬅️ Назад',
-                            }]
-                        ],
-                        resize_keyboard: true
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][16] = res.message_id
-                })
-            })
-        }
-
-        if (query.data === business_cbcs[5]){
-            message_text[chat.id][15] += `
-├<b>Название:</b> ` + business_info[chat.id][10] + `
-└<b>Номер:</b> ` + business_info[chat.id][11]
-
-            let updates_last = {}
-            updates_last['Motherbase/customers/list/' + chat.id + '/firm_name'] = business_info[chat.id][10]
-            updates_last['Motherbase/customers/list/' + chat.id + '/contact_phone'] = business_info[chat.id][11]
-            fb.database().ref().update(updates_last)
-            
-            bot.editMessageCaption(message_text[chat.id][15], {
-                parse_mode: 'HTML',
-                chat_id: business_info[chat.id][8],
-                message_id: message_toedit[chat.id][15]
-            }).catch(err => {
-                console.log('here ' + err.name + `\n\n ` + err.message)
-                bot.editMessageText(message_text[chat.id][15], {
-                    parse_mode: 'HTML',
-                    chat_id: business_info[chat.id][8],
-                    message_id: message_toedit[chat.id][15]
-                }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            })
-        
-            bot.deleteMessage(chat.id, message_toedit[chat.id][16])
-
-            let tx = 'Отлично! Скоро мы свяжемся с Вами и продемонстрируем страницу Вашей доставки в Resify. Пока можете просмотреть другие магазины, или зайти в нашу группу для бизнеса и узнать больше о нас:'
-            bot.sendPhoto(chat.id, business_info[chat.id][9], {
-                parse_mode: 'HTML',
-                caption: tx,
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'Опробовать доставку',
-                            callback_data: business_cbcs[6]
-                        }],
-                        [{
-                            text: 'Больше информации',
-                            url: 'https://t.me/resifybusiness'
-                        }]
-                    ]
-                }
-            }).catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-        }
-
-        if (query.data === business_cbcs[6]){
-            business_info[chat.id] = undefined
-            Reset(chat.id)
-            bot.sendSticker(chatId, sticker_hello).then(() => {
-                anotherpoint_multiple[chatId] = 2
-                bot.sendMessage(chatId, hellomessage_text, {
-                    parse_mode: 'HTML',
-                })
-                keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-            })
-        }
     }
+
+    //ДОБАВИТЬ СЮДА ВСЕ ЧТО ЕСТЬ ПРИ СТАРТЕ
+    if (query.data === backtostart[1]){
+        Start(query.message)
+    }
+
+    if (message_toedit[chat.id] !== undefined){
+        if (query.data === backtomain[1]){
+            bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+            Auth(chat)
+        }
     
-    if (chat.type === 'private'  && UserDelCats[chat.id] === undefined && business_info[chat.id] === undefined){
-        Reset(chat.id)
-        for (let i=0; i<100; i++){
-            bot.deleteMessage(chatId, message_id - i).catch(err => {
-                //console.log(err)
-            })
-        }
-        bot.sendSticker(chatId, sticker_hello).then(() => {
-            anotherpoint_multiple[chatId] = 2
-            bot.sendMessage(chatId, hellomessage_text, {
-                parse_mode: 'HTML',
-            })
-            keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-        })
-    }
-
-    if (chat.type === 'private'  && UserDelCats[chat.id] !== undefined && business_info[chat.id] === undefined){
-        
-
-    if (query.data === query_deletethismessage){
-        bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
-    }
-
-    if (query.data === business_cbcs[7]){
-        business_info[chat.id] = []
-        business_info[chat.id][0] = 0 //message_id который прилетит мне
-        business_info[chat.id][1] = chat.first_name
-        if (chat.last_name === undefined){
-            business_info[chat.id][2] = 'Не указано'
-        }
-        if (chat.last_name !== undefined){
-            business_info[chat.id][2] = chat.last_name
-        }
-
-        if (chat.username === undefined){
-            business_info[chat.id][4] = 'Не указано'
-        }
-        if (chat.username !== undefined){
-            business_info[chat.id][4] = chat.username
-        }
-
-        
-        business_info[chat.id][3] = chat.id
-
-        let first_info = {
-            id: business_info[chat.id][3],
-            first_name: business_info[chat.id][1],
-            last_name: business_info[chat.id][2],
-            username: business_info[chat.id][4]
-        }
-                 
-        let updates_first = {}
-        updates_first['Motherbase/customers/list/' + chat.id] = first_info
-        fb.database().ref().update(updates_first)
-
-        let mb_data = fb.database().ref('Motherbase/')
-        mb_data.get().then((result) => {
-
-            business_info[chat.id][6] = result.val().customers.links.media.howitworks
-            business_info[chat.id][7] = result.val().customers.links.media.comparison
-            business_info[chat.id][8] = result.val().chats.business_id
-            business_info[chat.id][9] = result.val().customers.links.media.pricing
-            business_info[chat.id][12] = result.val().customers.links.media.videonote
-
-            let txt_me = `🥳 <b>Новый клиент</b>
-├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
-└ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
-            
-            bot.getUserProfilePhotos(chat.id).then(res => {
-                business_info[chat.id][5] = res.photos[0][0].file_id
-                console.log(res.photos[0][0].file_id)
-               
-                //bot.forwardMessage(result.val().chats.business_id, chat.id, message_id)
-                bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
+        if (query.data === whoareyoubutton[1]){
+            donateregisterstep[chat.id] = 1
+            donate_name[chat.id] = ''
+            donate_money[chat.id] = 0
+            donate_minmoney[chat.id] = 0
+            donate_duration[chat.id] = 0
+            donate_sendduration[chat.id] = 3
+            donate_photo[chat.id] = ''
+            donate_duration_secs[chat.id] = 0
+            donate_sendduration_secs[chat.id] = 0
+            donate_materials[chat.id] = ''
+    
+            let creatordata = fb.database().ref('Kickstarter/mailing')
+            creatordata.get().then(result => {
+                donate_private[chat.id] = true
+                if (result.exists()){
+                    if (result.val().authors.includes(chat.id)){
+                        donate_private[chat.id] = false
+                        console.log('changing: ' + donate_private[chat.id])
+                    }
+                }
+                bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+                bot.sendMessage(chat.id, newdonationsteps[0], {
                     parse_mode: 'HTML',
-                    caption: txt_me
-                }).then(res => {
-                    message_toedit[chat.id] = []
-                    message_toedit[chat.id][15] = res.message_id
-                    message_text[chat.id] = []
-                    message_text[chat.id][15] = res.caption
-                }) .catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-            }).catch(err => {
-                console.log(err)
-                bot.sendMessage(result.val().chats.business_id, txt_me, {
-                    parse_mode: 'HTML'
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: backtostart[1]
+                            }]
+                        ]
+                    }
                 })
                 .then(res => {
-                    message_toedit[chat.id] = []
-                    message_toedit[chat.id][15] = res.message_id
-                    message_text[chat.id] = []
-                    message_text[chat.id][15] = res.text
-                })
-                .catch(err => {
-                    console.log('here ' + err.name + `\n\n ` + err.message)
+                    message_toedit[chat.id][0] = res.message_id
+                    messagetext_toedit[chat.id][0] = newdonationsteps[0]
                 })
             })
-            
-        })
-
-        for (let i=0; i<100; i++){
-            bot.deleteMessage(chatId, message_id - i).catch(err => {
-                //console.log(err)
-            })
-        }
-        bot.sendSticker(chatId, sticker_hello).then(() => {
-            let txt = `👋 Здравствуйте, ` +  chat.first_name + `. Я - Resify, еще один агрегатор доставки. 
-Но в отличие от конкурентов, <b>мы не берем % от продажи</b>. За небольшую ежемесячную плату вы сможете организовать онлайн-доставку, увеличить поток клиентов и их удержание`
-            bot.sendMessage(chat.id, txt, {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: 'Как это работает?',
-                            callback_data: business_cbcs[0]
-                        }]
-                    ]
-                }
-            })
-        })
-
-
-    }
-
-    if (query.data === reallystartagain[1]){
-        coupondata[chat.id] = undefined
-        Reset(chatId)
-
-        if (chatId !== delivery_chat[chatId]){
-            for (let i=0; i<100; i++){
-                bot.deleteMessage(chatId, message_id - i).catch(err => {
-                    //console.log(err)
-                })
-            }
-            bot.sendSticker(chatId, sticker_hello).then(() => {
-                anotherpoint_multiple[chatId] = 2
-                bot.sendMessage(chatId, hellomessage_text, {
-                    parse_mode: 'HTML',
-                })
-                keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-            })
+    
             
         }
-    }
-
-    if (query.data === declineorder_button[1]){
-        let updates = {}
-        updates[order_name[chatId]] = null
-        bot.deleteMessage(chatId, message_id)
-        fb.database().ref().update(updates).then(() => {
-            for (let i=0; i<100; i++){
-                bot.deleteMessage(chatId, message_id - i).catch(err => {
-                    //console.log(err)
-                })
-            }
-            bot.sendSticker(chatId, sticker_baddeliver).then(() => {
-                bot.sendMessage(chatId, '😢 Жаль, что вы решили отменить заказ. Может, закажем что-нибудь в другом заведении?').then(() => {
-                    //Reset(chatId)
-                    anotherpoint_multiple[chatId] = 2
-                    userPoint[chat.id] = 0
-                    userCategory[chat.id] = ''
-                    userFood[chat.id] = ''
-                    userFoodlist[chat.id] = []
-                    order_name[chatId] = 0
-                    coupondata[chat.id] = undefined
-                    
-                    basket[chat.id] = []
-                    finalprice[chatId] = 0
-                    finalbasket[chatId] = ''
-                    temp_backet_food[chatId] = 0
-                    temp_food_text[chatId] = ''
-                    temp_food_price[chatId] = 0
-                    temp_foodamount[chatId] = 1
-                    skidka[chatId] = 0
-
-                    order_status[chatId] = undefined
-
-                    keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], UserDelCat[chat.id], fb, bot, chat.id, change_delcat_text, choosepoint_text, user_mode[chat.id], sendlocation, message_toedit[chat.id], message_text[chat.id])
-                    //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, location_text, phone_text, UserDelCat[chatId], userPoint[chatId], user_mode[chatId], message_toedit[chat.id], message_text[chat.id])
-                })
-            })
-            
-        }).catch(err => {
-            console.log(err)
-        })
-    }
-
-    if (query.data === finish_order_text[1]){
-        let poll_text = 'Спасибо за заказ! Пожалуйста, оцените качество доставки: '
-        order_status[chatId] = undefined
-        if (message_toedit[chat.id][5] !== undefined){
-            bot.editMessageText(poll_text, {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][5]
-            }).then(() => {
-                bot.sendPoll(chatId, 'Как оцените наш сервис?', feedback_options, {
-                    is_anonymous: false
-                })
-            })
-        }
-        else {
-            bot.sendMessage(chat.id, poll_text).then(() => {
-                bot.sendPoll(chatId, 'Как оцените наш сервис?', feedback_options, {
-                    is_anonymous: false
-                })
-            })
-        }
-        let userdata1 = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/other_info/delivery_time')
-        userdata1.get().then((result) => {
-            console.log('newtime0: ' + order_name[chat.id] + '/accept_date')
-            let userdata2 = fb.database().ref(order_name[chat.id] + '/accept_date')
-            userdata2.get().then((result1) => {
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-                let newTime = time_now.getTime() - result1.val()
-                if (result.val() !== 0 && result.val() !== undefined && result.val() !== 'unknown'){
-                    newTime = (newTime + result.val()) / 2
-                }
-                if (newTime > 900000){
-                    let updates = {}
-                    console.log('newtime: ' + newTime)
-                    updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/other_info/stats/delivery_time'] = newTime
-                    fb.database().ref().update(updates)
-                }
-            })
-        })
-    }
-
-    if (query.data === sendadress_point[1]){
-        console.log('msg: ' + message_toedit[chat.id][3])
-        if (message_toedit[chat.id][3] !== undefined){
-            bot.deleteMessage(chat.id, message_toedit[chat.id][3])
-            .catch(err => {console.log('here: ' + err)})
-        }
-        bot.sendVenue(chat.id, point_location[chat.id][0], point_location[chat.id][1], 'Адрес:', point_adress[chat.id])
-        .then(res => {
-            message_toedit[chat.id][3] = res.message_id
-        })
-    }
-
-    if (query.data === backtomyorder[1]){
-        if (buttons_message[chatId] !== 0){
-            console.log('basket: ' + basket[chat.id])
-            bot.deleteMessage(chatId, buttons_message[chatId]).catch(err => {
-                console.log(err)
-            })
-            if (message_toedit[chat.id][1] !== undefined){
-                bot.deleteMessage(chatId, message_toedit[chat.id][1]).catch(err => {
-                    console.log(err)
-                })
-            }
-            bot.deleteMessage(chatId, message_id - 1).catch(err => {console.log('! ' + err)})
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0
-                for (let i = 0; i < basket[chatId].length; i++){
-                                finalsum += (basket[chatId][i][2] * basket[chatId][i][1])   
-                                if (i === basket[chatId].length - 1){
-                                    if (coupondata[chat.id] !== undefined){
-                                        editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                        finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                        console.log('1finalsum: ' +finalsum)
-                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                        }
-                                    }
-                                    else if (coupondata[chat.id] === undefined){
-                                        editmsg += finalsum + 'тг.'
-                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                        }
-                                    }
-                                    console.log(finalsum + ' ' + i)
-                                    finalprice[chatId] = finalsum + delivery_price[chat.id]
-                                    console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                                    for (let i = 0; i < basket[chatId].length; i++){
-                                        console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                        editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                        if (i === basket[chatId].length - 1){
-                                            bot.sendMessage(chatId,  editmsg , {
-                                                reply_markup:{
-                                                    inline_keyboard: [
-                                                        [{
-                                                            text: anotherfood_text2[0],
-                                                            callback_data: anotherfood_text2[1]
-                                                        },
-                                                        {
-                                                            text: editbasket_text,
-                                                            callback_data: editbasket_text
-                                                        }],
-                                                        [{
-                                                            text: writecoupon[0],
-                                                            callback_data: writecoupon[1]
-                                                        }],
-                                                        [{
-                                                            text: paybasket_text[0],
-                                                            callback_data: paybasket_text[1]
-                                                        }]
-                                                    ]
-                                                }
-                                            }).then(() => {
-                                                buttons_message[chatId] = message_id
-                                                console.log('& ' + buttons_message[chatId])
-                                            })
-                
-                                        }
-                                    }
-                                }
-                }
-            
-        }
-        else {
-            for (let i=0; i<100; i++){
-                bot.deleteMessage(chatId, message_id - i).catch(err => {
-                    //console.log(err)
-                })
-            }
-            bot.sendSticker(chatId, sticker_hello).then(() => {
-                anotherpoint_multiple[chatId] = 2
-                bot.sendMessage(chatId, hellomessage_text, {
-                    parse_mode: 'HTML',
-                })
-                keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-            })
-        }
-    }
-
-    if (query.data === sendphone_point[1]){
-        console.log('msg: ' + message_toedit[chat.id][4])
-        if (message_toedit[chat.id][4] !== undefined){          
-            bot.deleteMessage(chat.id, message_toedit[chat.id][4])
-            .catch(err => {console.log('here: ' + err)})
-        }
-        bot.sendContact(chat.id, help_phone[chat.id], 'Номер курьерской службы')
-        .then(res => {
-            message_toedit[chat.id][4] = res.message_id
-        })
-    }
-
-    for(let i = 0; i<UserDelCats[chat.id].length; i++){
-        if (query.data === UserDelCats[chat.id][i]){
-            UserDelCat[chat.id] = UserDelCats[chat.id][i]
-            bot.deleteMessage(chat.id, message_toedit[chat.id][0])
-            coupondata[chat.id] = undefined
-            basket[chat.id] = []
-            finalprice[chatId] = 0
-            finalbasket[chatId] = ''
-            temp_backet_food[chatId] = 0
-            temp_food_text[chatId] = ''
-            temp_food_price[chatId] = 0
-            temp_foodamount[chatId] = 1
-            skidka[chatId] = 0
-            
-            keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], UserDelCat[chat.id], fb, bot, chat.id, change_delcat_text, choosepoint_text, user_mode[chat.id], sendlocation, message_toedit[chat.id], message_text[chat.id])
-        }
-    }
-
-    if (query.data === anotherpoint_text){
-        userPoint[chat.id] = ''
-        bot.deleteMessage(chat.id, message_toedit[chat.id][0])
-        if (message_toedit[chat.id][3] != undefined) {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][3])
-        }
-        if (message_toedit[chat.id][4] != undefined) {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][4])
-        }
-        basket[chat.id] = []
-        finalprice[chatId] = 0
-        finalbasket[chatId] = ''
-        temp_backet_food[chatId] = 0
-        temp_food_text[chatId] = ''
-        temp_food_price[chatId] = 0
-        temp_foodamount[chatId] = 1
-        skidka[chatId] = 0
-        coupondata[chat.id] = undefined
-        keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], UserDelCat[chat.id], fb, bot, chat.id, change_delcat_text, choosepoint_text, user_mode[chat.id], sendlocation, message_toedit[chat.id], message_text[chat.id])
-    }
-
-    if (query.data === change_delcat_text){
-        userPoint[chat.id] = ''
-        UserDelCat[chat.id] = ''
-        bot.deleteMessage(chat.id, message_toedit[chat.id][0])
-        keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-    }
-
-    if (query.data === anotherusermode_text){
-        user_mode[chat.id] = 'unknown'
-        Reset(chat.id)
-        for (let i=0; i<100; i++){
-            bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                //console.log(err)
-            })
-        }
-        bot.sendSticker(chat.id, sticker_hello).then(() => {
-            bot.sendMessage(chat.id, hellomessage_text, {
-                parse_mode: 'HTML',
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: usermodes[0][0],
-                            callback_data: usermodes[0][1]
-                        }],
-                        [{
-                            text: usermodes[1][0],
-                            callback_data: usermodes[1][1]
-                        }]
-                    ]
-                }
-            })
-        })
-        
-    }
-    if (query.data === writecoupon[1]){
-        isWritingCoupon[chat.id] = 1
-        bot.deleteMessage(chatId, message_id)
-        bot.sendMessage(chatId, 'У Вас есть промокод на скидку? Тогда введите его:', {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: '◀️ Назад',
-                        callback_data: mybasket_text
-                    }]
-                ]
-            }
-        })
-        .then(res => {
-            message_toedit[chatId][2] = res.message_id
-        })
-    }
-    if (query.data === mybasket_text){
-        if (order_status[chatId] === 'unknown'){
-            if (buttons_message[chatId] !== 0){
-                console.log('basket: ' + basket[chat.id])
-                bot.deleteMessage(chatId, buttons_message[chatId]).catch(err => {
-                    console.log(err)
-                })
-                if (message_toedit[chat.id][1] !== undefined){
-                    bot.deleteMessage(chatId, message_toedit[chat.id][1]).catch(err => {
-                        console.log(err)
+    
+        if (query.data.includes(checkchannelfollow[1])){
+            let checkuser = fb.database().ref('Kickstarter/settings/channel')
+            checkuser.get().then(result => {
+                if (query.data === checkchannelfollow[1] + '_0'){
+                    let txt = 'Для того чтобы использовать бота, вам необходимо подписаться на наш канал.\nПодписка проверяется только один раз - сейчас.'
+                    bot.editMessageText(txt, {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: '🔗 Подписаться',
+                                    url: result.val().invite_link
+                                }],
+                                [{
+                                    text: 'Продолжить',
+                                    callback_data: checkchannelfollow[1] + '_1'
+                                }]
+                            ]
+                        }
                     })
                 }
-                bot.deleteMessage(chatId, message_id).then(() => {
-                    let editmsg = `Ваш заказ: `
-                    let finalsum = 0
-                    for (let i = 0; i < basket[chatId].length; i++){
-                                    finalsum += (basket[chatId][i][2] * basket[chatId][i][1])   
-                                    if (i === basket[chatId].length - 1){
-                                        if (coupondata[chat.id] !== undefined){
-                                            editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                            finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                            console.log('1finalsum: ' +finalsum)
-                                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                            }
-                                        }
-                                        else if (coupondata[chat.id] === undefined){
-                                            editmsg += finalsum + 'тг.'
-                                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                            }
-                                        }
-
-                                        finalprice[chatId] = finalsum + delivery_price[chat.id]
-                                        console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                                        for (let i = 0; i < basket[chatId].length; i++){
-                                            console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                            editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                            if (i === basket[chatId].length - 1){
-                                                
-                                                bot.sendMessage(chatId,  editmsg , {
-                                                    reply_markup:{
-                                                        inline_keyboard: [
-                                                            [{
-                                                                text: anotherfood_text2[0],
-                                                                callback_data: anotherfood_text2[1]
-                                                            },
-                                                            {
-                                                                text: editbasket_text,
-                                                                callback_data: editbasket_text
-                                                            }],
-                                                            [{
-                                                                text: writecoupon[0],
-                                                                callback_data: writecoupon[1]
-                                                            }],
-                                                            [{
-                                                                text: paybasket_text[0],
-                                                                callback_data: paybasket_text[1]
-                                                            }]
-                                                        ]
-                                                    }
-                                                }).then(() => {
-                                                    buttons_message[chatId] = message_id
-                                                    console.log('& ' + buttons_message[chatId])
-                                                })
+                if (query.data === checkchannelfollow[1] + '_1'){
+                    bot.getChatMember(result.val().id, chat.id).then(res => {
+                        console.log(res)
+                        if (res.status === 'member' || res.status === 'creator' || res.status === 'administrator'){
+                            console.log(user_donationlink[chat.id])
+                            if (user_donationlink[chat.id] !== undefined){
+                                OpenDonationParticipant(chat, null)
+                            }
+                            else {
+                                myBalance(chat)
+                                /* let txt = 'Для того, чтобы поучаствовать в сборе, Вам необходимо получить ссылку от автора этого сбора. Перейдя по ней, бот перезапустится и отобразит сбор 😊'
+                                bot.editMessageText(txt, {
+                                    parse_mode: 'HTML',
+                                    chat_id: chat.id,
+                                    message_id: message_toedit[chat.id][0],
+                                }) */
+                            }
+                        }
+                        else {
+                            bot.answerCallbackQuery({
+                                callback_query_id: query.id,
+                                text: '🥺 Вы все еще не подписаны...\n\nНажмите на кнопку 🔗 Подписаться под сообщением',
+                                show_alert: true
+                            })
+                        }
+                        //грузим список сборов, в которых можно поучаствовать или если у нас
+                        //есть ссылка-приглашение на конкретный сбор, то заходим в него
+                    })
+                    .catch(err => {
+                        console.log(err)
+                        bot.answerCallbackQuery({
+                            callback_query_id: query.id,
+                            text: '🥺 Вы все еще не подписаны...\n\nНажмите на кнопку 🔗 Подписаться под сообщением',
+                            show_alert: true
+                        })
+                    })
+                }
+            })
+            
+            
+        }
+    
+        if (query.data === mydonationslist[1]){
+    
+            donate_editmaterials[chat.id] = false
+            
+            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+            bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(error => {console.log(error)})
+            
+            let txt = '<b>Список Ваших сборов:</b>'
+    
+            //user_donations[chat.id] = []
+    
+            let kb = []
+    
+            let num_online = 0
+            let txt_online = ''
+            let kb_online = []
+    
+            let num_waiting = 0
+            let txt_waiting = ''
+            let kb_waiting = []
+    
+            let num_canceled = 0
+            let txt_canceled = ''
+            let kb_canceled = []
+            
+            let num_offline = 0
+            let txt_offline = ''
+            let kb_offline = []
+    
+            for (let i=0; i< donationnames[chat.id].length; i++){
+                let donationsdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + donationnames[chat.id][i])
+                donationsdata.get().then(result => {
+                    if (result.val().status === 'online'){
+                        if (num_online === 0) txt_online += '\n\n<b>🟢 Активные сборы:</b>'
+    
+                        //user_donations[chat.id][num_online] = result.val()
+    
+                        let stringlength = result.val().name.length
+                        console.log(stringlength)
+    
+                        if (stringlength > 15) {
+                            txt_online += '\n' + (result.val().name).slice(0, 15) + '...'
+                            kb_online.push([{
+                                text: '🟢 ' + (result.val().name).slice(0, 15) + '...',
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        if (stringlength <= 15){
+                            txt_online += '\n' + result.val().name
+                            kb_online.push([{
+                                text: '🟢 ' + result.val().name,
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+    
+                        num_online++
+                    }
+    
+                    if (result.val().status === 'waiting'){
+    
+                        if (num_waiting === 0) txt_waiting += '\n\n<b>🟡 Ожидают:</b>'
+    
+                        let stringlength = result.val().name.length
+                        console.log(stringlength)
+    
+                        if (stringlength > 15) {
+                            txt_waiting += '\n' + (result.val().name).slice(0, 15) + '...'
+                            kb_waiting.push([{
+                                text: '🟡 ' + (result.val().name).slice(0, 15) + '...',
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        if (stringlength <= 15){
+                            txt_waiting += '\n' + result.val().name
+                            kb_waiting.push([{
+                                text: '🟡 ' + result.val().name,
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        num_waiting++
+                    }
+    
+                    if (result.val().status === 'canceled'){
+    
+                        if (num_canceled === 0) txt_canceled += '\n\n<b>🔴 Отмененные сборы:</b>'
+    
+                        let stringlength = result.val().name.length
+                        console.log(stringlength)
+    
+                        if (stringlength > 15) {
+                            txt_canceled += '\n' + (result.val().name).slice(0, 15) + '...'
+                            kb_canceled.push([{
+                                text: '🔴 ' + (result.val().name).slice(0, 15) + '...',
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        if (stringlength <= 15){
+                            txt_canceled += '\n' + result.val().name
+                            kb_canceled.push([{
+                                text: '🔴 ' + result.val().name,
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        num_canceled++
+                    }
+    
+                    if (result.val().status === 'offline'){
+    
+                        if (num_offline === 0) txt_offline += '\n\n<b>✅ Завершенные:</b>'
+    
+                        let stringlength = result.val().name.length
+                        console.log(stringlength)
+    
+                        if (stringlength > 15) {
+                            txt_offline += '\n' + (result.val().name).slice(0, 15) + '...'
+                            kb_offline.push([{
+                                text: '✅ ' + (result.val().name).slice(0, 15) + '...',
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        if (stringlength <= 15){
+                            txt_offline += '\n' + result.val().name
+                            kb_offline.push([{
+                                text: '✅ ' + result.val().name,
+                                callback_data: 'opendonation_' +  donationnames[chat.id][i]
+                            }])
+                        }
+                        num_offline++
+                    }
+    
+                    if (i === donationnames[chat.id].length - 1){
+                        txt += txt_online + txt_waiting + txt_canceled + txt_offline
+                        txt += '\n\nДля просмотра сбора, нажмите на кнопку(-и) ниже'
+                        console.log('here')
+                        kb.push([{
+                            text: backtomain[0],
+                            callback_data: backtomain[1]
+                        },
+                        {
+                            text: '➕ Новый сбор',
+                            callback_data: whoareyoubutton[1]
+                        }])
+                        if (kb_online.length > 0){
+                            for (let x=0; x < kb_online.length; x++){
+                                kb.push(kb_online[x])
+                            }
+                        }
+                        
+                        if (kb_waiting.length > 0) {
+                            for (let y=0; y < kb_waiting.length; y++){
+                                kb.push(kb_waiting[y])
+                            }
+                        }
+                        
+                        if (kb_canceled.length > 0){
+                            for (let z=0; z < kb_canceled.length; z++){
+                                kb.push(kb_canceled[z])
+                            }
+                        }
+                        
+                        if (kb_offline.length > 0){
+                            for (let b=0; b< kb_offline.length; b++){
+                                kb.push(kb_offline[b])
+                            }
+                        }
+    
+                        bot.sendMessage(chat.id, txt, {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: kb
+                            }
+                        })
+                        .then(res => {
+                            message_toedit[chat.id][0] = res.message_id
+                        })
+                        .catch(err => {console.log('here: ' + err)})
+                    }
                     
-                                            }
-                                        }
-                                    }
+                })
+    
+                
+            }
+        }
+    
+        if (query.data.includes(checkparticipantsbutton[1])){
+            let donationdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + (query.data).split('_')[1] + '/participants')
+            donationdata.get().then(result => {
+                console.log('Kickstarter/users/' + chat.id + '/donations/' + query.data.split('_')[1] + '/participants')
+                let txt = '<b>Список участников:</b> \n\n'
+                for (let i = 0; i < result.val().length; i++){
+                    txt += '<a href="tg://user?id='+ result.val()[i].id +'">'+  result.val()[i].name +'</a>, '
+                    if (i === result.val().length - 1){
+                        bot.sendMessage(chat.id, txt, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            message_toedit[chat.id][1] = res.message_id
+                        })
+                    }
+                }
+            })
+        }
+    
+        if (query.data === publicdonationlist[1]){
+            GlobalDonationList(chat)
+        }
+    
+        if (query.data.includes('opendonation_')){
+            OpenDonation(chat, (query.data).split('_')[1])
+        }
+    
+        if (query.data.includes('opendonationparticipant_')){
+            OpenDonationParticipant(chat, (query.data).split('_')[1] + '/donations/' + (query.data).split('_')[2])
+        }
+    
+        if (query.data.includes(finishdonation[1])){
+            if (query.data.includes(finishdonation[1] + '_0_')){
+                let txt = 'Вы уверены, что хотите закончить сбор? Вы получите вырученные средства, а участники сбора - Ваш материал. \n\nЭто действие нельзя будет отменить'
+                bot.editMessageText(txt, {
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: 'opendonation_' + query.data.split('_')[2]
+                            },
+                            {
+                                text: finishdonation[0],
+                                callback_data: finishdonation[1] + '_1_' + query.data.split('_')[2]
+                            }]
+                        ]
                     }
                 }).catch(err => {
-                    console.log(err)
-                })
-            }
-            else {
-                for (let i=0; i<100; i++){
-                    bot.deleteMessage(chatId, message_id - i).catch(err => {
-                        //console.log(err)
-                    })
-                }
-                bot.sendSticker(chatId, sticker_hello).then(() => {
-                    anotherpoint_multiple[chatId] = 2
-                    //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], categories_count[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, choosecategory_text, location_text, phone_text)
-                    bot.sendMessage(chatId, hellomessage_text, {
-                        parse_mode: 'HTML',
-                    })
-                    keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-                    coupondata[chat.id] = undefined
-                    basket[chat.id] = []
-                    finalprice[chatId] = 0
-                    finalbasket[chatId] = ''
-                    temp_backet_food[chatId] = 0
-                    temp_food_text[chatId] = ''
-                    temp_food_price[chatId] = 0
-                    temp_foodamount[chatId] = 1
-                    skidka[chatId] = 0
-                })
-            }
-        }
-        else {
-            bot.deleteMessage(chatId, message_id)
-        }
-    }
-    if (query.data === paybasket_text[1]){
-        bot.deleteMessage(chatId, message_toedit[chatId][2])
-        if (finalprice[chatId] - delivery_price[chat.id] < delivery_min_price[chat.id]){
-            bot.sendMessage(chatId, 'Минимальная сумма заказа: ' + delivery_min_price[chat.id] + '. Закажите что-нибудь еще 😇')
-            .then(res => {
-                message_toedit[chatId][2] = res.message_id
-            })
-        }
-        else {
-            //bot.deleteMessage(chatId, message_id - 1)
-            bot.deleteMessage(chatId, message_id).catch(err => {console.log('! ' + err)})
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0
-                for (let i = 0; i < basket[chatId].length; i++){
-                                finalsum += (basket[chatId][i][2] * basket[chatId][i][1])
-                                if (i === basket[chatId].length - 1){
-                                    if (coupondata[chat.id] !== undefined){
-                                        editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                        finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                        console.log('1finalsum: ' +finalsum)
-                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                        }
-                                    }
-                                    else if (coupondata[chat.id] === undefined){
-                                        editmsg += finalsum + 'тг.'
-                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                        }
-                                    }
-                                    console.log(finalsum + ' ' + i)
-                                    finalprice[chatId] = finalsum + delivery_price[chat.id]
-                                    for (let i = 0; i < basket[chatId].length; i++){
-                                        console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                        editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                        if (i === basket[chatId].length - 1){
-                                            finalbasket[chatId] = editmsg
-                                            bot.sendMessage(chatId,  editmsg).then(res => {
-                                                CheckUser(chatId, chat.first_name, chatId, message_id)
-                                                message_toedit[chatId][2] = res.message_id
-                                            })
-                                        }
-                                    }
-                                }
-                }
-        }
-        
-    }
-    if (query.data === loadcategories[1]){
-        anotherpoint_multiple[chat.id] = 2
-        bot.deleteMessage(chat.id, message_toedit[chat.id][0])
-        if (message_toedit[chat.id][3] != undefined) {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][3])
-        }
-        if (message_toedit[chat.id][4] != undefined) {
-            bot.deleteMessage(chat.id, message_toedit[chat.id][4])
-        }
-        keyboards.CategoriesKeyboard(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, choosecategory_text, location_text, phone_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id] , message_toedit[chat.id], message_text[chat.id])   
-    }
-    //тут создаем клавиатуру с категориями для гостя
-    if (query.data === youchosepoint_text){
-        //console.log(query.message.text)
-        //bot.deleteMessage(chat.id, message_id-1)
-        let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-        point_info.get().then((snapshot) => {
-
-            help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-            point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-            point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-            point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-
-            point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-            point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-
-            delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-            delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-            point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-            point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-
-            point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-            point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-            //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-            point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-            //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-
-            point_rating[chat.id] = snapshot.val().other_info.stats.rating
-            point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-
-            delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-            console.log('325 ' + delivery_chat[chat.id])
-
-            let buttons_data = []
-            if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                buttons_data.push({
-                    text: sendadress_point[0],
-                    callback_data: sendadress_point[1]
-                })
-            }
-
-            if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                buttons_data.push({
-                    text: sendphone_point[0],
-                    callback_data: sendphone_point[1] 
-                })
-            }
-
-            let date = new Date()
-            let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-            let timeOfffset = 6 //Astana GMT +6
-            let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-            let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-            let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-            console.log(time_now.getTime() < restriction_time_min)
-
-            let ttd_ms = snapshot.val().other_info.stats.delivery_time
-            let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-            let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-            let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-
-            ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-            ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-            ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-            let ttd 
-            if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-            }
-
-            if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                ttd = ttd_minutes + ' мин.'
-            }
-            console.log('ttd_hours: ' + ttd_hours)
-
-            let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-
-            if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                console.log('1 wrong TIME, time_now: ' + time_now)
-                user_deliverdate[chat.id] = 'Как можно раньше'
-                msgtext += ` (Закрыто)`
-            }
-            
-            let rating
-            if (point_rating[chat.id] < 1){
-                rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-
-            if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-
-            if (point_rating[chat.id] > 2){
-                rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-            if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-            }
-            if (snapshot.val().other_info.stats.delivery_time > 0) {
-                msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-            }
-
-            msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-
-            if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-            }
-
-            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-            }
-
-            if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                msgtext += `
-                
-` + snapshot.val().other_info.delivery_info.disclaimer
-            }
-            
-            if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                console.log('2 wrong TIME, time_now: ' + time_now)
-                msgtext += `
-
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-            }
-
-            let finalbuttons
-            if (snapshot.val().chats.admin !== chat.id){
-                finalbuttons = [{
-                    text: anotherpoint_text,
-                    callback_data: anotherpoint_text
-                }],
-                [{
-                    text: loadcategories[0],
-                    callback_data: loadcategories[1]
-                }]
-            }
-
-            if (snapshot.val().chats.admin === chat.id){
-                isAdmin[chat.id] = true
-                finalbuttons = [{
-                    text: anotherpoint_text,
-                    callback_data: anotherpoint_text
-                }],
-                [{
-                    text: openadminpanel[0],
-                    callback_data: openadminpanel[1]
-                }]
-            }
-
-            if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                    parse_mode: 'HTML',
-                    caption: msgtext,
-                    reply_markup: {
-                        inline_keyboard: [
-                            buttons_data,
-                            finalbuttons
-                        ]
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][0] = res.message_id
-                    message_text[chat.id][0] = res.caption
-                })
-                .catch(() => {
-                    bot.sendMessage(chat.id, msgtext, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                buttons_data,
-                                finalbuttons
-                            ]
-                        }
-                    })
-                    .then(res => {
-                        message_toedit[chat.id][0] = res.message_id
-                        message_text[chat.id][0] = res.text
-                    })
-                })
-            }
-            if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                bot.sendMessage(chat.id, msgtext, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            buttons_data,
-                            finalbuttons
-                        ]
-                    }
-                })
-                .then(res => {
-                    message_toedit[chat.id][0] = res.message_id
-                    message_text[chat.id][0] = res.text
-                })
-            }
-            
-        })
-    }
-
-    for (let i = 0; i < userPoints[chat.id].length; i++){
-        //console.log(userCategories[chat.id][i])
-        if (query.data === userPoints[chat.id][i]/*  && userCategory[chat.id] === '' */){
-            userPoint[chat.id] = userPoints[chat.id][i]
-            userCategory[chat.id] = 'unknown'
-            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
-            console.log('founded chosen point. Lets load categories... ' + userCategory[chat.id])
-            basket[chat.id] = []
-            let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-            point_info.get().then((snapshot) => {
-
-            help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-            point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-            point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-            point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-
-            point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-            point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-
-            delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-            console.log('325 ' + delivery_chat[chat.id])
-
-            delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-            delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-            point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-            point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-
-            point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-            point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-            //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-            point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-            //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-
-            point_rating[chat.id] = snapshot.val().other_info.stats.rating
-            point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-
-            let buttons_data = []
-            if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                buttons_data.push({
-                    text: sendadress_point[0],
-                    callback_data: sendadress_point[1]
-                })
-            }
-
-            if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                buttons_data.push({
-                    text: sendphone_point[0],
-                    callback_data: sendphone_point[1] 
-                })
-            }
-
-            let date = new Date()
-            let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-            let timeOfffset = 6 //Astana GMT +6
-            let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-            let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-            let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-            console.log(time_now.getTime() < restriction_time_min)
-            console.log('min: ' + restriction_time_min)
-            console.log('max: ' + restriction_time_max)
-
-            let ttd_ms = snapshot.val().other_info.stats.delivery_time
-            let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-            let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-            let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-
-            ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-            ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-            ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-
-            let ttd 
-            if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-            }
-
-            if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                ttd = ttd_minutes + ' мин.'
-            }
-            console.log('ttd_hours: ' + ttd_hours)
-
-            let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-            if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                console.log('1 wrong TIME, time_now: ' + time_now)
-                user_deliverdate[chat.id] = 'Как можно раньше'
-                msgtext += ` (Закрыто)`
-            }
-            
-            let rating
-            if (point_rating[chat.id] < 1){
-                rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-
-            if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-
-            if (point_rating[chat.id] > 2){
-                rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-            }
-            
-            if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-            }
-            if (snapshot.val().other_info.stats.delivery_time > 0) {
-                msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-            }
-
-            msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-
-if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-    msgtext += `
-<b>💰 Мин. сумма заказа: </b>` + delivery_min_price[chat.id] + ` тенге.`
-}
-
-if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-    msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-}
-
-if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-    msgtext += `
-
-` + snapshot.val().other_info.delivery_info.disclaimer
-}
-            
-            if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                console.log('2 wrong TIME, time_now: ' + time_now)
-                msgtext += `
-
-<b>❗️ Внимание</b>. Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-            }
-
-            let finalbuttons
-            if (snapshot.val().chats.admin !== chat.id){
-                finalbuttons = [{
-                    text: anotherpoint_text,
-                    callback_data: anotherpoint_text
-                },
-                {
-                    text: loadcategories[0],
-                    callback_data: loadcategories[1]
-                }]
-            }
-
-            if (snapshot.val().chats.admin === chat.id){
-                isAdmin[chat.id] = true
-                finalbuttons = [{
-                    text: anotherpoint_text,
-                    callback_data: anotherpoint_text
-                },
-                {
-                    text: openadminpanel[0],
-                    callback_data: openadminpanel[1]
-                }]
-            }
-            
-            if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                    parse_mode: 'HTML',
-                    caption: msgtext,
-                    reply_markup: {
-                        inline_keyboard: [
-                            buttons_data,
-                            finalbuttons
-                        ]
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][0] = res.message_id
-                    message_text[chat.id][0] = res.caption
-                })
-                .catch(() => {
-                    bot.sendMessage(chat.id, msgtext, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                buttons_data,
-                                finalbuttons
-                            ]
-                        }
-                    })
-                    .then(res => {
-                        message_toedit[chat.id][0] = res.message_id
-                        message_text[chat.id][0] = res.text
-                    })
-                })
-            }
-            if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                bot.sendMessage(chat.id, msgtext, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            buttons_data,
-                            finalbuttons
-                        ]
-                    }
-                })
-                .then(res => {
-                    message_toedit[chat.id][0] = res.message_id
-                    message_text[chat.id][0] = res.text
-                })
-            }
-        })
-        }}
-
-    for (let i = 0; i < userCategories[chat.id].length; i++){
-        //console.log(userCategories[chat.id][i])
-        //userCategory[chat.id] = userCategories[chat.id][i]
-        //console.log('PRESSED ON CATEGORY!!! + ' + userCategories[chat.id][i] + ' ' + query.data)
-        if (query.data === userCategories[chat.id][i]/*  && userFood[chat.id] === '' */){
-            userCategory[chat.id] = userCategories[chat.id][i]
-            userFood[chat.id] = 'unknown'
-            console.log('PRESSED ON CATEGORY!!!')
-            //bot.deleteMessage(chat.id, message_id).catch(err => {console.log('here: ' + err)})
-            keyboards.FoodKeyboard(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query, choosefood_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id])
-        }
-    }
-    for (let i = 0; i < userFoodlist[chat.id].length; i++){
-        if (query.data === userFoodlist[chat.id][i] && !query.data.includes('admn')){
-            //console.log('Кнопку нашли')
-            userFood[chat.id] = i
-            let food_photo_link = ''
-            let food_description = ''
-            temp_food_price[chat.id] = ''
-            bot.deleteMessage(chat.id, message_id).then(() => {
-                let food_photo = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/' + user_mode[chat.id] + '/categories/' + userCategory[chat.id] + '/food/' + i)
-                food_photo.get().then((snapshot) =>
-                {
-                    food_photo_link = snapshot.val().photo
-                    food_description = snapshot.val().description
-                    temp_food_price[chat.id] = snapshot.val().price
-
-                    if (/*food_photo_link !== '' &&  food_description !== '' &&  */temp_food_price[chat.id] !== ''){
-                        bot.sendPhoto(chat.id, food_photo_link).then(() => {
-                            temp_food_text[chat.id] = `<b>` + userFoodlist[chat.id][userFood[chat.id]] + `</b>
-` + food_description + `
-
-<b> 💰 Цена: </b>` + temp_food_price[chat.id] + ` тенге`
-
-                            let inline_kb
-                            if (snapshot.val().is_active !== true){
-                                temp_food_text[chat.id] += `
-
-❗️ Этот товар пока что недоступен 🥺`
-                                inline_kb = [
-                                    [{
-                                        text: anotherfood_text,
-                                        callback_data: anotherfood_text
-                                    }]
-                                ]
-                            }
-
-                            if (snapshot.val().is_active === true){
-                                inline_kb = [
-                                    [{
-                                        text: addto_basket_text /* changefoodamount_basket_text */,
-                                        callback_data: addto_basket_text
-                                    }],
-                                    [{
-                                        text: anotherfood_text,
-                                        callback_data: anotherfood_text
-                                    }]
-                                ]
-                            }
-                            for (let i = 0; i < basket[chat.id].length; i++){
-                                if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-                                    console.log('foundfood ' + i)
-                                    inline_kb[0] =
-                                        [{
-                                            text: changefoodamount_basket_text /* changefoodamount_basket_text */,
-                                            callback_data: changefoodamount_basket_text
-                                        }]
-                                    bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                        parse_mode: 'HTML',
-                                        reply_markup:{
-                                            inline_keyboard: inline_kb
-                                        }
-                                    })
-                                    break
-                                }
-                                if (i === basket[chat.id].length - 1 && basket[chat.id][i][0] !== userFoodlist[chat.id][userFood[chat.id]]){
-                                    console.log('еду не нашли ' + i)
-                                    bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                        parse_mode: 'HTML',
-                                        reply_markup:{
-                                            inline_keyboard: inline_kb
-                                        }
-                                    })
-                                }
-                            }
-                            if (basket[chat.id].length === 0){
-                                console.log('корзина пустая')
-                                    bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                        parse_mode: 'HTML',
-                                        reply_markup:{
-                                            inline_keyboard: inline_kb
-                                        }
-                                    })
-                            }
-                        }).catch(err => {
-                            temp_food_text[chat.id] = `<b>` + userFoodlist[chat.id][userFood[chat.id]] + `</b>
-` + food_description + `
-
-<b> 💰 Цена: </b>` + temp_food_price[chat.id] + ` тенге`
-
-let inline_kb
-                            if (snapshot.val().is_active !== true){
-                                temp_food_text[chat.id] += `
-
-❗️ Этот товар пока что недоступен 🥺`
-                                inline_kb = [
-                                    [{
-                                        text: anotherfood_text,
-                                        callback_data: anotherfood_text
-                                    }]
-                                ]
-                            }
-
-                            if (snapshot.val().is_active === true){
-                                inline_kb = [
-                                    [{
-                                        text: addto_basket_text,
-                                        callback_data: addto_basket_text
-                                    }],
-                                    [{
-                                        text: anotherfood_text,
-                                        callback_data: anotherfood_text
-                                    }]
-                                ]
-                            }
-                                                        for (let i = 0; i < basket[chat.id].length; i++){
-                                                            if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-                                                                console.log('foundfood ' + i)
-                                                                inline_kb[0] =
-                                                                [{
-                                                                    text: changefoodamount_basket_text /* changefoodamount_basket_text */,
-                                                                    callback_data: changefoodamount_basket_text
-                                                                }]
-                                                                bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup:{
-                                                                        inline_keyboard: inline_kb
-                                                                    }
-                                                                })
-                                                                break
-                                                            }
-                                                            if (i === basket[chat.id].length - 1 && basket[chat.id][i][0] !== userFoodlist[chat.id][userFood[chat.id]]){
-                                                                console.log('еду не нашли ' + i)
-                                                                bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup:{
-                                                                        inline_keyboard: inline_kb
-                                                                    }
-                                                                })
-                                                            }
-                                                        }
-                                                        if (basket[chat.id].length === 0){
-                                                            console.log('корзина пустая')
-                                                                bot.sendMessage(chat.id, temp_food_text[chat.id], {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup:{
-                                                                        inline_keyboard: inline_kb
-                                                                    }
-                                                                })
-                                                        }
-                        })
-
-                    }
-
-                }).catch((err) => {console.log(err)})
-            })
-        }
-    }
-    if (query.data === anothercategory_text){
-        userCategory[chat.id] = ''
-        bot.deleteMessage(chat.id, message_id)
-        keyboards.CategoriesKeyboard(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, choosecategory_text, location_text, phone_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id], message_toedit[chat.id], message_text[chat.id])
-    }
-    if (query.data === anotherfood_text){
-        userFood[chat.id] = ''
-        /* bot.editMessageText(choosefood_text,
-            {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_id, //!!!! НЕ ТОТ МЕССЕДЖ ID УДАЛЯЕМ
-                reply_markup:{
-                    inline_keyboard:foodlist_keyboard[chat.id]
-                }
-            }) */
-        bot.deleteMessage(chat.id, message_id - 1)
-        keyboards.FoodKeyboard(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query, choosefood_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id])
-
-    }
-    if (query.data === anotherfood_text2[1]){
-        bot.deleteMessage(chatId, message_toedit[chatId][2])
-        /* bot.editMessageText(choosefood_text,
-            {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_id, //!!!! НЕ ТОТ МЕССЕДЖ ID УДАЛЯЕМ
-                reply_markup:{
-                    inline_keyboard:foodlist_keyboard[chat.id]
-                }
-            }) */
-            userFood[chat.id] = ''
-            keyboards.FoodKeyboard(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query, choosefood_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id])
-
-        //bot.deleteMessage(chat.id, message_id - 1)
-    }
-    if (query.data === addto_basket_text){
-        bot.editMessageText(text, {
-            chat_id: chat.id,
-            message_id: message_id
-        }) //убираем клаву в описании блюда
-        for (let i = 0; i < basket[chat.id].length; i++){
-            console.log('!!!! ' + basket[chat.id][i][0] + ' ' + userFoodlist[chat.id][userFood[chat.id]])
-            if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-
-                bot.sendMessage(chat.id, chooseamountoffood_text + basket[chat.id][i][1] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (basket[chat.id][i][1] * temp_food_price[chat.id] + 'тг.'), {
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: decrease_foodcount,
-                                callback_data: decrease_foodcount
-                            },
-                            {
-                                text: increase_foodcount,
-                                callback_data: increase_foodcount
-                            }],
-                            [{
-                                
-                                text: dont_addto_basket_text2,
-                                callback_data: dont_addto_basket_text2
-                            },
-                            {
-                                text: addto_basket_text2,
-                                callback_data: addto_basket_text2
-                            }]
-                        ]
-                    }
-                })
-                break
-            }
-            if (i === basket[chat.id].length - 1 && basket[chat.id][i][0] !== userFoodlist[chat.id][userFood[chat.id]]){
-                //когда мы проверили все ячейки и ни одна не совпала...
-                console.log('ALARM2: ' + i + ' ' + basket[chat.id].length)
-                /*if (i === basket[chat.id].length){
-                    bot.sendMessage(chat.id, chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id] + 'тг.'), {
-                        reply_markup:{
-                            inline_keyboard:[
-                                [{
-                                    text: decrease_foodcount,
-                                    callback_data: decrease_foodcount
-                                },
-                                    {
-                                        text: increase_foodcount,
-                                        callback_data: increase_foodcount
-                                    }],
-                                [{
-                                    text: addto_basket_text2,
-                                    callback_data: addto_basket_text2
-                                },
-                                    {
-                                        text: dont_addto_basket_text2,
-                                        callback_data: dont_addto_basket_text2
-                                    }]
-                            ]
-                        }
-                    })
-                }*/
-                temp_foodamount[chat.id] = 1
-                bot.sendMessage(chat.id, chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id] + 'тг.'), {
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: decrease_foodcount,
-                                callback_data: decrease_foodcount
-                            },
-                                {
-                                    text: increase_foodcount,
-                                    callback_data: increase_foodcount
-                                }],
-                            [{
-                                text: dont_addto_basket_text2,
-                                callback_data: dont_addto_basket_text2
-                            },
-                            {
-                                text: addto_basket_text2,
-                                callback_data: addto_basket_text2
-                            }]
-                        ]
-                    }
-                })
-            }
-        }
-        if (basket[chat.id].length === 0){
-            //когда мы проверили все ячейки и ни одна не совпала...
-            bot.sendMessage(chat.id, chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id] + 'тг.'), {
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: decrease_foodcount,
-                            callback_data: decrease_foodcount
-                        },
-                            {
-                                text: increase_foodcount,
-                                callback_data: increase_foodcount
-                            }],
-                        [{
-                            text: dont_addto_basket_text2,
-                            callback_data: dont_addto_basket_text2
-                        },
-                        {
-                            text: addto_basket_text2,
-                            callback_data: addto_basket_text2
-                        }]
-                    ]
-                }
-            })
-        }
-    }
-    //тут мы прибавляем или убавляем кол-во выбранного блюда
-    if (query.data === increase_foodcount || query.data === decrease_foodcount){
-        console.log(decrease_foodcount + ' ' + increase_foodcount + ' ' + dont_addto_basket_text2 + ' ' + addto_basket_text2)
-        if (query.data === increase_foodcount){
-            for (let i = 0; i < basket[chat.id].length; i++){
-                console.log('226 ' + basket[chat.id][i][0] + ' ' + userFoodlist[chat.id][userFood[chat.id]])
-                if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-                    basket[chat.id][i][1]++
-                    console.log('increasing existing food postion +1 ' + basket[chat.id][i][1])
-                    bot.editMessageText(chooseamountoffood_text + basket[chat.id][i][1] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (basket[chat.id][i][1] * temp_food_price[chat.id]) + 'тг.', {
+                    console.log('here: ' + err)
+                    bot.editMessageCaption(txt, {
                         chat_id: chat.id,
-                        message_id: message_id,
-                        reply_markup:{
-                            inline_keyboard:[
+                        message_id: message_toedit[chat.id][0],
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
                                 [{
-                                    text: decrease_foodcount,
-                                    callback_data: decrease_foodcount
-                                },
-                                    {
-                                        text: increase_foodcount,
-                                        callback_data: increase_foodcount
-                                    }],
-                                [{
-                                    text: dont_addto_basket_text2,
-                                    callback_data: dont_addto_basket_text2
+                                    text: backtostart[0],
+                                    callback_data: 'opendonation_' + query.data.split('_')[2]
                                 },
                                 {
-                                    text: addto_basket_text2,
-                                    callback_data: addto_basket_text2
+                                    text: finishdonation[0],
+                                    callback_data: finishdonation[1] + '_1_' + query.data.split('_')[2]
                                 }]
                             ]
                         }
                     })
-                    break
-                }
-                if (i === basket[chat.id].length - 1 && basket[chat.id][i][0] !== userFoodlist[chat.id][userFood[chat.id]]){
-                    console.log('227 ' + basket[chat.id][i][0] + ' ' + userFoodlist[chat.id][userFood[chat.id]])
-                    temp_foodamount[chat.id]++
-                        bot.editMessageText(chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id]) + 'тг.', {
-                            chat_id: chat.id,
-                            message_id: message_id,
-                            reply_markup:{
-                                inline_keyboard:[
-                                    [{
-                                        text: decrease_foodcount,
-                                        callback_data: decrease_foodcount
-                                    },
-                                        {
-                                            text: increase_foodcount,
-                                            callback_data: increase_foodcount
-                                        }],
-                                    [{
-                                        text: dont_addto_basket_text2,
-                                        callback_data: dont_addto_basket_text2
-                                    },
-                                    {
-                                        text: addto_basket_text2,
-                                        callback_data: addto_basket_text2
-                                    }]
-                                ]
-                            }
-                        })
-                        break
-                }
+                })
             }
-            if (basket[chat.id].length === 0){
-                temp_foodamount[chat.id]++
-                bot.editMessageText(chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id]) + 'тг.', {
+            if (query.data.includes(finishdonation[1] + '_1_')){
+                FinishDonation(chat, query.data.split('_')[2])
+            }
+        }
+    
+        if (query.data.includes(canceldonation[1])){
+            if (query.data.includes(canceldonation[1] + '_0_')){
+                let txt = 'Вы уверены, что хотите отменить сбор? Все собранные средства вернутся участникам, но они не увидят Ваш материал\n\nЭто действие нельзя будет отменить'
+                bot.editMessageText(txt, {
                     chat_id: chat.id,
-                    message_id: message_id,
-                    reply_markup:{
-                        inline_keyboard:[
+                    message_id: message_toedit[chat.id][0],
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
                             [{
-                                text: decrease_foodcount,
-                                callback_data: decrease_foodcount
-                            },
-                                {
-                                    text: increase_foodcount,
-                                    callback_data: increase_foodcount
-                                }],
-                            [{
-                                text: dont_addto_basket_text2,
-                                callback_data: dont_addto_basket_text2
+                                text: backtostart[0],
+                                callback_data: 'opendonation_' + query.data.split('_')[2]
                             },
                             {
-                                text: addto_basket_text2,
-                                callback_data: addto_basket_text2
+                                text: canceldonation[0],
+                                callback_data: canceldonation[1] + '_1_' + query.data.split('_')[2]
                             }]
                         ]
                     }
-                })
-            }
-        }
-        if (query.data === decrease_foodcount){
-            console.log('descrease')
-            for (let i = 0; i < basket[chat.id].length; i++){
-                if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-                    if (basket[chat.id][i][1] > 1){
-                        basket[chat.id][i][1]--
-                        bot.editMessageText(chooseamountoffood_text + basket[chat.id][i][1] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (basket[chat.id][i][1] * temp_food_price[chat.id]) + 'тг.', {
-                            chat_id: chat.id,
-                            message_id: message_id,
-                            reply_markup:{
-                                inline_keyboard:[
-                                    [{
-                                        text: decrease_foodcount,
-                                        callback_data: decrease_foodcount
-                                    },
-                                        {
-                                            text: increase_foodcount,
-                                            callback_data: increase_foodcount
-                                        }],
-                                    [{
-                                        text: dont_addto_basket_text2,
-                                        callback_data: dont_addto_basket_text2
-                                    },
-                                    {
-                                        text: addto_basket_text2,
-                                        callback_data: addto_basket_text2
-                                    }]
-                                ]
-                            }
-                        })
-                    }
-                }
-                else{
-                    //когда мы проверили все ячейки и ни одна не совпала...
-                    /*if (i === basket[chat.id].length){
-                        if (temp_foodamount[chat.id] > 1){
-                            temp_foodamount[chat.id]--
-                            bot.editMessageText(chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id]) + 'тг.', {
-                                chat_id: chat.id,
-                                message_id: message_id,
-                                reply_markup:{
-                                    inline_keyboard:[
-                                        [{
-                                            text: decrease_foodcount,
-                                            callback_data: decrease_foodcount
-                                        },
-                                            {
-                                                text: increase_foodcount,
-                                                callback_data: increase_foodcount
-                                            }],
-                                        [{
-                                            text: addto_basket_text2,
-                                            callback_data: addto_basket_text2
-                                        },
-                                            {
-                                                text: dont_addto_basket_text2,
-                                                callback_data: dont_addto_basket_text2
-                                            }]
-                                    ]
-                                }
-                            })
-                        }
-                    }*/
-
-                    if (temp_foodamount[chat.id] > 1){
-                        temp_foodamount[chat.id]--
-                        bot.editMessageText(chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id]) + 'тг.', {
-                            chat_id: chat.id,
-                            message_id: message_id,
-                            reply_markup:{
-                                inline_keyboard:[
-                                    [{
-                                        text: decrease_foodcount,
-                                        callback_data: decrease_foodcount
-                                    },
-                                        {
-                                            text: increase_foodcount,
-                                            callback_data: increase_foodcount
-                                        }],
-                                    [{
-                                        text: dont_addto_basket_text2,
-                                        callback_data: dont_addto_basket_text2
-                                    },
-                                    {
-                                        text: addto_basket_text2,
-                                        callback_data: addto_basket_text2
-                                    }]
-                                ]
-                            }
-                        })
-                        break
-                    }
-                }
-            }
-            if (basket[chat.id].length === 0){
-                if (temp_foodamount[chat.id] > 1){
-                    temp_foodamount[chat.id]--
-                    bot.editMessageText(chooseamountoffood_text + temp_foodamount[chat.id] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (temp_foodamount[chat.id] * temp_food_price[chat.id]) + 'тг.', {
+                }).catch(err => {
+                    console.log('here: ' + err)
+                    bot.editMessageCaption(txt, {
                         chat_id: chat.id,
-                        message_id: message_id,
-                        reply_markup:{
-                            inline_keyboard:[
+                        message_id: message_toedit[chat.id][0],
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
                                 [{
-                                    text: decrease_foodcount,
-                                    callback_data: decrease_foodcount
-                                },
-                                    {
-                                        text: increase_foodcount,
-                                        callback_data: increase_foodcount
-                                    }],
-                                [{
-                                    text: dont_addto_basket_text2,
-                                    callback_data: dont_addto_basket_text2
+                                    text: backtostart[0],
+                                    callback_data: 'opendonation_' + query.data.split('_')[2]
                                 },
                                 {
-                                    text: addto_basket_text2,
-                                    callback_data: addto_basket_text2
+                                    text: canceldonation[0],
+                                    callback_data: canceldonation[1] + '_1_' + query.data.split('_')[2]
                                 }]
                             ]
                         }
                     })
-                }
-            }
-        }
-    }
-    if (query.data === increase_foodcount2 || query.data === decrease_foodcount2){
-        if (query.data === increase_foodcount2){
-            console.log('Увеличиваем: ' + basket[chat.id][temp_backet_food[chat.id]][0])
-            basket[chat.id][temp_backet_food[chat.id]][1]++
-            bot.editMessageText(chooseamountoffood_text + basket[chat.id][temp_backet_food[chat.id]][1] + ' x ' + basket[chat.id][temp_backet_food[chat.id]][2] + 'тг. = ' + (basket[chat.id][temp_backet_food[chat.id]][1] * basket[chat.id][temp_backet_food[chat.id]][2]) + 'тг.', {
-                chat_id: chat.id,
-                message_id: message_id,
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: decrease_foodcount,
-                            callback_data: decrease_foodcount2
-                        },
-                            {
-                                text: increase_foodcount,
-                                callback_data: increase_foodcount2
-                            }],
-                        [{
-                            text: dont_addto_basket_text2,
-                            callback_data: delete_basketfood
-                        },
-                        {
-                            text: addto_basket_text2,
-                            callback_data: addto_basket_text3
-                        }]
-                    ]
-                }
-            })
-        }
-        if (query.data === decrease_foodcount2){
-            if (basket[chat.id][temp_backet_food[chat.id]][1] > 1){
-                console.log('Уменьшаем: ' + basket[chat.id][temp_backet_food[chat.id]][0])
-                basket[chat.id][temp_backet_food[chat.id]][1]--
-                bot.editMessageText(chooseamountoffood_text + basket[chat.id][temp_backet_food[chat.id]][1] + ' x ' + basket[chat.id][temp_backet_food[chat.id]][2] + 'тг. = ' + (basket[chat.id][temp_backet_food[chat.id]][1] * basket[chat.id][temp_backet_food[chat.id]][2]) + 'тг.', {
-                    chat_id: chat.id,
-                    message_id: message_id,
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: decrease_foodcount,
-                                callback_data: decrease_foodcount2
-                            },
-                                {
-                                    text: increase_foodcount,
-                                    callback_data: increase_foodcount2
-                                }],
-                            [{
-                                text: dont_addto_basket_text2,
-                                callback_data: delete_basketfood
-                            },
-                            {
-                                text: addto_basket_text2,
-                                callback_data: addto_basket_text3
-                            }]
-                        ]
-                    }
                 })
             }
-            
-        }
-    }
-    if (query.data === dont_addto_basket_text2){
-        for (let i = 0; i < basket[chat.id].length; i++){
-            if (userFoodlist[chat.id][userFood[chat.id]] === basket[chat.id][i][0]){
-                basket[chat.id].splice(i, 1)
-                console.log('DELETED')
-                //тут можно выводить список если удаляем предмет, а если еще не добавляли то нет
+            if (query.data.includes(canceldonation[1] + '_1_')){
+                CancelDonation(chat, query.data.split('_')[2])
             }
         }
-        bot.deleteMessage(chat.id, message_id).then(() => {
-            bot.editMessageText(temp_food_text[chat.id], {
+    
+        if (query.data.includes(editmaterial[1])){
+            donate_editmaterials[chat.id] = true
+            donate_tempdonateid[chat.id] = query.data.split('_')[1]
+            console.log('lol:' + query.data)
+    
+            bot.sendMessage(chat.id, newdonationsteps[6], {
                 parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_id - 1,
-                reply_markup:{
+                reply_markup: {
                     inline_keyboard: [
                         [{
-                            text: addto_basket_text,
-                            callback_data: addto_basket_text
-                        }],
-                        [{
-                            text: anotherfood_text,
-                            callback_data: anotherfood_text
+                            text: backeditmaterial[0],
+                            callback_data: backeditmaterial[1]
                         }]
                     ]
                 }
             })
-        })
-    }
-    if (query.data === addto_basket_text2){
-        console.log('!!!!!!!! ' + userFoodlist[chat.id] + '   ' + userFoodlist[chat.id][userFood[chat.id]])
-        for (let i = 0; i < basket[chat.id].length; i++){
-            console.log('0.1')
-            if (basket[chat.id][i][0] === userFoodlist[chat.id][userFood[chat.id]]){
-                console.log('1')
-              //  let newfood = [userFoodlist[chat.id][userFood[chat.id]], temp_foodamount[chat.id], temp_food_price[chat.id]]
-             //   basket[chat.id][i] = newfood
-                bot.deleteMessage(chat.id, message_id).catch(err => {console.log('! ' + err)})
-                bot.deleteMessage(chat.id, message_id - 1).catch(err => {console.log('! ' + err)})
-                bot.deleteMessage(chat.id, message_id - 2).catch(err => {console.log('! ' + err)})
-                    let editmsg = `Ваш заказ: `
-                    let finalsum = 0
-                    for (let i = 0; i < basket[chat.id].length; i++){
-                        finalsum += (basket[chat.id][i][2] * basket[chat.id][i][1])
-                        if (i === basket[chat.id].length - 1){
-                            if (coupondata[chat.id] !== undefined){
-                                editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                console.log('1finalsum: ' +finalsum)
-                                if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                    editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                }
-                            }
-                            else if (coupondata[chat.id] === undefined){
-                                editmsg += finalsum + 'тг.'
-                                if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                    editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                }
-                            }
-                            console.log(finalsum + ' ' + i)
-                            finalprice[chat.id] = finalsum + delivery_price[chat.id]
-                            console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-
-                            for (let i = 0; i < basket[chat.id].length; i++){
-                                console.log('1Блюдо: ' + basket[chat.id][i][0] + '. Цена: ' + basket[chat.id][i][2] + ' х ' + basket[chat.id][i][1] + ' = ' + (basket[chat.id][i][1] * basket[chat.id][i][2]))
-                                editmsg += `
-` + (i+1) + `. ` + basket[chat.id][i][0] + `. Цена: ` + basket[chat.id][i][2] + `тг. х ` + basket[chat.id][i][1] + ` = ` + (basket[chat.id][i][1] * basket[chat.id][i][2]) + `тг.`
-                                if (i === basket[chat.id].length - 1){
-                                    console.log('2Блюдо: ')
-                                    bot.sendMessage(chat.id, `<b>`+ basket[chat.id][i][0] + `</b> добавлен в корзину`, {
-                                        parse_mode: 'HTML',
-                                    }).then(res => {
-                                        console.log('ОТПРАВИЛИ СООБЩЕНИЕ')
-                                        message_toedit[chat.id][2] = res.message_id
-                                        bot.sendMessage(chat.id,  editmsg , {
-                                            reply_markup:{
-                                                inline_keyboard: [
-                                                    [{
-                                                        text: anotherfood_text2[0],
-                                                        callback_data: anotherfood_text2[1]
-                                                    },
-                                                    {
-                                                        text: editbasket_text,
-                                                        callback_data: editbasket_text
-                                                    }],
-                                                    [{
-                                                        text: writecoupon[0],
-                                                        callback_data: writecoupon[1]
-                                                    }],
-                                                    [{
-                                                        text: paybasket_text[0],
-                                                        callback_data: paybasket_text[1]
-                                                    }]
-                                                ]
-                                            }
-                                        }).then(()=>{
-                                            buttons_message[chat.id] = query.message.message_id
-                                            console.log('& ' + buttons_message[chat.id])
-                                        })
-                                    }).catch(err => {
-                                        console.log(err)
-                                    })
-        
-                                }
-                            }
-                        }
-                    }
-                break
-            }
-            if (i === basket[chat.id].length - 1 && basket[chat.id][i][0] !== userFoodlist[chat.id][userFood[chat.id]]) {
-                console.log(userFoodlist[chat.id][userFood[chat.id]] + ' ' + temp_foodamount[chat.id] + ' ' + temp_food_price[chat.id])
-                let newfood = [userFoodlist[chat.id][userFood[chat.id]], temp_foodamount[chat.id], temp_food_price[chat.id], userCategory[chat.id]]
-                basket[chat.id].push(newfood)
-                temp_foodamount[chat.id] = 1
-                bot.deleteMessage(chat.id, message_id).catch(err => {console.log('! ' + err)})
-                bot.deleteMessage(chat.id, message_id - 1).catch(err => {console.log('! ' + err)})
-                bot.deleteMessage(chat.id, message_id - 2).catch(err => {console.log('! ' + err)})
-                    let editmsg = `Ваш заказ: `
-                    let finalsum = 0
-                    
-                    for (let i = 0; i < basket[chat.id].length; i++){
-                        finalsum += (basket[chat.id][i][2] * basket[chat.id][i][1])
-                        if (i === basket[chat.id].length - 1){
-                            if (coupondata[chat.id] !== undefined){
-                                editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                console.log('1finalsum: ' +finalsum)
-                                if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                    editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                }
-                            }
-                            else if (coupondata[chat.id] === undefined){
-                                editmsg += finalsum + 'тг.'
-                                if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                    editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                }
-                            }
-                            //console.log(finalsum + ' ' + i)
-                            finalprice[chat.id] = finalsum + delivery_price[chat.id]
-                            console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                            for (let i = 0; i < basket[chat.id].length; i++){
-                                //console.log('1Блюдо: ' + basket[chat.id][i][0] + '. Цена: ' + basket[chat.id][i][2] + ' х ' + basket[chat.id][i][1] + ' = ' + (basket[chat.id][i][1] * basket[chat.id][i][2]))
-                                editmsg += `
-` + (i+1) + `. ` + basket[chat.id][i][0] + `. Цена: ` + basket[chat.id][i][2] + `тг. х ` + basket[chat.id][i][1] + ` = ` + (basket[chat.id][i][1] * basket[chat.id][i][2]) + `тг.`
-                                if (i === basket[chat.id].length - 1){
-                                    console.log('2Блюдо: ')
-                                    if (userstatus[chat.id] === 'registered'){
-                                        bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
-                                            parse_mode: 'HTML',
-                                            reply_markup: {
-                                                keyboard: registered_keyboard[0],
-                                                resize_keyboard: true
-            
-                                            }
-                                        }).then(res => {
-                                            message_toedit[chat.id][2] = res.message_id
-                                            bot.sendMessage(chat.id,  editmsg , {
-                                                reply_markup:{
-                                                    inline_keyboard: [
-                                                        [{
-                                                            text: anotherfood_text2[0],
-                                                            callback_data: anotherfood_text2[1]
-                                                        },
-                                                        {
-                                                            text: editbasket_text,
-                                                            callback_data: editbasket_text
-                                                        }],
-                                                        [{
-                                                            text: writecoupon[0],
-                                                            callback_data: writecoupon[1]
-                                                        }],
-                                                        [{
-                                                            text: paybasket_text[0],
-                                                            callback_data: paybasket_text[1]
-                                                        }]
-                                                    ]
-                                                }
-                                            }).then(()=>{
-                                                buttons_message[chat.id] = query.message.message_id
-                                                console.log('& ' + buttons_message[chat.id])
-                                            })
-                                        })
-                                    }
-                                    if (userstatus[chat.id] === 'unregistered' || userstatus[chat.id] === 'unknown'){
-                                        bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
-                                            parse_mode: 'HTML',
-                                            reply_markup: {
-                                                keyboard: unregistered_keyboard[0],
-                                                resize_keyboard: true
-            
-                                            }
-                                        }).then(res => {
-                                            message_toedit[chat.id][2] = res.message_id
-                                            bot.sendMessage(chat.id,  editmsg , {
-                                                reply_markup:{
-                                                    inline_keyboard: [
-                                                        [{
-                                                            text: anotherfood_text2[0],
-                                                            callback_data: anotherfood_text2[1]
-                                                        },
-                                                        {
-                                                            text: editbasket_text,
-                                                            callback_data: editbasket_text
-                                                        }],
-                                                        [{
-                                                            text: writecoupon[0],
-                                                            callback_data: writecoupon[1]
-                                                        }],
-                                                        [{
-                                                            text: paybasket_text[0],
-                                                            callback_data: paybasket_text[1]
-                                                        }]
-                                                    ]
-                                                }
-                                            }).then(()=>{
-                                                buttons_message[chat.id] = query.message.message_id
-                                                console.log('& ' + buttons_message[chat.id])
-                                            })
-                                        })
-                                    }
-        
-                                }
-                            }
-                        }
-                    }
-                
-                break
-            }
+            .then(res => {
+                message_toedit[chat.id][1] = res.message_id
+            })
+            .catch(err => {console.log('here: ' + err)})
         }
-        if (basket[chat.id].length === 0){
-            console.log('3')
-            let newfood = [userFoodlist[chat.id][userFood[chat.id]], temp_foodamount[chat.id], temp_food_price[chat.id], userCategory[chat.id]]
-            basket[chat.id].push(newfood)
-            bot.deleteMessage(chat.id, message_id).catch(err => {console.log('! ' + err)})
-            bot.deleteMessage(chat.id, message_id - 1).catch(err => {console.log('! ' + err)})
-            bot.deleteMessage(chat.id, message_id - 2).catch(err => {console.log('! ' + err)})
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0 
-                    for (let i = 0; i < basket[chat.id].length; i++){
-                        finalsum += (basket[chat.id][i][2] * basket[chat.id][i][1])
-                        if (coupondata[chat.id] !== undefined){
-                            editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                            finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                            console.log('1finalsum: ' +finalsum)
-                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                            }
-                        }
-                        else if (coupondata[chat.id] === undefined){
-                            editmsg += finalsum + 'тг.'
-                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                            }
-                        }
-                        finalprice[chat.id] = finalsum + delivery_price[chat.id]
-                        console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
 
-                        for (let i = 0; i < basket[chat.id].length; i++){
-                            console.log('1Блюдо: ' + basket[chat.id][i][0] + '. Цена: ' + basket[chat.id][i][2] + ' х ' + basket[chat.id][i][1] + ' = ' + (basket[chat.id][i][1] * basket[chat.id][i][2]))
-                            editmsg += `
-` + (i+1) + `. ` + basket[chat.id][i][0] + `. Цена: ` + basket[chat.id][i][2] + `тг. х ` + basket[chat.id][i][1] + ` = ` + (basket[chat.id][i][1] * basket[chat.id][i][2]) + `тг.`
-                            if (i === basket[chat.id].length - 1){
-                                console.log('2Блюдо: userstatus[chat.id]: ' + userstatus[chat.id] + ', ' + chat.id)
-                                if (userstatus[chat.id] === 'registered'){
-                                    bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
-                                        parse_mode: 'HTML',
-/*                                         reply_markup: {
-                                            keyboard: registered_keyboard[0],
-                                            resize_keyboard: true
-            
-                                        } */
-                                    }).then(res => {
-                                        message_toedit[chat.id][2] = res.message_id
-                                        bot.sendMessage(chat.id,  editmsg , {
-                                            reply_markup:{
-                                                inline_keyboard: [
-                                                    [{
-                                                        text: anotherfood_text2[0],
-                                                        callback_data: anotherfood_text2[1]
-                                                    },
-                                                    {
-                                                        text: editbasket_text,
-                                                        callback_data: editbasket_text
-                                                    }],
-                                                    [{
-                                                        text: writecoupon[0],
-                                                        callback_data: writecoupon[1]
-                                                    }],
-                                                    [{
-                                                        text: paybasket_text[0],
-                                                        callback_data: paybasket_text[1]
-                                                    }]
-                                                ]
-                                            }
-                                        }).then(()=>{
-                                            buttons_message[chat.id] = query.message.message_id
-                                            console.log('& ' + buttons_message[chat.id])
-                                        })
-                                    })
-                                }
-                                
-                                if (userstatus[chat.id] === 'unregistered' || userstatus[chat.id] === 'unknown'){
-                                    bot.sendMessage(chat.id, `<b>`+ newfood[0] + `</b> добавлен в корзину`, {
-                                        parse_mode: 'HTML',
-/*                                         reply_markup: {
-                                            keyboard: unregistered_keyboard[0],
-                                            resize_keyboard: true
-            
-                                        } */
-                                    }).then(res => {     
-                                        message_toedit[chat.id][2] = res.message_id     
-                                        bot.sendMessage(chat.id,  editmsg , {
-                                            parse_mode:'HTML',
-                                            reply_markup:{
-                                                inline_keyboard: [
-                                                    [{
-                                                        text: anotherfood_text2[0],
-                                                        callback_data: anotherfood_text2[1]
-                                                    },
-                                                    {
-                                                        text: editbasket_text,
-                                                        callback_data: editbasket_text
-                                                    }],
-                                                    [{
-                                                        text: writecoupon[0],
-                                                        callback_data: writecoupon[1]
-                                                    }],
-                                                    [{
-                                                        text: paybasket_text[0],
-                                                        callback_data: paybasket_text[1]
-                                                    }]
-                                                ]
-                                            }
-                                        }).then(()=>{
-                                            buttons_message[chat.id] = query.message.message_id
-                                            console.log('& ' + buttons_message[chat.id])
-                                        })
-                                    })
-                                }
-                            }
-                        }
-                    }
-            
+        if (query.data.includes(editpreview[1])){
+            donate_editpreview[chat.id] = true
+            donate_tempdonateid[chat.id] = query.data.split('_')[1]
+            console.log('lol:' + query.data)
+    
+            bot.sendMessage(chat.id, newdonationsteps[4], {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backeditpreview[0],
+                            callback_data: backeditpreview[1]
+                        }]
+                    ]
+                }
+            })
+            .then(res => {
+                message_toedit[chat.id][1] = res.message_id
+            })
+            .catch(err => {console.log('here: ' + err)})
         }
-    }
-    if (query.data === editbasket_text){
-        bot.deleteMessage(chatId, message_toedit[chatId][2])
-        bot.editMessageText(text, {
-            chat_id: chat.id,
-            message_id: message_id
-        }).then(() => {
-            let keyboard = []
-            let line_amount = 1 + Math.floor(basket[chat.id].length / 4)
-            let lastbuttons_amount = basket[chat.id].length - ((line_amount - 1) * 4)
-            console.log('4-х клавишных рядом в клавиатуре: ' + line_amount + '. Кнопок в последнем ряду ( <4 клавиш ): ' + lastbuttons_amount)
-            keyboard[0] = [{
-                text: anotherfood_text2[0],
-                callback_data: anotherfood_text2[1]
-            }]
-            for (let i = 1; i < line_amount; i++){
-                console.log('Создаем клавиатуру с рядами по 4 кнопки: ' + i)
-                keyboard[i] = [{
-                    text: i,
-                    callback_data: i.toString() + '_editbasketcb'
-                },
-                {
-                    text: i+1,
-                    callback_data: (i + 1).toString()  + '_editbasketcb'
-                },
-                {
-                    text: i+2,
-                    callback_data: (i + 2).toString()  + '_editbasketcb'
-                },
-                {
-                    text: i+3,
-                    callback_data: (i + 3).toString()  + '_editbasketcb'
-                }]
-                if (i === line_amount - 1 && lastbuttons_amount !== 0){
-                    console.log('Закончили создавать 4-х клавишные ряды. Создаем последний ряд')
-                    keyboard[line_amount] = []
-                    for (let b = 1; b < lastbuttons_amount + 1; b++){
-                        console.log('b = ' + b + '. lastbuttons_amount = ' + lastbuttons_amount)
-                        if (line_amount > 1){
-                            keyboard[line_amount].push({
-                                text: (4 + b).toString(),
-                                callback_data: (4 + b).toString() + '_editbasketcb'
-                            })
-                        }
-                        if (line_amount <= 1){
-                            keyboard[line_amount].push({
-                                text: b.toString(),
-                                callback_data: b.toString()  + '_editbasketcb'
-                            })
-                        }
-                        if (b === lastbuttons_amount){
-                            console.log('Клаву создали, отправляем сообщение с клавиатурой' + b + ' ' + keyboard[line_amount])
-                            bot.sendMessage(chat.id, choosefoodtoedit_text, {
-                                reply_markup: {
-                                    inline_keyboard: keyboard
-                                }
-                            })
-                        }
-                    }
-                }
-                if (lastbuttons_amount === 0){
-                    console.log('Клаву создали, отправляем сообщение с клавиатурой' + keyboard[line_amount])
-                            bot.sendMessage(chat.id, choosefoodtoedit_text, {
-                                reply_markup: {
-                                    inline_keyboard: keyboard
-                                }
-                            })
-                }
-            }
-            if (line_amount === 1){
-                keyboard[1] = []
-                console.log('Закончили создавать 4-х клавишные ряды. Создаем последний ряд')
-                    for (let b = 1; b < lastbuttons_amount+1; b++){
-                        if (line_amount > 1) {
-                            keyboard[1].push({
-                                text: (4 + b).toString() ,
-                                callback_data: (4 + b).toString()  + '_editbasketcb'
-                            })
-                        }
-                        if (line_amount <= 1) {
-                            keyboard[1].push({
-                                text: b.toString() ,
-                                callback_data: b.toString()  + '_editbasketcb'
-                            })
-                        }
-                        if (b === lastbuttons_amount){
-                            console.log('Клаву создали, отправляем сообщение с клавиатурой' + b + ' ' + keyboard[0] + ' ' + keyboard[1])
-                            bot.sendMessage(chat.id, choosefoodtoedit_text, {
-                                reply_markup: {
-                                    inline_keyboard: keyboard
-                                }
-                            })
-                        }
-                    }
-            }
-            
-        })
-    }
-    for (let i = 0; i < 100; i++){
-        if (userCategory[chat.id] !== '' && userCategory[chat.id] !== 'unknown'){
-            if (query.data === (i+1).toString() + '_editbasketcb'){
-                temp_backet_food[chat.id] = i
-                console.log('pressed button is: ' + i)
-                bot.editMessageText(chooseamountoffood_text + basket[chat.id][i][1] + ' x ' + temp_food_price[chat.id] + 'тг. = ' + (basket[chat.id][i][1] * temp_food_price[chat.id] + 'тг.'), {
+    
+        if (query.data === backeditmaterial[1]){
+            console.log('heere')
+            donate_editmaterials[chat.id] = false
+            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+        }
+        if (query.data === backeditpreview[1]){
+            console.log('heere')
+            donate_editmaterials[chat.id] = false
+            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+        }
+    
+        if (query.data === sborprivacy[1]){
+            donate_private[chat.id] = false
+            donateregisterstep[chat.id] = 6
+            if (donate_materials[chat.id] !== ''){
+                bot.editMessageText(newdonationsteps[7], {
+                    parse_mode: 'HTML',
                     chat_id: chat.id,
-                    message_id: message_id,
-                    reply_markup:{
-                        inline_keyboard:[
+                    message_id: message_toedit[chat.id][0],
+                    reply_markup: {
+                        inline_keyboard: [
                             [{
-                                text: decrease_foodcount,
-                                callback_data: decrease_foodcount2
-                            },
-                            {
-                                text: increase_foodcount,
-                                callback_data: increase_foodcount2
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[4]
                             }],
                             [{
-                                text: delete_basketfood,
-                                callback_data: delete_basketfood
-                            },
-                            {
-                                text: addto_basket_text2,
-                                callback_data: addto_basket_text3
+                                text: previewimg[2],
+                                callback_data: previewimg[3]
                             }]
                         ]
                     }
-                }).then(() => {
-                    bot.deleteMessage(chat.id, message_id - 1)
+                })
+            }
+            if (donate_materials[chat.id] === ''){
+                bot.editMessageText(newdonationsteps[6], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[4]
+                            }],
+                            [{
+                                text: previewimg[2],
+                                callback_data: previewimg[3]
+                            }]
+                        ]
+                    }
                 })
             }
         }
-        
-        //console.log('we dont have data with number: ' + i)
-    }
-    if (query.data === delete_basketfood) {
-        //const index = basket[chat.id].indexOf(temp_backet_food)
-        let basket2 = basket[chat.id]
-        console.log('!!!!   '  + temp_backet_food[chat.id])
-        
-        for (let i = 0; i < basket[chat.id].length; i++){
-            //пока не нашли элемент для удаления, можно ничего не делать
-            /*if (i < temp_backet_food){
-                basket[chat.id][i] = basket2[i]
-            }*/
-            if (i >= temp_backet_food[chat.id]){
-                if (basket2[i+1] !== undefined){
-                    console.log('BASKET2: ' + basket2[i+1])
-                    basket[chat.id][i] = basket2[i+1]
-                }
-                else {
-                    //удаляем последний элемент нашего массива
-                    console.log('BASKET22: ' + basket2[i+1])
-                    basket[chat.id].splice(i, 1)
-                }
-                
+    
+        if (query.data === sborprivacy[3]){
+            donate_private[chat.id] = true
+            donateregisterstep[chat.id] = 6
+            if (donate_materials[chat.id] !== ''){
+                bot.editMessageText(newdonationsteps[7], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[4]
+                            }],
+                            [{
+                                text: previewimg[2],
+                                callback_data: previewimg[3]
+                            }]
+                        ]
+                    }
+                })
+            }
+            if (donate_materials[chat.id] === ''){
+                bot.editMessageText(newdonationsteps[6], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[4]
+                            }],
+                            [{
+                                text: previewimg[2],
+                                callback_data: previewimg[3]
+                            }]
+                        ]
+                    }
+                })
             }
         }
-        bot.deleteMessage(chat.id, message_id).catch(err => {console.log('! ' + err)})
-            if (basket[chat.id].length > 0){
-                let editmsg = `Ваш заказ: `
-                let finalsum = 0
-                for (let i = 0; i < basket[chat.id].length; i++){
-                    finalsum += (basket[chat.id][i][2] * basket[chat.id][i][1])
-                    if (i === basket[chat.id].length - 1){
-                        if (coupondata[chat.id] !== undefined){
-                            editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                            finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                            console.log('1finalsum: ' +finalsum)
-                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                            }
-                        }
-                        else if (coupondata[chat.id] === undefined){
-                            editmsg += finalsum + 'тг.'
-                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                            }
-                        }
-                        console.log(finalsum + ' ' + i)
-                        finalprice[chat.id] = finalsum + delivery_price[chat.id]
-                        console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                        for (let i = 0; i < basket[chat.id].length; i++){
-                            console.log('1Блюдо: ' + basket[chat.id][i][0] + '. Цена: ' + basket[chat.id][i][2] + ' х ' + basket[chat.id][i][1] + ' = ' + (basket[chat.id][i][1] * basket[chat.id][i][2]))
-                            editmsg += `
-` + (i+1) + `. ` + basket[chat.id][i][0] + `. Цена: ` + basket[chat.id][i][2] + `тг. х ` + basket[chat.id][i][1] + ` = ` + (basket[chat.id][i][1] * basket[chat.id][i][2]) + `тг.`
-                            if (i === basket[chat.id].length - 1){
-                                console.log('2Блюдо: ')
-                                if (userstatus[chat.id] === 'registered'){
-                                    bot.sendMessage(chat.id, `<b>`+ basket[chat.id][i][0] + `</b> добавлен в корзину`, {
-                                        parse_mode: 'HTML',
-/*                                         reply_markup: {
-                                            keyboard: registered_keyboard[0],
-                                            resize_keyboard: true
-        
-                                        } */
-                                    }).then(res => {
-                                        message_toedit[chat.id][2] = res.message_id
-                                        bot.sendMessage(chat.id,  editmsg , {
-                                            reply_markup:{
-                                                inline_keyboard: [
-                                                    [{
-                                                        text: anotherfood_text2[0],
-                                                        callback_data: anotherfood_text2[1]
-                                                    },
-                                                    {
-                                                        text: editbasket_text,
-                                                        callback_data: editbasket_text
-                                                    }],
-                                                    [{
-                                                        text: writecoupon[0],
-                                                        callback_data: writecoupon[1]
-                                                    }],
-                                                    [{
-                                                        text: paybasket_text[0],
-                                                        callback_data: paybasket_text[1]
-                                                    }]
-                                                ]
-                                            }
-                                        }).then(()=>{
-                                            buttons_message[chat.id] = query.message.message_id
-                                            console.log('& ' + buttons_message[chat.id])
-                                        })
-                                    })
-                                }
-                                if (userstatus[chat.id] === 'unknown' || userstatus[chat.id] === 'unregistered'){
-                                    bot.sendMessage(chat.id, `<b>`+ basket[chat.id][i][0] + `</b> добавлен в корзину`, {
-                                        parse_mode: 'HTML',
-/*                                         reply_markup: {
-                                            keyboard: unregistered_keyboard[0],
-                                            resize_keyboard: true
-        
-                                        } */
-                                    }).then(res => {
-                                        message_toedit[chat.id][2] = res.message_id
-                                        bot.sendMessage(chat.id,  editmsg , {
-                                            reply_markup:{
-                                                inline_keyboard: [
-                                                    [{
-                                                        text: anotherfood_text2[0],
-                                                        callback_data: anotherfood_text2[1]
-                                                    },
-                                                    {
-                                                        text: editbasket_text,
-                                                        callback_data: editbasket_text
-                                                    }],
-                                                    [{
-                                                        text: writecoupon[0],
-                                                        callback_data: writecoupon[1]
-                                                    }],
-                                                    [{
-                                                        text: paybasket_text[0],
-                                                        callback_data: paybasket_text[1]
-                                                    }]
-                                                ]
-                                            }
-                                        }).then(()=>{
-                                            buttons_message[chat.id] = query.message.message_id
-                                            console.log('& ' + buttons_message[chat.id])
-                                        })
-                                    })
-                                }
     
+        if (query.data === previewimg[3]){
+    
+            donateregisterstep[chat.id] = 5
+            bot.editMessageText(newdonationsteps[5], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[3]
+                        }],
+                        [{
+                            text: ihavematerials[0],
+                            callback_data: ihavematerials[1]
+                        },
+                        {
+                            text: ihavematerials[2],
+                            callback_data: ihavematerials[3]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === createdonation[1]){
+            let registerdata = fb.database().ref('Kickstarter/users/' + chat.id)
+            registerdata.get().then(result => {
+    
+                let updates = {}
+                let newdonation = {
+                    name: donate_name[chat.id],
+                    money: donate_money[chat.id],
+                    minmoney: donate_minmoney[chat.id],
+                    duration: donate_duration_secs[chat.id],
+                    sendduration: donate_sendduration_secs[chat.id],
+                    privacy: donate_private[chat.id],
+                    photo: donate_photo[chat.id],
+                    status: 'online',
+                    bank: 0,
+                    materials: donate_materials[chat.id]
+                }
+                let freeaut = fb.database().ref('Kickstarter/mailing')
+                freeaut.get().then(reply => {
+                    if (!reply.val().authors.includes(chat.id)){
+                        if (!reply.val().free_authors.includes(chat.id)){
+                            let new_updates = {}
+                            if (reply.val().free_authors === ''){
+                                new_updates['Kickstarter/mailing/free_authors'] = (chat.id).toString()
                             }
+                            if (reply.val().free_authors !== ''){
+                                new_updates['Kickstarter/mailing/free_authors'] = reply.val().free_authors + ',' + chat.id
+                            }
+                            fb.database().ref().update(new_updates)
                         }
                     }
+                })
+                
+    
+                /* if (donate_private[chat.id] === false){
+                    let publicdon = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdon.get().then(reply => {
+                        let donation_updates = {}
+                        if (reply.val() !== undefined && result.exists()){
+                            donation_updates['Kickstarter/gallery/donations/'+reply.val().length+'/user_id'] = chat.id
+                            donation_updates['Kickstarter/gallery/donations/'+reply.val().length+'/name'] = donate_name[chat.id]
+                            donation_updates['Kickstarter/gallery/donations/'+reply.val().length+'/donation_id'] = donate_duration_secs[chat.id]
+                        }
+                        else {
+                            donation_updates['Kickstarter/gallery/donations/0/user_id'] = chat.id
+                            donation_updates['Kickstarter/gallery/donations/0/name'] = donate_name[chat.id]
+                            donation_updates['Kickstarter/gallery/donations/0/donation_id'] = donate_duration_secs[chat.id]
+                        }
+                        fb.database().ref().update(donation_updates)
+                    })
+                    
+                } */
+    
+    
+                if (!result.exists()) {
+                    console.log('USER DIDNT REGISTER YET')
+                    updates['Kickstarter/users/' + chat.id + '/profile/id'] = chat.id
+                    updates['Kickstarter/users/' + chat.id + '/profile/name'] = chat.first_name
+                    
+                    updates['Kickstarter/users/' + chat.id + '/balance/bank'] = 0
+                    updates['Kickstarter/users/' + chat.id + '/balance/comission'] = 10
+                    updates['Kickstarter/users/' + chat.id + '/balance/overall'] = 0
+                    updates['Kickstarter/users/' + chat.id + '/balance/withdrew'] = 0
+                    updates['Kickstarter/users/' + chat.id + '/balance/withdroval_limit'] = 3000 //мин. сумма для вывода
+                }
+    
+                updates['Kickstarter/users/' + chat.id + '/donations/' + donate_duration_secs[chat.id]] = newdonation
+                fb.database().ref().update(updates)
+                .then(() => {
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+                    Auth(chat)
+                })
+            })
+        }
+    
+        if (query.data === backtonewdonate[6]){
+            if (donate_materials[chat.id] === 'null'){
+                donate_materials[chat.id] = 'null'
+                donateregisterstep[chat.id] = 6
+                if (msg.text.includes('https://')){
+                    bot.editMessageText(newdonationsteps[7], {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: backtostart[0],
+                                    callback_data: backtonewdonate[5]
+                                }]
+                            ]
+                        }
+                    })
                 }
             }
             else {
-                finalprice[chat.id] = 0
-                bot.sendMessage(chat.id,  basketisempty_text, {
-                    reply_markup:{
+                donate_photo[chat.id] = ''
+                donateregisterstep[chat.id] = 6
+                bot.editMessageText(newdonationsteps[6], {
+                    parse_mode: 'HTML',
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    reply_markup: {
                         inline_keyboard: [
                             [{
-                                text: anotherfood_text2[0],
-                                callback_data: anotherfood_text2[1]
+                                text: backtostart[0],
+                                callback_data: backtonewdonate[4]
                             }],
+                            [{
+                                text: previewimg[2],
+                                callback_data: previewimg[3]
+                            }]
                         ]
                     }
-                }).then(()=>{
-                    buttons_message[chat.id] = query.message.message_id
-                    console.log('& ' + buttons_message[chat.id])
                 })
             }
-
-    }
-    if (query.data === addto_basket_text3) {
-        bot.deleteMessage(chat.id, message_id).catch(err => {console.log('! ' + err)})
-            let editmsg = `Ваш заказ: `
-            let finalsum = 0
-            for (let i = 0; i < basket[chat.id].length; i++){
-                finalsum += (basket[chat.id][i][2] * basket[chat.id][i][1])
-                if (i === basket[chat.id].length - 1){
-                    if (coupondata[chat.id] !== undefined){
-                        editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                        finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                        console.log('1finalsum: ' +finalsum)
-                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                        }
-                    }
-                    else if (coupondata[chat.id] === undefined){
-                        editmsg += finalsum + 'тг.'
-                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                            editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                        }
-                    }
-                    finalprice[chat.id] = finalsum + delivery_price[chat.id]
-                    console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                    console.log(finalsum + ' ' + i)
-                    for (let i = 0; i < basket[chat.id].length; i++){
-                        console.log('1Блюдо: ' + basket[chat.id][i][0] + '. Цена: ' + basket[chat.id][i][2] + ' х ' + basket[chat.id][i][1] + ' = ' + (basket[chat.id][i][1] * basket[chat.id][i][2]))
-                        editmsg += `
-` + (i+1) + `. ` + basket[chat.id][i][0] + `. Цена: ` + basket[chat.id][i][2] + `тг. х ` + basket[chat.id][i][1] + ` = ` + (basket[chat.id][i][1] * basket[chat.id][i][2]) + `тг.`
-                        if (i === basket[chat.id].length - 1){
-                            console.log('2Блюдо: ')
-                            if (userstatus[chat.id] === 'unknown' || userstatus[chat.id] === 'unregistered'){
-                                bot.sendMessage(chat.id, `<b>`+ basket[chat.id][i][0] + `</b> добавлен в корзину`, {
-                                    parse_mode: 'HTML',
-/*                                     reply_markup: {
-                                        keyboard: unregistered_keyboard[0],
-                                        resize_keyboard: true
+        }
     
-                                    } */
-                                }).then(res => {
-                                    message_toedit[chat.id][2] = res.message_id
-                                    bot.sendMessage(chat.id,  editmsg , {
-                                        reply_markup:{
-                                            inline_keyboard: [
-                                                [{
-                                                    text: anotherfood_text2[0],
-                                                    callback_data: anotherfood_text2[1]
-                                                },
-                                                {
-                                                    text: editbasket_text,
-                                                    callback_data: editbasket_text
-                                                }],
-                                                [{
-                                                    text: writecoupon[0],
-                                                    callback_data: writecoupon[1]
-                                                }],
-                                                [{
-                                                    text: paybasket_text[0],
-                                                    callback_data: paybasket_text[1]
-                                                }]
-                                            ]
-                                        }
-                                    }).then(()=>{
-                                        buttons_message[chat.id] = query.message.message_id
-                                        console.log('& ' + buttons_message[chat.id])
-                                    })
-                                })
-                            }
-                            if (userstatus[chat.id] === 'registered'){
-                                bot.sendMessage(chat.id, `<b>`+ basket[chat.id][i][0] + `</b> добавлен в корзину`, {
-                                    parse_mode: 'HTML',
-/*                                     reply_markup: {
-                                        keyboard: registered_keyboard[0],
-                                        resize_keyboard: true
+        if (query.data === ihavematerials[3]){
+            CreateDonation(chat)
+        }
     
-                                    } */
-                                }).then(res => {
-                                    message_toedit[chat.id][2] = res.message_id
-                                    bot.sendMessage(chat.id,  editmsg , {
-                                        reply_markup:{
-                                            inline_keyboard: [
-                                                [{
-                                                    text: anotherfood_text2[0],
-                                                    callback_data: anotherfood_text2[1]
-                                                },
-                                                {
-                                                    text: editbasket_text,
-                                                    callback_data: editbasket_text
-                                                }],
-                                                [{
-                                                    text: writecoupon[0],
-                                                    callback_data: writecoupon[1]
-                                                }],
-                                                [{
-                                                    text: paybasket_text[0],
-                                                    callback_data: paybasket_text[1]
-                                                }]
-                                            ]
-                                        }
-                                    }).then(()=>{
-                                        buttons_message[chat.id] = query.message.message_id
-                                        console.log('& ' + buttons_message[chat.id])
-                                    })
-                                })
-                            }
-
-                        }
-                    }
+        if (query.data === backtonewdonate[5]){
+            donate_photo[chat.id] = ''
+            donateregisterstep[chat.id] = 6
+            bot.editMessageText(newdonationsteps[6], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[4]
+                        }],
+                        [{
+                            text: previewimg[2],
+                            callback_data: previewimg[3]
+                        }]
+                    ]
                 }
-            }
-            
-    }  
-    if (query.data === yesigotorder_text){
-        for(let i = 0; i < 100; i++){
-            if (i <= 98){
-                bot.deleteMessage(chat.id, message_id - i - 1).catch(err => {
-                    console.log('Очистка закончена: ' + err)
-                })
-            }
-            if (i === 99){
-                bot.deleteMessage(chat.id, message_id - i - 1).catch(err => {
-                    console.log('Очистка закончена: ' + err)
-                }).then(() => {
-                    bot.sendMessage(chat.id, hellomessage_text,
+            })
+        }
+    
+        if (query.data === backtonewdonate[4]){
+            donate_materials[chat.id] = 'null'
+            bot.editMessageText(newdonationsteps[5], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[3]
+                        }],
+                        [{
+                            text: ihavematerials[0],
+                            callback_data: ihavematerials[1]
+                        },
                         {
-                                reply_markup:{
-                                    inline_keyboard:[
+                            text: ihavematerials[2],
+                            callback_data: ihavematerials[3]
+                        }]
+                    ]
+                }
+            })
+    
+            bot.editMessageText(newdonationsteps[5], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[3]
+                        }],
+                        [{
+                            text: sborprivacy[2],
+                            callback_data: sborprivacy[3]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === backtonewdonate[3]){
+            donateregisterstep[chat.id] = 5
+            donate_photo[chat.id] = ''
+    
+            bot.editMessageText(newdonationsteps[4], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[2]
+                        }],
+                        [{
+                            text: previewimg[2],
+                            callback_data: previewimg[3]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === backtonewdonate[2]){
+            donateregisterstep[chat.id] = 4
+            donate_duration[chat.id] = 0
+    
+            bot.editMessageText(newdonationsteps[3], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[1]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === backtonewdonate[1]){
+            donateregisterstep[chat.id] = 3
+            donate_minmoney[chat.id] = 0
+    
+            bot.editMessageText(newdonationsteps[2], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[0]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === backtonewdonate[0]){
+            donateregisterstep[chat.id] = 2
+            donate_money[chat.id] = 0
+    
+            bot.editMessageText(newdonationsteps[1], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: whoareyoubutton[1]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === ihavematerials[1]){
+            donate_materials[chat.id] = 'null'
+            donateregisterstep[chat.id] = 6
+    
+            bot.editMessageText(newdonationsteps[6], {
+                parse_mode: 'HTML',
+                chat_id: chat.id,
+                message_id: message_toedit[chat.id][0],
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[4]
+                        }],
+                        [{
+                            text: ihavematerials[2],
+                            callback_data: ihavematerials[3]
+                        }]
+                    ]
+                }
+            })
+        }
+    
+        if (query.data === balancehistory[1]){
+            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+    
+            let balancedata = fb.database().ref('Kickstarter/users/' + chat.id)
+            balancedata.get().then(result => {
+                if (result.val().balance.history !== undefined){
+                    let txt = '<b>Список Ваших операций:</b>\n'
+    
+                    for(let i = 0; i < result.val().balance.history.length; i++){
+                        let created_date = new Date(result.val().balance.history[i].date)
+                        let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
+        
+                        txt += '\n<b>' + createddate + ':</b> ' +  result.val().balance.history[i].description
+        
+                        if (i === result.val().balance.history.length - 1){
+                            bot.editMessageText(txt, {
+                                parse_mode: 'HTML',
+                                chat_id: chat.id,
+                                message_id: message_toedit[chat.id][0],
+                                reply_markup: {
+                                    inline_keyboard: [
                                         [{
-                                            text: 'Нур-Султан',
-                                            callback_data: 'Нур-Султан'
-                                        }]/*,
-                                        [{
-                                            text: 'Алматы',
-                                            callback_data: 'Алматы'
-                                        }]*/
+                                            text: backtostart[0],
+                                            callback_data: mybalancebutton[1]
+                                        }]
                                     ]
                                 }
-                        })
-                })
-                
-            }
-        }
-        
-    }
-    if (query.data === backtoaskinfo[1]){
-        isMakingChanges[chat.id] = 0
-        if (user_name[chat.id] !== '' && user_phone[chat.id] !== '' && user_adress[chat.id] !== ''){
-            bot.editMessageText(message_text[chat.id][1], {
-                parse_mode: 'HTML',
-                chat_id: chat.id, 
-                message_id: message_toedit[chat.id][1],
-                reply_markup: {
-                    inline_keyboard:[
-                        [{
-                            text: 'Имя: ' + user_name[chat.id],
-                            callback_data: changename_text
-                        },
-                        {
-                            text: 'Телефон: ' + user_phone[chat.id],
-                            callback_data: changephone_text
-                        }],
-                        [{
-                            text: 'Адрес: ' + user_adress[chat.id],
-                            callback_data: changeadress_text
-                        }],
-                        [{
-                            text: backtomyorder[0],
-                            callback_data: backtomyorder[1]
-                        },{
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect_text
-                        }]
-                    ]
-                }
-            })
-        }
-        else {
-            bot.editMessageText(message_text[chat.id][1], {
-                parse_mode: 'HTML',
-                chat_id: chat.id, 
-                message_id: message_toedit[chat.id][1],
-                reply_markup: {
-                    inline_keyboard:[
-                        [{
-                            text: 'Имя: ' + user_name[chat.id],
-                            callback_data: changename_text
-                        },
-                        {
-                            text: 'Телефон: ' + user_phone[chat.id],
-                            callback_data: changephone_text
-                        }],
-                        [{
-                            text: 'Адрес: ' + user_adress[chat.id],
-                            callback_data: changeadress_text
-                        }],
-                        [{
-                            text: backtomyorder[0],
-                            callback_data: backtomyorder[1]
-                        },{
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect_text
-                        }]
-                    ]
-                }
-            })
-        }
-    }
-    if (query.data === changename_text){
-        isMakingChanges[chat.id] = 1
-        bot.editMessageText('🙂 Введите свое имя, так курьеру будет проще найти Вас:', {
-            parse_mode: 'HTML',
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: backtoaskinfo[0],
-                        callback_data: backtoaskinfo[1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === changephone_text){
-        isMakingChanges[chat.id] = 2
-        bot.deleteMessage(chat.id, message_toedit[chat.id][1])
-        bot.sendPhoto(chat.id, openkeyboard_pic, {
-            parse_mode: 'HTML',
-            caption: 'Нажмите на кнопку <b>"📞 Отправить номер"</b> снизу, чтобы прикрепить свой номер. Если вы не видите кнопку, нажмите на значок справа от клавиатуры',
-            reply_markup: {
-                keyboard: [
-                    [{
-                        text: '📞 Отправить номер',
-                        request_contact: true
-                    }],
-                    [{
-                        text: '◀️ Назад'
-                    }]
-                ],
-                resize_keyboard: true
-            }
-        }).then(res => {
-            message_toedit[chat.id][1] = res.message_id
-            message_text[chat.id][1] = res.caption
-        })
-    }
-    if (query.data === changeadress_text){
-        isMakingChanges[chat.id] = 3
-        bot.editMessageText('📍 Введите адрес доставки в формате Улица, Дом, Квартира, Этаж:', {
-            parse_mode: 'HTML',
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: backtoaskinfo[0],
-                        callback_data: backtoaskinfo[1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === changeamountof_persons){
-        isMakingChanges_2[chat.id] = 1
-        bot.editMessageText('👥 Введите количество персон: ', {
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: backtodopblank[0],
-                        callback_data: backtodopblank[1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === changepaying_method){
-        //isMakingChanges_2[chat.id] = 2
-        let kb = []
-        if (point_payment_options[chatId][1] === true){
-            kb.push([{
-                text: 'Наличными курьеру',
-                callback_data: 'Наличными курьеру'
-            }])
-        }
-
-        if (point_payment_options[chatId][0] === true){
-            kb.push([{
-                text: 'Безналичными курьеру',
-                callback_data:'Безналичными курьеру'
-            }])
-        }
-        bot.editMessageText('💳 Выберите способ оплаты', {
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup:{
-                inline_keyboard: kb
-            }
-        })
-    }
-    if (query.data === /* user_payingmethod[chat.id] +  */'Наличными курьеру' || query.data === /* user_payingmethod[chat.id] + */ 'Безналичными курьеру'){
-        if (query.data === /* user_payingmethod[chat.id] + */ 'Наличными курьеру'){
-            user_payingmethod[chat.id] = 'Наличными курьеру'
-
-            if (point_pplamount[chat.id] !== false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: '👥: ' + user_personsamount[chat.id],
-                                callback_data: changeamountof_persons
-                            },
-                            {
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
+                            })
+                        }
                     }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
+                }
+                else {
+                    bot.answerCallbackQuery({
+                        callback_query_id: query.id,
+                        text: '😢 Вы пока не совершили ни одной операции',
+                        show_alert: true
+                    })
+                }
+            })
+        }
+    
+        if (query.data === opendonationparticipant){
+            OpenDonationParticipant(chat, null)
+        }
+    
+        //ПОПОЛНЕНИЕ БАЛАНСА
+        if (query.data === mybalancebutton[1]){
+            myBalance(chat)
+        }
+        if (query.data === addmoneybutton[1]){
+            AddMoney(chat, false)
+        }
+        if (query.data === addmoneyparticipant[1]){
+            AddMoney(chat, true)
+        }
+        if (query.data.includes(addmoneyamount)){ 
+    
+            let amount = query.data.split('_')[1]
+    
+            let date = new Date()
+            let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+            let timeOfffset = 6 //Astana GMT +6
+            let time_now = new Date(utcTime + (3600000 * timeOfffset))
+    
+            billid[chat.id] = time_now.getTime()
+            
+            const params = {
+                publicKey,
+                amount: amount,
+                billId: time_now.getTime(),
+                successUrl: 'https://merchant.com/payment/success?billId=' + time_now.getTime()
+            };
+            
+            const link = qiwiApi.createPaymentForm(params)
+            console.log(link)
+    
+            let txt = ''
+            if (user_donationlink[chat.id] !== undefined && user_donationlink[chat.id] !== null) {
+                txt += '<b>Счет сформирован. Для пополнения баланса ('+ amount +' руб.), нажмите на ссылку ниже:\n<a href="'+ link + '">https://oplata.qiwi.com/pay</a></b>'
+            }
+            if (user_donationlink[chat.id] === undefined || user_donationlink[chat.id] === null) {
+                txt += messagetext_toedit[chat.id][0] + '\n\n<b>Счет сформирован. Для пополнения баланса ('+ amount +' руб.), нажмите на ссылку ниже:\n<a href="'+ link + '">https://oplata.qiwi.com/pay</a></b>'
             }
             
-            if (point_pplamount[chat.id] === false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            },
-                            {
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
-            }
-        }
-
-        else if (query.data === /* user_payingmethod[chat.id] + */ 'Безналичными курьеру'){
-            user_payingmethod[chat.id] = 'Безналичными курьеру'
-
-            if (point_pplamount[chat.id] !== false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: '👥: ' + user_personsamount[chat.id],
-                                callback_data: changeamountof_persons
-                            },
-                            {
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
-            }
-            
-            if (point_pplamount[chat.id] === false){
-                bot.editMessageText(dopblank_text, {
-                    chat_id: chat.id,
-                    message_id: message_toedit[chat.id][1],
-                    reply_markup:{
-                        inline_keyboard:[
-                            [{
-                                text: '🕒: ' + user_deliverdate[chat.id],
-                                callback_data: changedeliver_date
-                            },
-                            {
-                                text: '💵: ' + user_payingmethod[chat.id],
-                                callback_data: changepaying_method
-                            }],
-                            [{
-                                text: backtoaskinfo[0],
-                                callback_data: backtoaskinfo[1]
-                            },
-                            {
-                                text: dataiscorrect_text,
-                                callback_data: dataiscorrect2_text
-                            }]
-                        ]
-                    }
-                }).then(res => {
-                    message_text[chat.id][1] = res.text
-                    message_toedit[chat.id][1] = res.message_id
-                    //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-                })
-            }
-        }
-    }
-    if (query.data === backtodopblank[1]){
-        isMakingChanges_2[chat.id] = 0
-        if (point_pplamount[chat.id] !== false){
-            bot.editMessageText(dopblank_text, {
+            bot.editMessageText(txt, {
                 chat_id: chat.id,
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
+                message_id: message_toedit[chat.id][0], 
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
                         [{
-                            text: '💵: ' + user_payingmethod[chat.id],
-                            callback_data: changepaying_method
+                            text: checkmoneyaddbutton[0],
+                            callback_data: checkmoneyaddbutton[1],
                         }],
                         [{
-                            text: '👥: ' + user_personsamount[chat.id],
-                            callback_data: changeamountof_persons
-                        },
-                        {
-                            text: '🕒: ' + user_deliverdate[chat.id],
-                            callback_data: changedeliver_date
-                        }],
-                        [{
-                            text: backtoaskinfo[0],
-                            callback_data: backtoaskinfo[1]
-                        },
-                        {
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect2_text
-                        }]
-                    ]
-                }
-            }).then(res => {
-                message_text[chat.id][1] = res.text
-                message_toedit[chat.id][1] = res.message_id
-                //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-            })
-        }
-        
-        if (point_pplamount[chat.id] === false){
-            bot.editMessageText(dopblank_text, {
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: '🕒: ' + user_deliverdate[chat.id],
-                            callback_data: changedeliver_date
-                        },
-                        {
-                            text: '💵: ' + user_payingmethod[chat.id],
-                            callback_data: changepaying_method
-                        }],
-                        [{
-                            text: backtoaskinfo[0],
-                            callback_data: backtoaskinfo[1]
-                        },
-                        {
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect2_text
-                        }]
-                    ]
-                }
-            }).then(res => {
-                message_text[chat.id][1] = res.text
-                message_toedit[chat.id][1] = res.message_id
-                //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-            })
-        }
-    }
-    if (query.data === changedeliver_date){
-        isMakingChanges_2[chat.id] = 2
-        bot.editMessageText('⏰ Укажите, когда вам нужно доставить заказ: ', {
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: backtodopblank[0],
-                        callback_data: backtodopblank[1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === dataiscorrect_text){
-        if (point_pplamount[chat.id] !== false){
-            bot.editMessageText(dopblank_text, {
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: '💵: ' + user_payingmethod[chat.id],
-                            callback_data: changepaying_method
-                        }],
-                        [{
-                            text: '👥: ' + user_personsamount[chat.id],
-                            callback_data: changeamountof_persons
-                        },
-                        {
-                            text: '🕒: ' + user_deliverdate[chat.id],
-                            callback_data: changedeliver_date
-                        }],
-                        [{
-                            text: backtoaskinfo[0],
-                            callback_data: backtoaskinfo[1]
-                        },
-                        {
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect2_text
-                        }]
-                    ]
-                }
-            }).then(res => {
-                message_text[chat.id][1] = res.text
-                message_toedit[chat.id][1] = res.message_id
-                //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-            })
-        }
-        
-        if (point_pplamount[chat.id] === false){
-            bot.editMessageText(dopblank_text, {
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: '🕒: ' + user_deliverdate[chat.id],
-                            callback_data: changedeliver_date
-                        },
-                        {
-                            text: '💵: ' + user_payingmethod[chat.id],
-                            callback_data: changepaying_method
-                        }],
-                        [{
-                            text: backtoaskinfo[0],
-                            callback_data: backtoaskinfo[1]
-                        },
-                        {
-                            text: dataiscorrect_text,
-                            callback_data: dataiscorrect2_text
-                        }]
-                    ]
-                }
-            }).then(res => {
-                message_text[chat.id][1] = res.text
-                message_toedit[chat.id][1] = res.message_id
-                //console.log('savedmessage = ' + add_info_msg[chat.id] + ', ' + message_id)
-            })
-        }
-    }
-    if (query.data === dataiscorrect2_text){
-        if (user_payingmethod[chat.id] === 'Наличными курьеру'){
-            isMakingChanges_2[chat.id] = 3
-            bot.editMessageText('Напишите, с какой суммы вы хотите получить сдачу: ', {
-                chat_id: chat.id, 
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: no_sdacha_text,
-                            callback_data: no_sdacha_text
+                            text: backtostart[0],
+                            callback_data: checkmoneyaddbutton[2],
                         }]
                     ]
                 }
             })
-        }
-        else {
-            isMakingChanges_2[chat.id] = 4
-            user_sdachainfo[chat.id] = no_sdacha_text
-            bot.editMessageText('Уточните, как курьер может до вас добраться: ', {
-                chat_id: chat.id, 
-                message_id: message_toedit[chat.id][1],
-                reply_markup:{
-                    inline_keyboard:[
-                        [{
-                            text: no_howtocome_text,
-                            callback_data: no_howtocome_text
-                        }]
-                    ]
-                }
-            })
-        }
-        
-    }
-    if (query.data === no_sdacha_text){
-        isMakingChanges_2[chat.id] = 4
-        user_sdachainfo[chat.id] = no_sdacha_text
-        bot.editMessageText('Уточните, как курьер может до вас добраться: ', {
-            chat_id: chat.id, 
-            message_id: message_toedit[chat.id][1],
-            reply_markup:{
-                inline_keyboard:[
-                    [{
-                        text: no_howtocome_text,
-                        callback_data: no_howtocome_text
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === no_howtocome_text){
-        isMakingChanges_2[chat.id] = 0
-        isMakingChanges_3[chat.id] = 0
-        isMakingChanges[chat.id] = 0
-        user_howtocome[chat.id] = 'Не указано'
-        if (userstatus[chat.id] !== 'unregistered'){
-            skidka[chat.id] = 0
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1])
-            .then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-                
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
-                }
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-                
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                                  ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
     
-let minutes = time_now.getMinutes()
-if (minutes < 10) minutes = '0' + minutes
-let hours = time_now.getHours()
-if (hours < 10) hours = '0' + hours
-let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
+        }
+        if (query.data === checkmoneyaddbutton[1]){
     
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-
-if (coupondata[chat.id] !== undefined){
-    deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-}
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-    deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + query.message.message_id)
-    console.log('delivery_chat: ' + delivery_chat[chat.id])
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
-        }
-    })
-
-            })
-        }
-        else {
-            //bot.deleteMessage(chat.id, message_toedit[chat.id][1])
-            bot.deleteMessage(chat.id, message_toedit[chat.id][1]).then(() => {
-                order_status[chat.id] = order_statuses_text[0]
-                bot.sendMessage(chat.id, delivery_started, {
-                    reply_markup: {
-                        inline_keyboard: unregistered_keyboard[3],
-                    }
-                }).then(res => {
-                    message_toedit[chat.id][5] = res.message_id
-                    message_text[chat.id][5] = res.text
-                })
-
-                let updates = {};
-
-                let username = []
-                username[chat.id] = "undefined"
-                if (chat.username != undefined) username[chat.id] = chat.username.toString()
-                
-                let alltimepurchases = []
-                alltimepurchases[chat.id] = 1
-                if (alltime_purchases_amount[chat.id] > 0){
-                    alltimepurchases[chat.id] = alltime_purchases_amount[chat.id] + 1
+            qiwiApi.getBillInfo(billid[chat.id]).then(data => {
+                console.log(data)
+                console.log(data.status.value)
+                if (data.status.value === 'WAITING'){
+                    bot.answerCallbackQuery({
+                        callback_query_id: query.id,
+                        text: '⏳ Платеж ожидает оплаты',
+                        show_alert: true
+                    })
                 }
-                
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/adress'] = user_adress[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/id'] = chat.id
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/name'] = user_name[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/phone'] = user_phone[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/username'] = username[chat.id]
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-               
-                updates['Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/clients/'  + chat.id + '/average_purchases'] = average_purchases[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/adress'] = user_adress[chat.id]
-
-                updates['Motherbase/clients/' + chat.id + '/food/alltime_purchases_amount'] = alltime_purchases_amount[chat.id]
-
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
-
-                //date_now = Date.now()
-                //date_string = date_now.getDate() + ',' + date_now.getHours() + ':' + date_now.getMinutes()
-                order_name[chat.id] = 'Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/bills/' + time_now.getTime()
-                console.log('ORDER NAME: ' + order_name[chat.id])
-                order_date[chat.id] = (time_now.getTime()).toString()
-
-                updates[order_name[chat.id] + '/date_ordered'] = time_now.getTime()
-                updates[order_name[chat.id] + '/order_info'] = finalbasket[chat.id]
-                updates[order_name[chat.id] + '/price'] = finalprice[chat.id],
-                updates[order_name[chat.id] + '/client_id'] = chat.id
-                updates[order_name[chat.id] + '/phone'] = user_phone[chat.id]
-                updates[order_name[chat.id] + '/order_status'] = order_statuses_text[0]
-                updates[order_name[chat.id] + '/adress'] = user_adress[chat.id]
-                updates[order_name[chat.id] + '/client_name'] = user_name[chat.id]
-                updates[order_name[chat.id] + '/user_payingmethod'] =user_payingmethod[chat.id]
-                updates[order_name[chat.id] + '/user_deliverdate'] = user_deliverdate[chat.id]
-                updates[order_name[chat.id] + '/user_sdachainfo'] = user_sdachainfo[chat.id]
-                updates[order_name[chat.id] + '/user_howtocome'] = user_howtocome[chat.id]
-
-
-                if (point_pplamount[chat.id] !== false){
-                    updates[order_name[chat.id] + '/user_personsamount'] = user_personsamount[chat.id]
-                }
-
-                if (userstatus[chat.id] === 'unregistered'){
-                    userstatus[chat.id] = 'registered'
-                }
-
-                fb.database().ref().update(updates)
-
-                AddMailingData(chat.id)
-                StartCheckingOrder(chat.id)
-
-                if (coupondata[chat.id] !== undefined) {
-                    let point_info4 = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients')
-                    point_info4.get().then((csnap) => {
-                        if (csnap.exists()){
-                            let upd = {}
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activ_left'] = csnap.val().activ_left - 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/activated'] = csnap.val().activated + 1
-                            upd['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupondata[chat.id][0] + '/clients'] = csnap.val().clients + ',' + chat.id    
-                            fb.database().ref().update(upd)
+                else if (data.status.value === 'PAID'){
+                    let addmoney_data = fb.database().ref('Kickstarter/users/' + chat.id + '/balance/')
+                    addmoney_data.get().then(result => {
+                        let updates = {}
+    
+                        let newaction = {
+                            description: 'Пополнение баланса на ' + parseInt(data.amount.value) + ' руб.',
+                            date: parseInt(data.billId)
+                        }
+    
+                        if (result.val().history !== undefined){
+                            updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().history.length] = newaction
+                        }
+                        if (result.val().history === undefined){
+                            updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newaction
+                        }
+    
+                        updates['Kickstarter/users/' + chat.id + '/balance/bank'] = result.val().bank + parseInt(data.amount.value)
+                        fb.database().ref().update(updates)
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                        bot.answerCallbackQuery({
+                            callback_query_id: query.id,
+                            text: '✅ Счет успешно пополнен',
+                            show_alert: true
+                        }).catch(err => {console.log('here: ' + err)})
+                        if (user_donationlink[chat.id] === undefined || user_donationlink[chat.id] === null){
+                            myBalance(chat)
+                        }
+                        if (user_donationlink[chat.id] !== undefined && user_donationlink[chat.id] !== null){
+                            OpenDonationParticipant(chat, null)
                         }
                         
                     })
                 }
-
-                   ////////////////////ОТПРАВКА ЧЕКА///////////////////////////////////                 
-    let options = { weekday: 'short'}
-    let minutes = time_now.getMinutes()
-    if (minutes < 10) minutes = '0' + minutes
-    let hours = time_now.getHours()
-    if (hours < 10) hours = '0' + hours
-    let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + time_now.getDate() + '.' + (time_now.getMonth() + 1)
-    
-    deliver_bill_topic = deliver_bill_topic_names[0]
-    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + user_name[chat.id] + `
-├ Адрес: ` + user_adress[chat.id] + `
-└ Номер: ` + user_phone[chat.id] + `
-
-`
-    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + finalbasket[chat.id] + `
-
-`
-    
-    deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + finalprice[chat.id] + ` тг.
-
-`
-
-if (coupondata[chat.id] !== undefined){
-    deliver_bill_finalprice += `Использован купон ` + coupondata[chat.id][0] + `. Скидка ` + coupondata[chat.id][1] + `% учтена в итоговой стоимости
-
-`
-}
-
-    deliver_bill_order_details = `<b>ℹ️ Детали заказа</b>
-└ Дата заказа: ` + visible_date + `
-
-`
-
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-    if (point_pplamount[chat.id] !== false){
-        deliver_bill_help_info += `
-├ Кол-во персон: ` + user_personsamount[chat.id]
-    }
-    deliver_bill_help_info += `
-├ Способ оплаты: ` + user_payingmethod[chat.id] + `
-├ Купюра оплаты: ` + user_sdachainfo[chat.id] + `
-└ Когда доставить: ` + user_deliverdate[chat.id] + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + user_howtocome[chat.id] + `
-
-`
-    console.log('order_date! ' + order_date[chat.id])
-
-    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-    console.log('last message id: ' + query.message.message_id)
-    bot.sendMessage(delivery_chat[chat.id], delivers_bill, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard:[
-                [{
-                    text: '✅ Принять заказ',
-                    callback_data: accept_order_callback + order_date[chat.id]
-                }],
-                [{
-                    text: '❌ Отклонить заказ',
-                    callback_data: refuse_order_callback + order_date[chat.id]
-                }]
-            ]
+                else{
+                    bot.answerCallbackQuery({
+                        callback_query_id: query.id,
+                        text: '❌ Платеж был отклонен или истек',
+                        show_alert: true
+                    })
+                }
+            }).catch(err => {
+                console.log('bill err => ' + err)
+                bot.answerCallbackQuery({
+                    callback_query_id: query.id,
+                    text: '🙅‍♂️ Этот платеж не найден!',
+                    show_alert: true
+                })
+            });
         }
-    })
+        if (query.data === checkmoneyaddbutton[2]){
+            qiwiApi.getBillInfo(billid[chat.id]).then(data => {
+                console.log(data)
+                console.log(data.status.value)
+                if (data.status.value === 'PAID'){
+                    let addmoney_data = fb.database().ref('Kickstarter/users/' + chat.id + '/balance/')
+                    addmoney_data.get().then(result => {
+                        let updates = {}
+                        updates['Kickstarter/users/' + chat.id + '/balance/bank'] = result.val().bank + data.amount.value
+                        fb.database().ref().update(updates)
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                        bot.answerCallbackQuery({
+                            callback_query_id: query.id,
+                            text: '✅ Счет успешно пополнен',
+                            show_alert: true
+                        }).catch(err => {console.log('here: ' + err)})
+                    })
+                }
+                if (user_donationlink[chat.id] === undefined || user_donationlink[chat.id] === null){
+                    AddMoney(chat, false)
+                }
+                if (user_donationlink[chat.id] !== undefined && user_donationlink[chat.id] !== null){
+                    OpenDonationParticipant(chat, null)
+                }
     
             }).catch(err => {
-                console.log('error: ' + err)
-            })
+                console.log('bill err => ' + err)
+                bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                if (user_donationlink[chat.id] === undefined || user_donationlink[chat.id] === null){
+                    AddMoney(chat, false)
+                }
+                if (user_donationlink[chat.id] !== undefined && user_donationlink[chat.id] !== null){
+                    OpenDonationParticipant(chat, null)
+                }
+            });
         }
-    }
-    if (query.data === add_email){
-        isMakingChanges[chat.id] = 4
-        bot.deleteMessage(chat.id, message_id)
-        bot.sendMessage(chat.id, '📩 Напишите ваш email:', {
-            reply_markup:{
-                keyboard:[
-                    [{
-                        text: dont_add_email,
-                    }]
-                ],
-                resize_keyboard: true
-            }
-        })
-    }
-    if (query.data === dont_add_email){
-        isMakingChanges[chat.id] = 0
-
-        let updates = {};
-        updates['Basement/clients/' + chat.id + '/coins'] = user_coins[chat.id]
-        fb.database().ref().update(updates).then(() => {
-            //тут отправить в главное меню
-            for (let i=0; i<100; i++){
-                bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                    console.log(err)
-                })
-            }
-            bot.sendMessage(chat.id, didntaddemail_text).then(() => {
-                Reset(chat.id)
-                anotherpoint_multiple[chat.id] = 2
-                keyboards.CategoriesKeyboard(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, choosecategory_text, location_text, phone_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id], message_toedit[chat.id], message_text[chat.id])
-            })
-        })
-    }  
-    if (query.data === dontleavecomment){
-        let orderinfo = fb.database().ref(order_name[chat.id]);
-        orderinfo.get().then((snapshot) => 
-        {
-            console.log('saving poll...')
-            let updates = {}
-/*             let bill_update = {
-                adress: snapshot.val().adress,
-                client_name: snapshot.val().client_name,
-                date_ordered: snapshot.val().date_ordered,
-                client_id: snapshot.val().client_id,
-                order_info: snapshot.val().order_info,
-                phone: snapshot.val().phone,
-                price: snapshot.val().price,
-                order_status: snapshot.val().order_status,
-                deliver_name: snapshot.val().deliver_name,
-                accept_date: snapshot.val().accept_date,
-                deliver_id: snapshot.val().deliver_id,
-                message_id: snapshot.val().message_id,
-                delivered_date: snapshot.val().delivered_date,
-                feedback: feedback_options[answered_feedback[chat.id]],
-                bill_text: snapshot.val().bill_text,
-                user_personsamount: snapshot.val().user_personsamount,
-                user_payingmethod: snapshot.val().user_payingmethod,
-                user_deliverdate: snapshot.val().user_deliverdate,
-                user_sdachainfo: snapshot.val().user_sdachainfo,
-                user_howtocome: snapshot.val().user_howtocome
-            } */
-            updates[order_name[chat.id] + '/feedback'] = feedback_options[answered_feedback[chat.id]]
-            bot.deleteMessage(chat.id, message_toedit[chatId][5]).catch(err => {console.log('hr: ' + err)})
-            fb.database().ref().update(updates).then(() => {
-                for (let i=0; i<100; i++){
-                    bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                        console.log('hr2: ' + err)
-                    })
-                }
-
-                let temp_bill = snapshot.val().bill_text + `
-<b>💬 Отзыв о доставке:</b>                    
-└ Оценка клиента: ` + feedback_options[answered_feedback[chat.id]]
-                    bot.editMessageText(temp_bill, {
-                        parse_mode: 'HTML',
-                        chat_id: delivery_chat[chat.id],
-                        message_id: snapshot.val().message_id
-                    })
-                bot.sendSticker(chat.id, sticker_hello).then(() => {
-                    bot.sendMessage(chatId, 'Мы рады, что Вы пользуетесь Resify. Закажем что-нибудь еще?').then(() => {
-                        //Reset(chatId)
-                        anotherpoint_multiple[chatId] = 2
-                        userPoint[chat.id] = 0
-                        userCategory[chat.id] = ''
-                        userFood[chat.id] = ''
-                        userFoodlist[chat.id] = []
-                        order_name[chatId] = 0
-                        coupondata[chat.id] = undefined
-                        basket[chat.id] = []
-                        finalprice[chatId] = 0
-                        finalbasket[chatId] = ''
-                        temp_backet_food[chatId] = 0
-                        temp_food_text[chatId] = ''
-                        temp_food_price[chatId] = 0
-                        temp_foodamount[chatId] = 1
-                        skidka[chatId] = 0
-                        order_status[chatId] = undefined
-                        keyboards.PointsKeyboard(points_keyboard[chat.id], userPoints[chat.id], UserDelCat[chat.id], fb, bot, chat.id, change_delcat_text, choosepoint_text, user_mode[chat.id], sendlocation, message_toedit[chat.id], message_text[chat.id])
-                    })
-                })
-            })
-        }) 
-    }
-    if (query.data === leavecomment){
-        bot.editMessageText('💬 Напишите отзыв:', {
-            chat_id: chat.id,
-            message_id: message_id
-        }).then(() => {
-            buttons_message[chat.id] = message_id
-            isMakingChanges[chat.id] = 5
-        })/* .catch(err => {
-            bot.editMessageText('💬 Напишите отзыв:', {
-                chat_id: chat.id,
-                message_id: message_id - 1
-            }).then(() => {
-                buttons_message[chat.id] = message_id - 1
-                isMakingChanges[chat.id] = 5
-            }).catch(err2 => {
-                bot.editMessageText('💬 Напишите отзыв:', {
+    
+        //ВЫВОД
+        if (query.data === withdrawbutton[1]){
+            WithDrawInfo(chat)
+            isAddingcardinfo[chat.id] = undefined
+        }
+        //ДОБАВИТЬ ИНФУ ПО КАРТЕ
+        if (query.data.includes(cardinfobutton[1])) {
+            if (query.data === cardinfobutton[1] + '_0'){
+                let txt = 'Куда Вы хотите выводить деньги? Qiwi или ЮMoney?'
+                bot.editMessageText(txt, {
                     chat_id: chat.id,
-                    message_id: message_id - 2
-                }).then(() => {
-                    buttons_message[chat.id] = message_id - 2
-                    isMakingChanges[chat.id] = 5
-                }).catch(err3 => {
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chat.id, message_id - i).catch(smth => {
-                            //console.log(smth)
-                        })
-                    }
-                    bot.sendSticker(chat.id, sticker_hello).then(() => {
-                        Reset(chat.id)
-                        anotherpoint_multiple[chat.id] = 2
-                        keyboards.CategoriesKeyboard(category_keyboard[chat.id], userCategories[chat.id], categories_count[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, choosecategory_text, hellomessage_text, location_text, phone_text)
-                    })
-                })
-            })
-        }) */
-        
-    }
-    if (query.data === openadminpanel[1]){
-        
-        let cbadmin_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id])
-    cbadmin_data.get().then((result) => {
-        if (result.val().chats !== undefined){
-            if (result.val().chats.admin === chat.id){
-                isMailingMessage[chat.id] = 0
-                //isChangingPrefs[chat.id] = 0
-                isChangingPhone[chat.id] = 0
-                isChangingTime[chat.id] = 0
-                isChangingDelivery[chat.id] = 0
-                isCreatingCoupon[chat.id] = 0
-                mailing_text[chat.id] = ''
-
-                isAdmin[chat.id] = true
-                //message_text[chat.id] = []
-                //message_toedit[chat.id] = []
-    
-                point_rating[chat.id] = result.val().other_info.stats.rating
-                point_delivery_time[chat.id] = result.val().other_info.stats.delivery_time
-    
-                let rating
-                if (point_rating[chat.id] < 1){
-                    rating = feedback_options[0] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                }
-    
-                if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                    rating = feedback_options[1] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                }
-    
-                if (point_rating[chat.id] > 2){
-                    rating = feedback_options[2] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                }
-    
-                let ttd_ms = result.val().other_info.stats.delivery_time
-                let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-    
-                ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-    
-                let ttd 
-                if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                    ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                }
-    
-                if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                    ttd = ttd_minutes + ' мин.'
-                }
-                console.log('ttd_hours: ' + ttd_hours)
-    
-                for (let i=0; i<100; i++){
-                    bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                        //console.log(err)
-                    })
-                }
-                let txt = `Привет! Вы вошли как Администратор <b>` + result.val().point_name + `</b>
-`
-    
-                if (result.val().other_info.stats.feedbacks_amount >= 5){
-                    txt += `
-<b>⭐️ Ваш рейтинг:</b> ` + rating
-                }
-                if (result.val().other_info.stats.delivery_time > 0) {
-                    txt += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                }
-    
-                bot.sendMessage(chat.id, txt, {
+                    message_id: message_toedit[chat.id][0],
                     parse_mode: 'HTML',
                     reply_markup: {
-                        inline_keyboard: keyboards.admin_menu_keyboard
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: withdrawbutton[1]
+                            }],
+                            [{
+                                text: '🥝 Qiwi',
+                                callback_data: cardinfobutton[1] + '_1_' + 'qiwi'
+                            },
+                            {
+                                text: '💰 ЮМани',
+                                callback_data: cardinfobutton[1] + '_1_' + 'yoomoney'
+                            }]
+                        ]
                     }
                 })
-                .then(res => {
-                    message_text[chat.id][6] = res.text
-                    message_toedit[chat.id][6] = res.message_id
+            }
+            if (query.data.includes(cardinfobutton[1] + '_1_')){
+                let txt = ''    
+                if (query.data.split('_')[2] === 'qiwi'){
+                    txt = 'Отправьте номер QIWI, на который будут приходить Ваши доходы со сборов\n\n<b>Пример: 79390000000</b> (11/12 знаков, без пробелов и дефисов)'
+                    isAddingcardinfo[chat.id] = 'qiwi'
+                }
+                if (query.data.split('_')[2] === 'yoomoney'){
+                    txt = 'Отправьте номер счета ЮMoney, на который будут приходить Ваши доходы со сборов. <b>Не путайте с номером карты!</b>\n\n<b>Пример: 4100000000000000</b> (16 знаков, без пробелов и дефисов)'
+                    isAddingcardinfo[chat.id] = 'yoomoney'
+                }
+
+                bot.editMessageText(txt, {
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: withdrawbutton[1]
+                            }]
+                        ]
+                    }
                 })
             }
-            else {
-                bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
-            }
         }
-        
-        else {
-            bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
-        }
-    })
-        
-    }
-    //САППОРТ
-    if (query.data === keyboards.admin_menu_buttons[4][1]){
-        var other_data = fb.database().ref('Motherbase/contacts')
-        other_data.get().then((snapshot) => {
-            bot.sendMessage(chat.id, `Возникли проблемы? Свяжитесь с нами и мы поможем в кратчайшие сроки ⌚️ 
-Email: `+ snapshot.val().email + `
-Телефон: ` + snapshot.val().phone + `
-Аккаунт в телеграме: ` + snapshot.val().tgusername, {
-        parse_mode: 'HTML', })
-        .then(res => {
-            message_toedit[chat.id][7] = res.message_id
-            message_text[chat.id][7] = res.text
-        })
-
-        })
-    }
-    //ВКЛАДКА НАСТРОЕК
-    if (query.data ===  keyboards.admin_menu_buttons[0][1]){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7]).catch(() => {})
-        bot.editMessageText(message_text[chat.id][6], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][6]
-        })
-        .then(() => {
-            var other_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/')
-            other_data.get().then((snapshot) => 
-            {
-                help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
+        //ВЫВЕСТИ ВСЕ
+        if (query.data.includes(withdrawallbutton[1])){
+            if (query.data.split('_')[1] === '0'){
+                let txt = 'Вы уверены, что хотите снять все доступные средства с текущего баланса?\n\nКомиссия при снятии составляет ' + query.data.split('_')[2] + '%'
+                bot.editMessageText(txt, {
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: withdrawbutton[1]
+                            },
+                            {
+                                text: 'Да',
+                                callback_data: withdrawallbutton[1] + '_1'
+                            }]
+                        ]
+                    }
+                })
+            }
+            if (query.data.split('_')[1] === '1'){
+                let balancedata = fb.database().ref('Kickstarter/users/' + chat.id)
+                balancedata.get().then(result => {
+                    //Создать в базе данных в ветке админа запрос на выплату. Он включает в себя
+                    //1. Имя автора
+                    //2. chat.id автора
+                    //3. Дату создания запроса
+                    //4. Текущий баланс
+                    //5. Сумму вывода
+                    //6. Комиссию сервиса: Х руб. (У%)
+                    //7. Реквизиты вывода
     
-                point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
+                    let date = new Date()
+                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                    let timeOfffset = 6 //Astana GMT +6
+                    let time_now = new Date(utcTime + (3600000 * timeOfffset))
     
-                delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
+                    let updates = {}
+                    let newrequest = {
+                        name: chat.first_name,
+                        id: chat.id,
+                        date: time_now.getTime(),
+                        bank: result.val().balance.bank,
+                        withdraw_amount: result.val().balance.bank,
+                        comission: result.val().balance.comission,
+                        card: result.val().balance.card,
+                        status: 'WAITING'
+                    }
     
-                //point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time
-                point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
+                    let newaction = {
+                        description: 'Запрос на вывод ' + result.val().balance.bank + '  руб.',
+                        date: time_now.getTime()
+                    }
     
-                point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
+                    updates['Kickstarter/payments/withdraw_requests/' + time_now.getTime()] = newrequest
     
-                delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                console.log('325 ' + delivery_chat[chat.id])
+                    let pending_withdrawal = 0
+                    if (result.val().balance.pending_withdrawal !== null && result.val().balance.pending_withdrawal !== undefined) pending_withdrawal = result.val().balance.pending_withdrawal
+                    updates['Kickstarter/users/' + chat.id + '/balance/pending_withdrawal'] = pending_withdrawal + result.val().balance.bank
+                    updates['Kickstarter/users/' + chat.id + '/balance/bank'] = 0
     
-                let date = new Date()
-                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                let timeOfffset = 6 //Astana GMT +6
-                let time_now = new Date(utcTime + (3600000 * timeOfffset))
+                    if (result.val().balance.history !== undefined) {
+                        updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
     
-                let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                console.log(time_now.getTime() < restriction_time_min)
+                    if (result.val().balance.history === undefined) {
+                        updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newaction
+                    }
     
-                let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
+                    //Формируем сообщение для меня с этими данными и отправляем
+                    let txt_admin = '📤 Запрос на вывод от <b><a href="tg://user?id='+ chat.id +'">'+ chat.first_name +'</a></b>'
+                    txt_admin += '\n\n<b>Дата:</b> ' + time_now.toString()
+                    txt_admin += '\n<b>Баланс:</b> ' + result.val().balance.bank
+                    txt_admin += '\n<b>Выводит:</b> ' + result.val().balance.bank
+                    txt_admin += '\n<b>Карта:</b> ' + result.val().balance.card
+                    txt_admin += '\n\n<b>Комиссия: ' + Math.floor(result.val().balance.bank / 100 * result.val().balance.comission) + ' рублей ('+ result.val().balance.comission +'%)</b>'
+                
+                    fb.database().ref().update(updates)
     
-                ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                let ttd 
-                if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                    ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                }
-    
-                if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                    ttd = ttd_minutes + ' мин.'
-                }
-                console.log('ttd_hours: ' + ttd_hours)
-        
-            })
-            bot.sendMessage(chat.id, 'В этом разделе Вы можете изменить некоторую информацию о своем заведении', {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: keyboards.admin_preferences_keyboard
-                }
-            })
-            .then(res => {
-                message_toedit[chat.id][7] = res.message_id
-                message_text[chat.id][7] = res.text
-            })
-        })
-    }
-    //НА ГЛАВНУЮ
-    if (query.data === keyboards.admin_preferences_buttons[3][1]){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7])
-        bot.editMessageText(message_text[chat.id][6], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][6],
-            reply_markup: {
-                inline_keyboard: keyboards.admin_menu_keyboard
-            }
-        })
-        .then(res => {
-            message_toedit[chat.id][7] = null
-            message_text[chat.id][7] = null
-        })
-        
-    }
-    //НАСТРОЙКИ ПО ДОСТАВКЕ
-    if (query.data === keyboards.admin_preferences_buttons[0][1]){
-        
-        bot.editMessageText('Указанные ниже данные отображаются у Ваших клиентов. Чем больше заполнено - тем лучше', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    },
-                    {
-                        text: keyboard_admin_delset[0][0] + delivery_min_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[0][1]
-                    }],
-                    [{
-                        text: keyboard_admin_delset[1][0] + delivery_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[1][1]
-                    },
-                    {
-                        text: keyboard_admin_delset[2][0],
-                        callback_data: keyboard_admin_delset[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_delset[0][1]){
-        isChangingDelivery[chat.id] = 1
-        bot.editMessageText('💵 Введите минимальную сумму для доставки. Клиент должен будет заказать больше этой суммы. Если минимальной суммы нет, отправьте цифру "0":', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[0][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_delset[1][1]){
-        isChangingDelivery[chat.id] = 2
-        bot.editMessageText('💵 Введите стоимость доставки. Если вы осуществляете доставку бесплатно, отправьте цифру "0":', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[0][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_delset[2][1]){
-        isChangingDelivery[chat.id] = 2
-        bot.editMessageText('У вас есть возможность принимать оплату доставки с бесконтактным способом с помощью курьера? (KASPI, Кассовый аппарат и тд?)', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[0][1]
-                    }],
-                    [{
-                        text: 'Да',
-                        callback_data: 'pwthbznal_cb'
-                    },
-                    {
-                        text: 'Нет',
-                        callback_data: 'dpwtbznal_cb'
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === 'pwthbznal_cb'){
-        let updates = {}
-        updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/payments/pay_beznal'] = true
-        fb.database().ref().update(updates)
-
-        bot.editMessageText('Указанные ниже данные отображаются у Ваших клиентов. Чем больше заполнено - тем лучше', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_delset[0][0] + delivery_min_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[0][1]
-                    }],
-                    [{
-                        text: keyboard_admin_delset[1][0] + delivery_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[1][1]
-                    },
-                    {
-                        text: keyboard_admin_delset[2][0],
-                        callback_data: keyboard_admin_delset[2][1]
-                    }]
-                ]
-            }
-        })
-
-    }
-    if (query.data === 'dpwtbznal_cb'){
-        let updates = {}
-        updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/other_info/payments/pay_beznal'] = false
-        fb.database().ref().update(updates)
-
-        bot.editMessageText('Указанные ниже данные отображаются у Ваших клиентов. Чем больше заполнено - тем лучше', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_delset[0][0] + delivery_min_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[0][1]
-                    }],
-                    [{
-                        text: keyboard_admin_delset[1][0] + delivery_price[chat.id] + ' тг.',
-                        callback_data: keyboard_admin_delset[1][1]
-                    },
-                    {
-                        text: keyboard_admin_delset[2][0],
-                        callback_data: keyboard_admin_delset[2][1]
-                    }]
-                ]
-            }
-        })
-
-    }
-    //НАСТРОЙКИ ПО ВРЕМЕНИ РАБОТЫ
-    if (query.data === keyboards.admin_preferences_buttons[1][1]){
-        bot.editMessageText('Тут вы можете настроить часы работы доставки. Мы уведомим Ваших клиентов, если будет слишком рано или поздно.', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_times[1][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_times[0][0] + ' c ' + point_workingtime[chat.id][0][0] + ':' + point_workingtime[chat.id][0][1] + ' по ' + point_workingtime[chat.id][1][0] + ':' + point_workingtime[chat.id][1][1],
-                        callback_data: keyboard_admin_times[0][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_times[0][1]){
-        isChangingTime[chat.id] = 1
-        bot.editMessageText('Укажите часы работы службы доставки в формате ЧЧ:ММ-ЧЧ:ММ. Если вы укажите часы работы по-другому, время не изменится: ', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[1][1]
-                    }]
-                ]
-            }
-        })
-    }
-    //НАСТРОЙКИ КОНТАКТОВ
-    if (query.data === keyboards.admin_preferences_buttons[2][1]){
-        bot.editMessageText('Укажите данные для связи с вами. Клиент увидит их когда выберет ваше заведение', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_phone[3][0],
-                        callback_data: 'backtoalldata_cb'
-                    }],
-                    [{
-                        text: keyboard_admin_phone[0][0] + help_phone[chat.id],
-                        callback_data: keyboard_admin_phone[0][1]
-                    },
-                    {
-                        text: keyboard_admin_phone[1][0] + point_location[chat.id][0] + ', ' + point_location[chat.id][1],
-                        callback_data: keyboard_admin_phone[1][1]
-                    }],
-                    [{
-                        text: keyboard_admin_phone[2][0] + point_adress[chat.id],
-                        callback_data: keyboard_admin_phone[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_phone[0][1]){
-        isChangingPhone[chat.id] = 1
-        bot.editMessageText('Укажите номер телефона, по которому может позвонить Ваш клиент в случае возникновения вопросов: ', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_phone[1][1]){
-        isChangingPhone[chat.id] = 2
-        bot.editMessageText('Отправьте геолокацию точки, из которой осуществляется доставка. Найдите скрепку в левом нижнем углу (справка от кнопки меню) и выберите "Геопозиция":', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-    if (query.data === keyboard_admin_phone[2][1]){
-        isChangingPhone[chat.id] = 3
-        bot.editMessageText('Напишите адрес, из которого осуществляется доставка:', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: keyboard_admin_delset[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-    //НАЗАД В НАСТРОЙКИ
-    if (query.data === 'backtoalldata_cb'){
-        
-        bot.editMessageText(message_text[chat.id][7], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: keyboards.admin_preferences_keyboard
-            }
-        })
-    }
-
-    //ВКЛАДКА РАССЫЛОК
-    if (query.data ===  keyboards.admin_menu_buttons[1][1]){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7]).catch(() => {})
-        bot.editMessageText(message_text[chat.id][6], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][6]
-        })
-        .then(() => {
-            var other_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/mailing')
-            other_data.get().then((snapshot) => {
-                if (snapshot.val().preferences.is_active === true){
-                    isMailingMessage[chat.id] = 1
-                    bot.sendMessage(chat.id, 'Вы можете отправить письмо всем своим клиентам. Введите текст сообщения: ', {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: keyboards.admin_preferences_buttons[3][0],
-                                    callback_data: keyboards.admin_preferences_buttons[3][1]
-                                }]
-                            ]
-                        }
-                    })
-                    .then(res => {
-                        message_toedit[chat.id][7] = res.message_id
-                        message_text[chat.id][7] = res.text
-                    })
-                }
-                else if(snapshot.val().preferences === undefined || snapshot.val().preferences.is_active !== true){
-                    var other_data1 = fb.database().ref('Motherbase/contacts')
-                    other_data1.get().then((snapshot2) => {
-                        let nick = snapshot2.val().tgusername
-                        if (nick.includes('@')){
-                            nick = nick.slice(1)
-                        }
-                        bot.sendMessage(chat.id, 'Создавайте скидочные купоны и отправляйте их с помощью рассылки своим клиентам. Поднимите уровень продаж на новый уровень с тарифом "Базовый" 🤩', {
+                    let generaldata = fb.database().ref('Kickstarter/')
+                    generaldata.get().then(res => {
+                        bot.sendMessage(res.val().payments.info.moderator_id, txt_admin, {
                             parse_mode: 'HTML',
                             reply_markup: {
                                 inline_keyboard: [
                                     [{
-                                        text: keyboards.admin_preferences_buttons[3][0],
-                                        callback_data: keyboards.admin_preferences_buttons[3][1]
-                                    }],
-                                    [{
-                                        text: 'Повысить тариф 🔋',
-                                        url: 'https://t.me/' + nick
+                                        text: acceptwithdrawal[0],
+                                        callback_data: acceptwithdrawal[1] + '_' + time_now.getTime()
+                                    },
+                                    {
+                                        text: declinewithdrawal[0],
+                                        callback_data: declinewithdrawal[1] + '_' + time_now.getTime()
                                     }]
                                 ]
                             }
                         })
-                        .then(res => {
-                            message_toedit[chat.id][7] = res.message_id
-                            message_text[chat.id][7] = res.text
+                        .then(resulting => {
+                            if (messagetext_toedit[res.val().payments.info.moderator_id] === undefined) messagetext_toedit[res.val().payments.info.moderator_id] = []
+                            if (message_toedit[res.val().payments.info.moderator_id] === undefined) message_toedit[res.val().payments.info.moderator_id] = []
+                            messagetext_toedit[res.val().payments.info.moderator_id][3] = resulting.text
+                            message_toedit[res.val().payments.info.moderator_id][3] = resulting.message_id
                         })
-                        
-                    })
-                }
-            })
-            
-        })
-    }
-    if (query.data === sendmessage_cb){
-        StartMailing(mailing_text[chat.id], chat.id)
-        bot.deleteMessage(chat.id, message_toedit[chat.id][6])
-        .then(() => {
-            bot.editMessageText('Рассылка запущена! Чем еще займемся? 😏', {
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][7],
-                reply_markup: {
-                    inline_keyboard: keyboards.admin_menu_keyboard
-                }
-            })
-            .then(res => {
-                message_toedit[chat.id][6] = res.message_id
-                message_toedit[chat.id][7] = null
-            })
-        })
-    }
-
-    //ВКЛАДКА КУПОНОВ
-    if (query.data ===  keyboards.admin_menu_buttons[3][1]){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7]).catch(() => {})
-        bot.editMessageText(message_text[chat.id][6], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][6]
-        }).catch(() => {})
-        let kb = []
-        kb[0] = [{
-            text: keyboards.admin_preferences_buttons[3][0],
-            callback_data: keyboards.admin_preferences_buttons[3][1]
-        }]
-
-        var other_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system')
-        other_data.get().then((snapshot) => {
-            if (coupondata[chat.id] === undefined){
-                coupondata[chat.id] = []
-            }
-            if (snapshot.val().preferences.coupons.is_active === true){
-                let coupons
-                if (snapshot.val().coupons !== undefined){
-                    coupons = Object.keys(snapshot.val().coupons)
-                    coupondata[chat.id][1] = snapshot.val().preferences.coupons.max_activ
-                    if (coupons.length < snapshot.val().preferences.coupons.max_coupons) {
-                        kb[0][1] = {
-                            text: keyboards.admin_preferences_buttons[4][0],
-                            callback_data: keyboards.admin_preferences_buttons[4][1]
-                        }
-        
-                        for (let i = 0; i<coupons.length; i++){ 
-                            var other_data1 = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                            other_data1.get().then((result) => {
-                                kb[i+1] = [{
-                                    text: result.val().name,
-                                    callback_data: 'readcoupon_' + coupons[i]
-                                }]
-        
-                                if (i === coupons.length - 1){
-                                    bot.sendMessage(chat.id, 'Вы можете создать скидочный купон и выдавать его своим клиентам. Один купон могут использовать до '+ snapshot.val().preferences.coupons.max_activ +' человек', {
-                                        parse_mode: 'HTML',
-                                        reply_markup: {
-                                            inline_keyboard: kb
-                                        }
-                                    })
-                                    .then(res => {
-                                        message_toedit[chat.id][7] = res.message_id
-                                        message_text[chat.id][7] = res.text
-                                    })
-                                }
-                            })
-                            
-                        }
-        
-                        
-                    }
-                    else {
-                        for (let i = 0; i<coupons.length; i++){ 
-                            var other_data1 = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                            other_data1.get().then((result) => {
-                                kb[i+1] = [{
-                                    text: result.val().name,
-                                    callback_data: 'readcoupon_' + coupons[i]
-                                }]
-        
-                                if (i === coupons.length - 1){
-                                    bot.sendMessage(chat.id, 'Вы можете создать скидочный купон и выдавать его своим клиентам. Один купон могут использовать до '+ snapshot.val().preferences.coupons.max_activ +' человек', {
-                                        parse_mode: 'HTML',
-                                        reply_markup: {
-                                            inline_keyboard: kb
-                                        }
-                                    })
-                                    .then(res => {
-                                        message_toedit[chat.id][7] = res.message_id
-                                        message_text[chat.id][7] = res.text
-                                    })
-                                }
-                            })
-                            
-                        }
-        
-                        
-                    }
-                }
-                else {
-                    coupondata[chat.id][1] = snapshot.val().preferences.coupons.max_activ
-                    kb[0] = [{
-                        text: keyboards.admin_preferences_buttons[3][0],
-                        callback_data: keyboards.admin_preferences_buttons[3][1]
-                    }, 
-                    {
-                        text: keyboards.admin_preferences_buttons[4][0],
-                        callback_data: keyboards.admin_preferences_buttons[4][1]
-                    }]
     
-                    bot.sendMessage(chat.id, 'Вы можете создать скидочный купон и выдавать его своим клиентам. Один купон могут использовать до '+ snapshot.val().preferences.coupons.max_activ +' человек', {
+                        let txt = 'Запрос на вывод ' + result.val().balance.bank + ' руб. был отправлен. Обычно обработка платежа занимает до трех дней'
+                        txt += '\n\n<i>Если Ваш платеж отклонили или статус платежа не меняется, свяжитесь с <a href="tg://user?id='+ res.val().payments.info.moderator_id +'">модератором</a></i>'
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+                        bot.sendMessage(chat.id, txt, {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: 'Понятно',
+                                        callback_data: backtostart[1]
+                                    }]
+                                ]
+                            }
+                        })
+                    })
+                    
+                    //Отправляем сообщение автору, что запрос был подан и ответ будет в течение 3 дней
+    
+                })
+            }
+        }
+        //ВЫВЕСТИ СВОЮ СУММУ
+        if (query.data.includes(withdrawcustombutton[1])){
+            if (query.data.split('_')[1] === '0'){
+                let balancedata = fb.database().ref('Kickstarter/users/' + chat.id + '/balance')
+                balancedata.get().then(result => {
+                    let kb = []
+                    let procents = [Math.floor(result.val().bank  * 0.25), Math.floor(result.val().bank  * 0.5), Math.floor(result.val().bank  * 0.75), Math.floor(result.val().bank)]
+                    let txt = '<b>Укажите, какую сумму вы хотите снять?</b>\nКомиссия при снятии составляет ' + query.data.split('_')[2] + '%'
+                    
+                    kb[0] = [{
+                        text: backtostart[0],
+                        callback_data: withdrawbutton[1]
+                    }]
+                    if (Math.floor(result.val().bank  * 0.25) >= result.val().withdroval_limit){
+                        kb.push([{
+                            text: procents[0] + 'руб. (25%)',
+                            callback_data: withdrawcustombutton[1] + '_1_' + procents[0]
+                        }])
+                    }
+                    if (Math.floor(result.val().bank  * 0.5) >= result.val().withdroval_limit){
+                        kb.push([{
+                            text: procents[1] + 'руб. (50%)',
+                            callback_data: withdrawcustombutton[1] + '_1_' + procents[1]
+                        }])
+                    }
+                    if (Math.floor(result.val().bank  * 0.75) >= result.val().withdroval_limit){
+                        kb.push([{
+                            text: procents[2] + 'руб. (75%)',
+                            callback_data: withdrawcustombutton[1] + '_1_' + procents[2]
+                        }])
+                    }
+                    kb.push([{
+                        text: procents[3] + 'руб. (100%)',
+                        callback_data: withdrawcustombutton[1] + '_1_' + procents[3]
+                    }])
+    
+                    bot.editMessageText(txt, {
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
                         parse_mode: 'HTML',
                         reply_markup: {
                             inline_keyboard: kb
                         }
                     })
-                    .then(res => {
-                        message_toedit[chat.id][7] = res.message_id
-                        message_text[chat.id][7] = res.text
-                    })
-                }
-            }
-            else if (snapshot.val().preferences === undefined || snapshot.val().preferences.coupons.is_active !== true) {
-                var other_data1 = fb.database().ref('Motherbase/contacts')
-                other_data1.get().then((snapshot2) => {
-                    let nick = snapshot2.val().tgusername
-                    if (nick.includes('@')){
-                        nick = nick.slice(1)
-                    }
-                    bot.sendMessage(chat.id, 'Создавайте скидочные купоны и отправляйте их с помощью рассылки своим клиентам. Поднимите уровень продаж на новый уровень с тарифом "Базовый" 🤩', {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: keyboards.admin_preferences_buttons[3][0],
-                                    callback_data: keyboards.admin_preferences_buttons[3][1]
-                                }],
-                                [{
-                                    text: 'Повысить тариф 🔋',
-                                    url: 'https://t.me/' + nick
-                                }]
-                            ]
-                        }
-                    })
-                    .then(res => {
-                        message_toedit[chat.id][7] = res.message_id
-                        message_text[chat.id][7] = res.text
-                    })
-                    
-                })
-               
-            }
-        })
-    }
-
-    if (query.data.includes('readcoupon_')){
-        let coupon_name = query.data.split('_')
-        coupon_name = coupon_name[1]
-        var other_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupon_name)
-        other_data.get().then((snapshot) => {
-            let txt = `Купон <b>`+ snapshot.val().name +`</b>
-Скидка: <b>` + snapshot.val().percent + `%</b>
-Активаций сделано: <b>` + snapshot.val().activated + `</b>
-Активаций осталось: <b>` + snapshot.val().activ_left + `</b>`
-            bot.editMessageText(txt , {
-                parse_mode: 'HTML',
-                chat_id: chat.id,
-                message_id: message_toedit[chat.id][7],
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: '◀️ Назад',
-                            callback_data: keyboards.admin_menu_buttons[3][1]
-                        }],
-                        [{
-                            text: '❌ Удалить купон',
-                            callback_data: 'delcoupon_' + coupon_name
-                        }]
-                    ]
-                }
-            })
-        })
-    }
-
-    if (query.data.includes('delcoupon_')){
-        let coupon_name = query.data.split('_')
-        coupon_name = coupon_name[1]
-        let updates = {};
-        updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/loyal_system/coupons/' + coupon_name] = null
-        fb.database().ref().update(updates)
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7]).catch(() => {})
-        bot.editMessageText(message_text[chat.id][6], {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][6]
-        }).catch(() => {})
-        let kb = []
-        kb[0] = [{
-            text: keyboards.admin_preferences_buttons[3][0],
-            callback_data: keyboards.admin_preferences_buttons[3][1]
-        }]
-        var other_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system')
-        other_data.get().then((snapshot) => {
-            if (snapshot.val().coupons !== undefined){
-                let coupons = Object.keys(snapshot.val().coupons)
-                if (coupons.length < snapshot.val().preferences.coupons.max_coupons) {
-                    kb[1] = [{
-                        text: keyboards.admin_preferences_buttons[4][0],
-                        callback_data: keyboards.admin_preferences_buttons[4][1]
-                    }]
-    
-                    for (let i = 0; i<coupons.length; i++){ 
-                        var other_data1 = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                        other_data1.get().then((result) => {
-                            kb[i+2] = [{
-                                text: result.val().name,
-                                callback_data: 'readcoupon_' + coupons[i]
-                            }]
-    
-                            if (i === coupons.length - 1){
-                                bot.sendMessage(chat.id, 'Купон был успешно удален', {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: kb
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][7] = res.message_id
-                                    message_text[chat.id][7] = res.text
-                                })
-                            }
-                        })
-                        
-                    }
-    
-                    
-                }
-                else {
-                    for (let i = 0; i<coupons.length; i++){ 
-                        var other_data1 = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                        other_data1.get().then((result) => {
-                            kb[i+1] = [{
-                                text: result.val().name,
-                                callback_data: 'readcoupon_' + coupons[i]
-                            }]
-    
-                            if (i === coupons.length - 1){
-                                bot.sendMessage(chat.id, 'Купон был успешно удален', {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: kb
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][7] = res.message_id
-                                    message_text[chat.id][7] = res.text
-                                })
-                            }
-                        })
-                        
-                    }
-    
-                    
-                }
-            }
-            else {
-                kb[1] = [{
-                    text: keyboards.admin_preferences_buttons[4][0],
-                    callback_data: keyboards.admin_preferences_buttons[4][1]
-                }]
-
-                bot.sendMessage(chat.id, 'Купон был успешно удален', {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: kb
-                    }
-                })
-                .then(res => {
-                    message_toedit[chat.id][7] = res.message_id
-                    message_text[chat.id][7] = res.text
                 })
             }
-        })
-    }
-
-    if (query.data === keyboards.admin_preferences_buttons[4][1]){
-        isCreatingCoupon[chat.id] = 1
-        bot.editMessageText('Введите код купона. Он может быть любым, но клиенту нужно будет точь-в-точь его скопировать:' , {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: '◀️ Назад',
-                        callback_data: keyboards.admin_menu_buttons[3][1]
-                    }]
-                ]
-            }
-        })
-    }
-
-    //СТОП-ЛИСТЫ
-    if (query.data === keyboards.admin_menu_buttons[2][1]){
-        let categories_data = fb.database().ref('Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/other_info/pricing/stoplists')
-        categories_data.get().then((snapshot) => {
-            if (snapshot.val() === true){
-                bot.deleteMessage(chat.id, message_toedit[chat.id][6]).catch(() => {})
-                keyboards.CategoriesKeyboardAdmin(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, 'Выберите нужную категорию: ', location_text, phone_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id] , message_toedit[chat.id], message_text[chat.id], openadminpanel[1]) 
-            }
-            else {
-                var other_data1 = fb.database().ref('Motherbase/contacts')
-                other_data1.get().then((snapshot2) => {
-                    let nick = snapshot2.val().tgusername
-                    if (nick.includes('@')){
-                        nick = nick.slice(1)
+            if (query.data.split('_')[1] === '1'){
+                let balancedata = fb.database().ref('Kickstarter/users/' + chat.id)
+                balancedata.get().then(result => {
+                    //Создать в базе данных в ветке админа запрос на выплату. Он включает в себя
+                    //1. Имя автора
+                    //2. chat.id автора
+                    //3. Дату создания запроса
+                    //4. Текущий баланс
+                    //5. Сумму вывода
+                    //6. Комиссию сервиса: Х руб. (У%)
+                    //7. Реквизиты вывода
+    
+                    console.log(parseInt(query.data.split('_')[2]))
+    
+                    let date = new Date()
+                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                    let timeOfffset = 6 //Astana GMT +6
+                    let time_now = new Date(utcTime + (3600000 * timeOfffset))
+    
+                    let updates = {}
+                    let newrequest = {
+                        name: chat.first_name,
+                        id: chat.id,
+                        date: time_now.getTime(),
+                        bank: result.val().balance.bank,
+                        withdraw_amount: parseInt(query.data.split('_')[2]),
+                        comission: result.val().balance.comission,
+                        card: result.val().balance.card,
+                        status: 'WAITING'
                     }
-                    bot.editMessageText('Создавайте скидочные купоны и отправляйте их с помощью рассылки своим клиентам. Поднимите уровень продаж на новый уровень с тарифом "Базовый" 🤩', {
-                        parse_mode: 'HTML',
-                        chat_id: chat.id,
-                        message_id: message_toedit[chat.id][6],
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: keyboards.admin_preferences_buttons[3][0],
-                                    callback_data: openadminpanel[1]
-                                }],
-                                [{
-                                    text: 'Повысить тариф 🔋',
-                                    url: 'https://t.me/' + nick
-                                }]
-                            ]
-                        }
-                    })
-                })
-                
-            }
-        })
-        
-    }
-
-    if (query.data === keyboards.admin_menu_buttons[2][1] + '_sec'){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7]).catch(() => {})
-        keyboards.CategoriesKeyboardAdmin(category_keyboard[chat.id], userCategories[chat.id], fb, bot, chat.id, query.message, anotherpoint_text, 'Выберите нужную категорию: ', location_text, phone_text, UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id] , message_toedit[chat.id], message_text[chat.id], openadminpanel[1]) 
-    }
-
-    if (query.data.includes('_admnctcb')){
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7])
-        userCategory[chat.id] = query.data.split('_')
-        userCategory[chat.id] = userCategory[chat.id][0]
-        keyboards.FoodKeyboardAdmin(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query,  'Нажмите на товар, чтобы добавить его в стоп-лист. Если рядом с ним значок "🔘" - он включен и отображается. ⚪️ - отключен', UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id], message_toedit[chat.id], message_text[chat.id])
-    }
-
-    if (query.data.includes('admnturnoff_')){
-        let num = query.data.split('_')
-        console.log('num:' + num[1] + ', ' + query.data)
-
-        let updates = {}
-        updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/delivery_menu/categories/' + userCategory[chat.id] + '/food/' + num[1] + '/is_active'] = false
-        fb.database().ref().update(updates)
-
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7])
-        keyboards.FoodKeyboardAdmin(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query,  'Нажмите на товар, чтобы добавить его в стоп-лист. Если рядом с ним значок "🔘" - он включен и отображается. ⚪️ - отключен', UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id], message_toedit[chat.id], message_text[chat.id])
-        
-    }
-
-    if (query.data.includes('admnturnon_')){
-        let num = query.data.split('_')
-        console.log('num:' + num[1] + ', ' + query.data)
-
-        let updates = {}
-        updates['Delivery/' + UserDelCat[chatId] + '/' + userPoint[chatId] + '/delivery_menu/categories/' + userCategory[chat.id] + '/food/' + num[1] + '/is_active'] = true
-        fb.database().ref().update(updates)
-
-        bot.deleteMessage(chat.id, message_toedit[chat.id][7])
-        keyboards.FoodKeyboardAdmin(foodlist_keyboard[chat.id], userFoodlist[chat.id], foodlist_count[chat.id], userCategory[chat.id], fb, bot, chat, message_id, anothercategory_text, query, 'Нажмите на товар, чтобы добавить его в стоп-лист. Если рядом с ним значок "🔘" - он включен и отображается. ⚪️ - отключен', UserDelCat[chat.id], userPoint[chat.id], user_mode[chat.id], message_toedit[chat.id], message_text[chat.id])
-    }
-
-    if (query.data.includes('admnerr_')){
-        let num = query.data.split('_')
-        console.log('num:' + num[1])
-
-        bot.editMessageText('‼️ Этот товар содержит ошибки. Свяжитесь с службой поддержки ‼️', {
-            parse_mode: 'HTML',
-            chat_id: chat.id,
-            message_id: message_toedit[chat.id][7],
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: '◀️ Назад',
-                        callback_data: keyboards.admin_menu_buttons[2][1]
-                    }]
-                ]
-            }
-        })
-    }
-
-    }
-
-    //Этот раздел работает с группами для курьеров
-    if (chat.type === 'group' || chat.type === 'supergroup'){
-        bot.getChat(chat.id).then((result0) => {
-            if (result0.description !== null || result0.description !== undefined){
-                let del_userdata = []
-                console.log(result0)
-                del_userdata[chat.id] = result0.description.split(',') // [0] - категория, [1] - точка
-                if (del_userdata[chat.id].length === 2){
-                    let userdata = fb.database().ref('Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] +'/bills/')
-                    userdata.get().then((result) => {
-                        let bills_array = Object.keys(result.val())
-                        console.log('Вы нажимаете на кнопку callback для доставщиков: ' + query.data + ', array = ' + bills_array.length)
-                        for(let i = bills_array.length - 1; i >= 0; i--){
-                            console.log(i + ' Processing... ' + query.data + ', ' + (accept_order_callback + bills_array[i]))
-                            if (query.data === accept_order_callback + bills_array[i].toString()){
-                                accepted_order_name = bills_array[i]
-                                console.log('Вы приняли заказ: ' + accepted_order_name)
-                                //сохранить в чеке айди доставщика чтобы только он мог нажимать на кнопки
-                                let orderinfo = fb.database().ref('Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i]);
-                                orderinfo.get().then((snapshot) => 
-                                {
-                                    console.log(query)
-                                    console.log('deliverer name2 : ' + query.message.from.first_name + ', ' + query.message.from.id)
-                                    let date = new Date()
-                                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                    let timeOfffset = 6 //Astana GMT +6
-                                    let accept_date = new Date(utcTime + (3600000 * timeOfffset))
-                                    //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
-                                    let updates = {}
-/*                                     let order_update = {
-                                        adress: snapshot.val().adress,
-                                        client_name: snapshot.val().client_name,
-                                        date_ordered: snapshot.val().date_ordered,
-                                        client_id: snapshot.val().client_id,
-                                        order_info: snapshot.val().order_info,
-                                        phone: snapshot.val().phone,
-                                        price: snapshot.val().price,
-                                        order_status: order_statuses_text[1],
-                                        deliver_name: query.from.first_name.toString(),
-                                        accept_date: accept_date.getTime(),
-                                        deliver_id: query.from.id.toString(),
-                                        message_id: query.message.message_id,
-                                        user_personsamount: snapshot.val().user_personsamount,
-                                        user_payingmethod: snapshot.val().user_payingmethod,
-                                        user_deliverdate: snapshot.val().user_deliverdate,
-                                        user_sdachainfo: snapshot.val().user_sdachainfo,
-                                        user_howtocome: snapshot.val().user_howtocome
-                                    } */
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/order_status'] = order_statuses_text[1]
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_name'] = query.from.first_name
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/accept_date'] = accept_date.getTime()
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_id'] = query.from.id.toString()
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/message_id'] = query.message.message_id
-                                    fb.database().ref().update(updates)
-                
-                                    /////ИЗМЕНЯЕМ ЧЕК///////////////
-                
-                                    let options = { weekday: 'short'}
-                                    let Astana_date = new Date(snapshot.val().date_ordered)
-                                    
-                                    let minutes = Astana_date.getMinutes()
-                                    if (minutes < 10) minutes = '0' + minutes
-                                    let hours = Astana_date.getHours()
-                                    if (hours < 10) hours = '0' + hours
-                                    let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + Astana_date.getDate() + '.' + (Astana_date.getMonth() + 1)
-                
-                                    let Astana_date_accept = new Date(accept_date)  
-                                    let minutes2 = Astana_date_accept.getMinutes()
-                                    if (minutes2 < 10) minutes2 = '0' + minutes2
-                                    let hours2 = Astana_date_accept.getHours()
-                                    if (hours2 < 10) hours2 = '0' + hours2
-                                    let visible_date_accept = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date_accept) + ' ' +  */hours2 + ':' + minutes2 + ', ' + Astana_date_accept.getDate() + '.' + (Astana_date_accept.getMonth() + 1)                                   
-                
-                                    deliver_bill_topic = deliver_bill_topic_names[1] + order_statuses_text[1]
-                                    deliver_bill_client_info = `
-                                
-<b>👤 Заказчик</b>
-├ ФИО: ` + snapshot.val().client_name + `
-├ Адрес: ` + snapshot.val().adress + `
-└ Номер: ` + snapshot.val().phone + `
-                                
-`
-deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + snapshot.val().order_info + `
-
-`
-                                    
-deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + snapshot.val().price + ` тг.
-
-`
-                                
-deliver_bill_order_details = `<b>ℹ️ Детали заказа</b> (Нур-Султан GMT+6)
-├ Дата заказа: ` + visible_date + `
-├ Дата принятия заказа: ` + visible_date_accept + `
-└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
-`
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-
-if (snapshot.val().user_personsamount !== undefined){
-    deliver_bill_help_info += `
-├ Кол-во персон: ` + snapshot.val().user_personsamount
-}
-
-deliver_bill_help_info += `
-├ Способ оплаты: ` + snapshot.val().user_payingmethod + `
-├ Купюра оплаты: ` + snapshot.val().user_sdachainfo + `
-└ Когда доставить: ` + snapshot.val().user_deliverdate + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + snapshot.val().user_howtocome + `
-
-`
-                
-                                    delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-                                    bot.editMessageText(delivers_bill, {
-                                        parse_mode: 'HTML',
-                                        chat_id: query.message.chat.id,
-                                        message_id: query.message.message_id,
-                                        reply_markup:{
-                                            inline_keyboard:[
-                                                [{
-                                                    text: '✅ Заказ доставлен',
-                                                    callback_data: isdelivered_callback + bills_array[i]
-                                                }]
-                                            ]
-                                        }
-                                    })
-                                })
-                                break
-                            }
-                            else if (query.data === refuse_order_callback + bills_array[i]){
-                                console.log('Вы отклонили заказ: ' + bills_array[i])
-                                let orderinfo = fb.database().ref('Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i]);
-                                orderinfo.get().then((snapshot) => 
-                                {
-                                    let date = new Date()
-                                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                    let timeOfffset = 6 //Astana GMT +6
-                                    let refuse_date = new Date(utcTime + (3600000 * timeOfffset))
-
-                                    //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
-                                    let updates = {}
-/*                                     let order_update = {
-                                        adress: snapshot.val().adress,
-                                        client_name: snapshot.val().client_name,
-                                        date_ordered: snapshot.val().date_ordered,
-                                        client_id: snapshot.val().client_id,
-                                        order_info: snapshot.val().order_info,
-                                        phone: snapshot.val().phone,
-                                        price: snapshot.val().price,
-                                        order_status: order_statuses_text[3],
-                                        deliver_name: query.from.first_name.toString(),
-                                        accept_date: refuse_date.getTime(),
-                                        deliver_id: query.from.id.toString(),
-                                        message_id: query.message.message_id,
-                                        user_personsamount: snapshot.val().user_personsamount,
-                                        user_payingmethod: snapshot.val().user_payingmethod,
-                                        user_deliverdate: snapshot.val().user_deliverdate,
-                                        user_sdachainfo: snapshot.val().user_sdachainfo,
-                                        user_howtocome: snapshot.val().user_howtocome,
-                                        
-                                    } */
-                                    
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/order_status'] = order_statuses_text[3]
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_name'] = query.from.first_name
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/accept_date'] = refuse_date.getTime()
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_id'] = query.from.id.toString()
-                                    updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/message_id'] = query.message.message_id
-                                    fb.database().ref().update(updates)
-                
-                                    /////ИЗМЕНЯЕМ ЧЕК///////////////
-                                    let options = { weekday: 'short'}
-                                    let Astana_date = new Date(snapshot.val().date_ordered)
-                                    
-                let minutes = Astana_date.getMinutes()
-                if (minutes < 10) minutes = '0' + minutes
-                let hours = Astana_date.getHours()
-                if (hours < 10) hours = '0' + hours
-                let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + Astana_date.getDate() + '.' + (Astana_date.getMonth() + 1)
-                
-                let Astana_date_accept = new Date(refuse_date)
-                let minutes2 = Astana_date_accept.getMinutes()
-                if (minutes2 < 10) minutes2 = '0' + minutes2
-                let hours2 = Astana_date_accept.getHours()
-                if (hours2 < 10) hours2 = '0' + hours2
-                let visible_date_refuse = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date_accept) + ' ' +  */hours2 + ':' + minutes2 + ', ' + Astana_date_accept.getDate() + '.' + (Astana_date_accept.getMonth() + 1)                                   
-                
-                                    deliver_bill_topic = deliver_bill_topic_names[2] + query.from.first_name.toString()
-                                    deliver_bill_client_info = `
-
-<b>👤 Заказчик</b>
-├ ФИО: ` + snapshot.val().client_name + `
-├ Адрес: ` + snapshot.val().adress + `
-└ Номер: ` + snapshot.val().phone + `
-                                
-`
-                                    deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + snapshot.val().order_info + `
-
-`
-                                    
-deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + snapshot.val().price + ` тг.
-
-`
-                                
-deliver_bill_order_details = `<b>ℹ️ Детали заказа</b> (Нур-Султан GMT+6)
-├ Дата заказа: ` + visible_date + `
-├ Дата отказа от заказа: ` + visible_date_refuse + `
-└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
-`
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-
-if (snapshot.val().user_personsamount !== undefined){
-    deliver_bill_help_info += `
-├ Кол-во персон: ` + snapshot.val().user_personsamount
-}
-
-deliver_bill_help_info += `
-├ Способ оплаты: ` + snapshot.val().user_payingmethod + `
-├ Купюра оплаты: ` + snapshot.val().user_sdachainfo + `
-└ Когда доставить: ` + snapshot.val().user_deliverdate + `
-                
-<b>🚴‍♂️ Как пройти?</b>
-` + snapshot.val().user_howtocome + `
-
-`
-                delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-                                    bot.editMessageText(delivers_bill, {
-                                        parse_mode: 'HTML',
-                                        chat_id: query.message.chat.id,
-                                        message_id: query.message.message_id,
-                                    })
-                                })
-                                break 
-                            }
-                            else if (query.data === isdelivered_callback + bills_array[i]){
-                                accepted_order_name = bills_array[i]
-                                console.log('Вы доставили заказ: ' + accepted_order_name)
-                                //сохранить в чеке айди доставщика чтобы только он мог нажимать на кнопки
-                                let orderinfo = fb.database().ref('Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i]);
-                                orderinfo.get().then((snapshot) => 
-                                {
-                                    if (query.from.id.toString() === snapshot.val().deliver_id){
-                                        
-                                        let date = new Date()
-                                        let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                        let timeOfffset = 6 //Astana GMT +6
-                                        let delivered_date = new Date(utcTime + (3600000 * timeOfffset))
-                                        //обновляем чек (!!! Нужно делать тоже самое для чека клиента)
-                    
-                                        /////ИЗМЕНЯЕМ ЧЕК///////////////
-                                        let options = { weekday: 'short'}
-                                        let Astana_date = new Date(snapshot.val().date_ordered)
-                                        
-                let minutes = Astana_date.getMinutes()
-                if (minutes < 10) minutes = '0' + minutes
-                let hours = Astana_date.getHours()
-                if (hours < 10) hours = '0' + hours
-                let visible_date = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date) + ' ' +  */hours + ':' + minutes + ', ' + Astana_date.getDate() + '.' + (Astana_date.getMonth() + 1)
-                
-                let Astana_date_accept = new Date(snapshot.val().accept_date)  
-                let minutes2 = Astana_date_accept.getMinutes()
-                if (minutes2 < 10) minutes2 = '0' + minutes2
-                let hours2 = Astana_date_accept.getHours()
-                if (hours2 < 10) hours2 = '0' + hours2
-                let visible_date_accept = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date_accept) + ' ' +  */hours2 + ':' + minutes2 + ', ' + Astana_date_accept.getDate() + '.' + (Astana_date_accept.getMonth() + 1)                                   
-                
-                
-                let Astana_date_delivered = new Date(delivered_date)  
-                let minutes3 = Astana_date_delivered.getMinutes()
-                if (minutes3 < 10) minutes3 = '0' + minutes3
-                let hours3 = Astana_date_delivered.getHours()
-                if (hours3 < 10) hours3 = '0' + hours3
-                let visible_date_delivered = /* new Intl.DateTimeFormat('ru-RU', options).format(Astana_date_delivered) + ' ' +  */hours3 + ':' + minutes3 + ', ' + Astana_date_delivered.getDate() + '.' + (Astana_date_delivered.getMonth() + 1)                                      
-                                        
-                                        deliver_bill_topic = deliver_bill_topic_names[1] + order_statuses_text[2]
-                                        deliver_bill_client_info = `
-                                        
-<b>👤 Заказчик</b>
-├ ФИО: ` + snapshot.val().client_name + `
-├ Адрес: ` + snapshot.val().adress + `
-└ Номер: ` + snapshot.val().phone + `
-                                    
-`
-deliver_bill_order_info = `<b>🧾 Описание заказа:</b>
-` + snapshot.val().order_info + `
-                                    
-`
-                                        
-deliver_bill_finalprice = `<b>💵 Итого к оплате:</b>
-` + snapshot.val().price + ` тг.
-                
-`
-                         
-deliver_bill_order_details = `<b>ℹ️ Детали заказа</b> (Нур-Султан, GMT+6)
-├ Дата заказа: ` + visible_date + `
-├ Дата принятия заказа: ` + visible_date_accept + `
-├ Дата доставки: ` + visible_date_delivered + `
-└ Имя работника: ` + query.from.first_name.toString() + `, id: `+ query.from.id.toString() + `
-`
-deliver_bill_help_info = `<b>📌 Доп. информация</b>`
-
-if (snapshot.val().user_personsamount !== undefined){
-    deliver_bill_help_info += `
-├ Кол-во персон: ` + snapshot.val().user_personsamount
-}
-
-deliver_bill_help_info += `
-├ Способ оплаты: ` + snapshot.val().user_payingmethod + `
-├ Купюра оплаты: ` + snapshot.val().user_sdachainfo + `
-└ Когда доставить: ` + snapshot.val().user_deliverdate + `
-
-<b>🚴‍♂️ Как пройти?</b>
-` + snapshot.val().user_howtocome + `
-
-`
-                delivers_bill = deliver_bill_topic + deliver_bill_client_info + deliver_bill_order_info + deliver_bill_finalprice + deliver_bill_help_info + deliver_bill_order_details
-                                        
-                                            let updates = {}
-                                           /*  let order_update = {
-                                                adress: snapshot.val().adress,
-                                                client_name: snapshot.val().client_name,
-                                                date_ordered: snapshot.val().date_ordered,
-                                                client_id: snapshot.val().client_id,
-                                                order_info: snapshot.val().order_info,
-                                                phone: snapshot.val().phone,
-                                                price: snapshot.val().price,
-                                                order_status: order_statuses_text[2],
-                                                deliver_name: query.from.first_name.toString(),
-                                                accept_date: snapshot.val().accept_date,
-                                                deliver_id: query.from.id.toString(),
-                                                delivered_date: delivered_date.getTime(),
-                                                message_id: query.message.message_id,
-                                                bill_text: delivers_bill,
-                                                user_personsamount: snapshot.val().user_personsamount,
-                                                user_payingmethod: snapshot.val().user_payingmethod,
-                                                user_deliverdate: snapshot.val().user_deliverdate,
-                                                user_sdachainfo: snapshot.val().user_sdachainfo,
-                                                user_howtocome: snapshot.val().user_howtocome
-                                            } */
-                                            
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/order_status'] = order_statuses_text[2]
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_name'] = query.from.first_name
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/delivered_date'] = delivered_date.getTime()
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/deliver_id'] = query.from.id.toString()
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/message_id'] = query.message.message_id
-                                            updates['Delivery/'+ del_userdata[chat.id][0] + '/' + del_userdata[chat.id][1] + '/bills/' + bills_array[i] + '/bill_text'] = delivers_bill
-
-                                            fb.database().ref().update(updates)
-                
-                                            bot.editMessageText(delivers_bill, {
-                                            parse_mode: 'HTML',
-                                            chat_id: query.message.chat.id,
-                                            message_id: query.message.message_id,
-                                        })
-                                    }
-                                    
-                                })
-                                break
-                            }
-                            else if (i === 0) {
-                                console.log(i + 'HERE IT IS')
-                                bot.editMessageText('💭 Заказ не найден. Скорее всего, клиент его отменил', {
-                                    chat_id: chat.id,
-                                    message_id: query.message.message_id
-                                })
-                            }
-                        }
-                    })
-                }
-            }
-            else {
-                bot.sendMessage(chat.id, 'Извините, этот бот пока не работает в группах и каналах 🥺')
-            }
-        })
     
-    }
-})
-
-//Кнопка меню "Мой заказ"
-bot.onText(/\/my_order/, msg => {
-
-    const { chat, message_id, text } = msg
-    const chatId = chat.id
-    if (order_status[chatId] === 'unknown'){
-        if (isWritingBusiness[chat.id] === 0 || isWritingBusiness[chat.id] === undefined){
-            if (buttons_message[chatId] !== 0){
-                console.log('basket: ' + basket[chat.id])
-                bot.deleteMessage(chatId, buttons_message[chatId]).catch(err => {
-                    console.log(err)
-                })
-                if (message_toedit[chat.id][1] !== undefined){
-                    bot.deleteMessage(chatId, message_toedit[chat.id][1]).catch(err => {
-                        console.log(err)
-                    })
-                }
-                bot.deleteMessage(chatId, message_id - 1).catch(err => {console.log('! ' + err)})
-                    let editmsg = `Ваш заказ: `
-                    let finalsum = 0
-                    for (let i = 0; i < basket[chatId].length; i++){
-                                    finalsum += (basket[chatId][i][2] * basket[chatId][i][1])   
-                                    if (i === basket[chatId].length - 1){
-                                        if (coupondata[chat.id] !== undefined){
-                                            editmsg += `
-Новая цена по промокоду ` + coupondata[chat.id][0] + `: ` + Math.floor(finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100)))
-                                            finalsum = finalsum - (finalsum * (parseInt(coupondata[chat.id][1]) / 100))
-                                            console.log('1finalsum: ' +finalsum)
-                                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                            }
-                                        }
-                                        else if (coupondata[chat.id] === undefined){
-                                            editmsg += finalsum + 'тг.'
-                                            if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown'){
-                                                editmsg += ` +` + delivery_price[chat.id] + 'тг. (доставка)'
-                                            }
-                                        }
-                                        console.log(finalsum + ' ' + i)
-                                        finalprice[chatId] = finalsum + delivery_price[chat.id]
-                                        console.log('finalprice: ' +finalprice[chat.id] + ', finalsum: ' + finalsum)
-                                        for (let i = 0; i < basket[chatId].length; i++){
-                                            console.log('1Блюдо: ' + basket[chatId][i][0] + '. Цена: ' + basket[chatId][i][2] + ' х ' + basket[chatId][i][1] + ' = ' + (basket[chatId][i][1] * basket[chatId][i][2]))
-                                            editmsg += `
-` + (i+1) + `. ` + basket[chatId][i][0] + `. Цена: ` + basket[chatId][i][2] + `тг. х ` + basket[chatId][i][1] + ` = ` + (basket[chatId][i][1] * basket[chatId][i][2]) + `тг.`
-                                            if (i === basket[chatId].length - 1){
-                                                bot.sendMessage(chatId,  editmsg , {
-                                                    reply_markup:{
-                                                        inline_keyboard: [
-                                                            [{
-                                                                text: anotherfood_text2[0],
-                                                                callback_data: anotherfood_text2[1]
-                                                            },
-                                                            {
-                                                                text: editbasket_text,
-                                                                callback_data: editbasket_text
-                                                            }],
-                                                            [{
-                                                                text: writecoupon[0],
-                                                                callback_data: writecoupon[1]
-                                                            }],
-                                                            [{
-                                                                text: paybasket_text[0],
-                                                                callback_data: paybasket_text[1]
-                                                            }]
-                                                        ]
-                                                    }
-                                                }).then(() => {
-                                                    buttons_message[chatId] = message_id
-                                                    console.log('& ' + buttons_message[chatId])
-                                                })
-                    
-                                            }
-                                        }
-                                    }
+                    let newaction = {
+                        description: 'Запрос на вывод ' + parseInt(query.data.split('_')[2]) + '  руб.',
+                        date: time_now.getTime()
                     }
-                
-            }
-            else {
-                for (let i=0; i<100; i++){
-                    bot.deleteMessage(chatId, message_id - i).catch(err => {
-                        //console.log(err)
-                    })
-                }
-                bot.sendSticker(chatId, sticker_hello).then(() => {
-                    anotherpoint_multiple[chatId] = 2
-                    bot.sendMessage(chatId, hellomessage_text, {
-                        parse_mode: 'HTML',
-                    })
-                    keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-                })
-            }
-        }
-        else {
-            isWritingBusiness[chat.id] = 0
-            bot.deleteMessage(chatId, message_id)
-        }
-    }
-    else {
-        bot.deleteMessage(chatId, message_id).then(() => {
-            //bot.sendMessage(chatId, 'Ошибка 2512828')
-        })
-    }
-
-})
-
-//Нужно для быстрого получения chatid пользователя. Достаточно ввести команду "/Admin_controller:GetChatInfo" и бот пришлет его в ответ.
-bot.onText(/\/Admin_controller:GetChatInfo/, msg =>
-{
-    //console.log(msg)
-    const chatId = msg.chat.id
-    bot.sendMessage(chatId, chatId)
-
-})
-
-//Кнопка меню ("Главная")
-bot.onText(/\/start/, msg => {
     
-    const { chat, message_id, text } = msg
-    const chatId = chat.id
-    user_mode[chat.id] = 'delivery_menu'
-    console.log('order_status: ' + order_status[chatId])
-    business_info[chat.id] = undefined
-    if (isWritingBusiness[chat.id] === 0 || isWritingBusiness[chat.id] === undefined){
-        if (order_status[chatId] === 'unknown' || order_status[chatId] === undefined){
-
-            if (text.includes('_deladmin')) {
-                let inform = text.split(' ')
-                inform = inform[1].split('_')
-                if (inform.length === 4){
-                    Reset(chat.id)
-                    UserDelCat[chat.id] = inform[2]
-                    userPoint[chat.id] = inform[3]
-                    
-        
-                    let cbadmin_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id])
-                    cbadmin_data.get().then((result) => {
-                        
-                        if (result.val().chats !== undefined){
-                            
-                            if (result.val().chats.admin === chat.id){
-                                
-                                isMailingMessage[chat.id] = 0
-                                //isChangingPrefs[chat.id] = 0
-                                isChangingPhone[chat.id] = 0
-                                isChangingTime[chat.id] = 0
-                                isChangingDelivery[chat.id] = 0
-                                isCreatingCoupon[chat.id] = 0
-                                mailing_text[chat.id] = ''
-                                
-                                isAdmin[chat.id] = true
-                                //message_text[chat.id] = []
-                                //message_toedit[chat.id] = []
+                    updates['Kickstarter/payments/withdraw_requests/' + time_now.getTime()] = newrequest
     
-                                UserDelCat[chat.id] = inform[2]
-                                userPoint[chat.id] = inform[3]
-                    
-                                point_rating[chat.id] = result.val().other_info.stats.rating
-                                point_delivery_time[chat.id] = result.val().other_info.stats.delivery_time
-                    
-                                let rating
-                                if (point_rating[chat.id] < 1){
-                                    rating = feedback_options[0] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                }
-                    
-                                if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                                    rating = feedback_options[1] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                }
-                    
-                                if (point_rating[chat.id] > 2){
-                                    rating = feedback_options[2] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                }
-                    
-                                let ttd_ms = result.val().other_info.stats.delivery_time
-                                let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                                let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                                let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-                    
-                                ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                                ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                                ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                    
-                                let ttd 
-                                if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                                    ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                                }
-                    
-                                if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                                    ttd = ttd_minutes + ' мин.'
-                                }
-                                console.log('ttd_hours: ' + ttd_hours)
-                                
-                    
-                                for (let i=0; i<100; i++){
-                                    bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                                        //console.log(err)
-                                    })
-                                }
-                                let txt = `Привет! Вы вошли как Администратор <b>` + result.val().point_name + `</b>
-`
-                    
-                                if (result.val().other_info.stats.feedbacks_amount >= 5){
-                                    txt += `
-<b>⭐️ Ваш рейтинг:</b> ` + rating
-                                }
-                                if (result.val().other_info.stats.delivery_time > 0) {
-                                    txt += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                                }
-                                
-                                bot.sendMessage(chat.id, txt, {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: keyboards.admin_menu_keyboard
-                                    }
-                                })
-                                .then(res => {
-                                    message_text[chat.id][6] = res.text
-                                    message_toedit[chat.id][6] = res.message_id
-                                })
+                    let pending_withdrawal = 0
+                    if (result.val().balance.pending_withdrawal !== null && result.val().balance.pending_withdrawal !== undefined) pending_withdrawal = result.val().balance.pending_withdrawal
+                    updates['Kickstarter/users/' + chat.id + '/balance/pending_withdrawal'] = pending_withdrawal + parseInt(query.data.split('_')[2])
+                    updates['Kickstarter/users/' + chat.id + '/balance/bank'] = result.val().balance.bank - parseInt(query.data.split('_')[2])
     
-                                
-                            }
-                            else {
-                                bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
-                            }
-                        }
-                        
-                        else {
-                            bot.sendMessage(chat.id,  text_notadmin[Math.floor(Math.random() * text_notadmin.length)])
-                        }
-                    })
-                }
-                else {
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chatId, message_id - i).catch(err => {
-                            //console.log(err)
-                        })
+                    if (result.val().balance.history !== undefined) {
+                        updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().balance.history.length] = newaction
                     }
-                    bot.sendSticker(chatId, sticker_hello).then(() => {
-                        anotherpoint_multiple[chatId] = 2
-                        //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], categories_count[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, choosecategory_text, location_text, phone_text)
-                        bot.sendMessage(chatId, hellomessage_text, {
+    
+                    if (result.val().balance.history === undefined) {
+                        updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newaction
+                    }
+    
+                    //Формируем сообщение для меня с этими данными и отправляем
+                    let txt_admin = '📤 Запрос на вывод от <b><a href="tg://user?id='+ chat.id +'">'+ chat.first_name +'</a></b>'
+                    txt_admin += '\n\n<b>Дата:</b> ' + time_now.toString()
+                    txt_admin += '\n<b>Баланс:</b> ' + result.val().balance.bank
+                    txt_admin += '\n<b>Выводит:</b> ' + parseInt(query.data.split('_')[2])
+                    txt_admin += '\n<b>Карта:</b> ' + result.val().balance.card
+                    txt_admin += '\n\n<b>Комиссия: ' + Math.floor(parseInt(query.data.split('_')[2]) / 100 * result.val().balance.comission) + ' рублей ('+ result.val().balance.comission +'%)</b>'
+                
+                    fb.database().ref().update(updates)
+    
+                    let generaldata = fb.database().ref('Kickstarter/')
+                    generaldata.get().then(res => {
+                        bot.sendMessage(res.val().payments.info.moderator_id, txt_admin, {
                             parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: acceptwithdrawal[0],
+                                        callback_data: acceptwithdrawal[1] + '_' + time_now.getTime()
+                                    },
+                                    {
+                                        text: declinewithdrawal[0],
+                                        callback_data: declinewithdrawal[1] + '_' + time_now.getTime()
+                                    }]
+                                ]
+                            }
                         })
-                        keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
+                        .then(resulting => {
+                            if (messagetext_toedit[res.val().payments.info.moderator_id] === undefined) messagetext_toedit[res.val().payments.info.moderator_id] = []
+                            if (message_toedit[res.val().payments.info.moderator_id] === undefined) message_toedit[res.val().payments.info.moderator_id] = []
+                            messagetext_toedit[res.val().payments.info.moderator_id][3] = resulting.text
+                            message_toedit[res.val().payments.info.moderator_id][3] = resulting.message_id
+                        })
+    
+                        let txt = 'Запрос на вывод ' + parseInt(query.data.split('_')[2]) + ' руб. был отправлен. Обычно обработка платежа занимает до трех дней'
+                        txt += '\n\n<i>Если Ваш платеж отклонили или статус платежа не меняется, свяжитесь с <a href="tg://user?id='+ res.val().payments.info.moderator_id +'">модератором</a></i>'
+                        bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+                        bot.sendMessage(chat.id, txt, {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: 'Понятно',
+                                        callback_data: backtostart[1]
+                                    }]
+                                ]
+                            }
+                        })
                     })
-                }
-                
+                    
+                    //Отправляем сообщение автору, что запрос был подан и ответ будет в течение 3 дней
+    
+                })
             }
+        }
+        //ПРИНЯТЬ И ОТПРАВИТЬ ДЕНЬГИ ВЫВОД
+        if (query.data.includes(acceptwithdrawal[1])){
+            let generaldata = fb.database().ref('Kickstarter/')
+            generaldata.get().then(res => {
+                let withdrawdata = fb.database().ref('Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1])
+                withdrawdata.get().then(result => {
+                    if (chat.id === res.val().payments.info.moderator_id){
+                        let comission_amount = result.val().withdraw_amount / 100 * result.val().comission
+                        let withdraw_amount = result.val().withdraw_amount - comission_amount
+                        let comment = 'Вывод средств с бота. Код: ' + query.data.split('_')[1]
+                        let comment_admin = 'Вывод комиссии с бота. Код: ' + query.data.split('_')[1]
+                        let updates = {}
     
-            if (text.includes('_client')){
-                for (let i=0; i<100; i++){
-                    bot.deleteMessage(chatId, message_id - i).catch(err => {
-                        //console.log(err)
+                        let txt = ''
+                        sendPayment(result.val().card.split(':')[0], result.val().card.split(':')[1], withdraw_amount, comment).then(answ => {
+                            txt += '✅ Деньги перечислены'
+                            console.log(answ)
+    
+                            sendPayment('yoomoney', res.val().payments.info.yoomoney, comission_amount, comment_admin).then(() => {
+                                txt += '\n✅ Комиссия переведена'
+                                updates['Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1] + '/status'] = 'SUCCESS'
+                                if (messagetext_toedit[res.val().payments.info.moderator_id] === undefined) messagetext_toedit[res.val().payments.info.moderator_id] = []
+                                if (message_toedit[res.val().payments.info.moderator_id] === undefined) message_toedit[res.val().payments.info.moderator_id] = []
+    
+                                bot.editMessageText(txt + '\n\n' + messagetext_toedit[res.val().payments.info.moderator_id][3], {
+                                    chat_id: res.val().payments.info.moderator_id,
+                                    message_id: message_toedit[res.val().payments.info.moderator_id][3],
+                                    parse_mode: 'HTML',
+                                })
+        
+                                let authordata = fb.database().ref('Kickstarter/users/' + result.val().id)
+                                authordata.get().then(reply => {
+        
+                                    let date = new Date()
+                                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                                    let timeOfffset = 6 //Astana GMT +6
+                                    let time_now = new Date(utcTime + (3600000 * timeOfffset))
+        
+                                    let created_date = new Date(result.val().date)
+                                    let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
+        
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/pending_withdrawal'] = reply.val().balance.pending_withdrawal - result.val().withdraw_amount
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/withdrew'] = reply.val().balance.withdrew + result.val().withdraw_amount
+                                    
+                                    let newaction = {
+                                        description: 'Запрос на вывод от ' + createddate + '. Результат: УСПЕШНО ('+result.val().withdraw_amount+' руб. выведено)',
+                                        date: time_now.getTime()
+                                    }
+                                    if (reply.val().balance.history !== undefined) {
+                                        updates['Kickstarter/users/' + result.val().id + '/balance/history/' + reply.val().balance.history.length] = newaction
+                                    }
+                    
+                                    if (reply.val().balance.history === undefined) {
+                                        updates['Kickstarter/users/' + result.val().id + '/balance/history/0'] = newaction
+                                    }
+        
+                                    fb.database().ref().update(updates)
+        
+                                    let success_txt = '✅ Ваш запрос на вывод ' + result.val().withdraw_amount + ' руб. от ' + createddate + ' был одобрен. Деньги были отправлены на Ваш счет (' + result.val().card.split(':')[1] + ')'
+    
+                                    bot.sendMessage(result.val().id, success_txt, {
+                                        parse_mode: 'HTML'
+                                    })
+                                    .then(msgansw => {
+                                        message_toedit[result.val().id][1] = msgansw.message_id
+                                    })
+                                    
+                                })
+                            })
+                            .catch(err => {
+                                console.log(err)
+                                txt += '\n❌ Комиссия не была переведена. Ошибка: ' + err
+                                updates['Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1] + '/status'] = 'SUCCESS_HALF'
+                            
+                                if (messagetext_toedit[res.val().payments.info.moderator_id] === undefined) messagetext_toedit[res.val().payments.info.moderator_id] = []
+                                if (message_toedit[res.val().payments.info.moderator_id] === undefined) message_toedit[res.val().payments.info.moderator_id] = []
+    
+                                bot.editMessageText(txt + '\n\n' + messagetext_toedit[res.val().payments.info.moderator_id][3], {
+                                    chat_id: res.val().payments.info.moderator_id,
+                                    message_id: message_toedit[res.val().payments.info.moderator_id][3],
+                                    parse_mode: 'HTML',
+                                })
+        
+                                let authordata = fb.database().ref('Kickstarter/users/' + result.val().id)
+                                authordata.get().then(reply => {
+        
+                                    let date = new Date()
+                                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                                    let timeOfffset = 6 //Astana GMT +6
+                                    let time_now = new Date(utcTime + (3600000 * timeOfffset))
+        
+                                    let created_date = new Date(result.val().date)
+                                    let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
+        
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/pending_withdrawal'] = reply.val().balance.pending_withdrawal - result.val().withdraw_amount
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/withdrew'] = reply.val().balance.withdrew + result.val().withdraw_amount
+                                    
+                                    let newaction = {
+                                        description: 'Запрос на вывод от ' + createddate + '. Результат: УСПЕШНО ('+result.val().withdraw_amount+' руб. выведено)',
+                                        date: time_now.getTime()
+                                    }
+                                    if (reply.val().balance.history !== undefined) {
+                                        updates['Kickstarter/users/' + result.val().id + '/balance/history/' + reply.val().balance.history.length] = newaction
+                                    }
+                    
+                                    if (reply.val().balance.history === undefined) {
+                                        updates['Kickstarter/users/' + result.val().id + '/balance/history/0'] = newaction
+                                    }
+        
+                                    fb.database().ref().update(updates)
+        
+                                    let success_txt = '✅ Ваш запрос на вывод ' + result.val().withdraw_amount + ' руб. от ' + createddate + ' был одобрен. Деньги были отправлены на Ваш счет (' + result.val().card.split(':')[1] + ')'
+    
+                                    bot.sendMessage(result.val().id, success_txt, {
+                                        parse_mode: 'HTML'
+                                    })
+                                    .then(msgansw => {
+                                        message_toedit[result.val().id][1] = msgansw.message_id
+                                    })
+                                    
+                                })
+                            })
+                        })
+                        .catch(error => {
+                            console.log(error)
+                            txt += '❌ Деньги и комиссия не были зачислены. Ошибка: ' + error
+    
+                            if (messagetext_toedit[res.val().payments.info.moderator_id] === undefined) messagetext_toedit[res.val().payments.info.moderator_id] = []
+                            if (message_toedit[res.val().payments.info.moderator_id] === undefined) message_toedit[res.val().payments.info.moderator_id] = []
+    
+                            bot.editMessageText(txt + '\n\n' + messagetext_toedit[res.val().payments.info.moderator_id][3], {
+                                chat_id: res.val().payments.info.moderator_id,
+                                message_id: message_toedit[res.val().payments.info.moderator_id][3],
+                                parse_mode: 'HTML',
+                            })
+    
+                            updates['Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1] + '/status'] = 'ERROR'
+                            let authordata = fb.database().ref('Kickstarter/users/' + result.val().id)
+                            authordata.get().then(reply => {
+    
+                                let date = new Date()
+                                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                                let timeOfffset = 6 //Astana GMT +6
+                                let time_now = new Date(utcTime + (3600000 * timeOfffset))
+    
+                                let created_date = new Date(result.val().date)
+                                let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
+    
+                                updates['Kickstarter/users/' + result.val().id + '/balance/pending_withdrawal'] = reply.val().balance.pending_withdrawal - result.val().withdraw_amount
+                                updates['Kickstarter/users/' + result.val().id + '/balance/bank'] = reply.val().balance.bank + result.val().withdraw_amount
+                                
+                                let newaction = {
+                                    description: 'Запрос на вывод от ' + createddate + '. Результат: ОТКЛОНЕНО (деньги возвращены на счет баланса)',
+                                    date: time_now.getTime()
+                                }
+                                if (reply.val().balance.history !== undefined) {
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/history/' + reply.val().balance.history.length] = newaction
+                                }
+                
+                                if (reply.val().balance.history === undefined) {
+                                    updates['Kickstarter/users/' + result.val().id + '/balance/history/0'] = newaction
+                                }
+    
+                                fb.database().ref().update(updates)
+    
+                                let error_txt = 'К сожалению, наш сервис столкнулся с ошибкой и мы были вынуждены отклонить Ваш запрос на вывод ' + result.val().withdraw_amount + ' руб. от ' + createddate
+                                error_txt = '\nДеньги были возвращены на счет Вашего баланса'
+                                error_txt = '\n❗️ Возможно Вы ввели некорректные данные для вывода. Попробуйте изменить номер счета для вывода'
+                                error_txt += '\n\n Если ситуация не решится, свяжитесь с <a href="tg://user?id='+ res.val().payments.info.moderator_id +'">модератором</a>'
+                                
+                                bot.sendMessage(result.val().id, error_txt, {
+                                    parse_mode: 'HTML',
+                                    reply_markup: {
+                                        inline_keyboard: [
+                                            [{
+                                                text: 'Служба поддержки',
+                                                url: 'tg://user?id=' + res.val().payments.info.moderator_id
+                                            }]
+                                        ]
+                                    }
+                                })
+                                .then(msgansw => {
+                                    message_toedit[result.val().id][1] = msgansw.message_id
+                                })
+                                
+                            })
+                            
+                        })
+                    }
+                })
+            })
+        }
+        if (query.data.includes(declinewithdrawal[1])){
+    
+            let generaldata = fb.database().ref('Kickstarter/')
+            generaldata.get().then(res => {
+                let withdrawdata = fb.database().ref('Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1])
+                withdrawdata.get().then(result => {
+                    let txt = '❌ Вы отклонили перевод'
+            
+                    bot.editMessageText(txt + '\n\n' + messagetext_toedit[res.val().payments.info.moderator_id][3], {
+                        chat_id: res.val().payments.info.moderator_id,
+                        message_id: message_toedit[res.val().payments.info.moderator_id][3],
+                        parse_mode: 'HTML',
                     })
-                }
-                let inform = text.split(' ')
-                inform = inform[1].split('_')
-                console.log(inform.length)
-                if (inform.length === 4){
-                    Reset(chat.id)
-                    UserDelCat[chat.id] = inform[2]
-                    userPoint[chat.id] = inform[3]
-    
-                    let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-                    point_info.get().then((snapshot) => {
-            
-                        help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                        point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                        point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                        point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-            
-                        point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                        point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-            
-                        delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                        delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                        point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                        point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-            
-                        point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                        point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                        //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                        point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                        //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-            
-                        point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                        point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-            
-                        delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                        console.log('325 ' + delivery_chat[chat.id])
-            
-                        let buttons_data = []
-                        if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                            buttons_data.push({
-                                text: sendadress_point[0],
-                                callback_data: sendadress_point[1]
-                            })
-                        }
-            
-                        if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                            buttons_data.push({
-                                text: sendphone_point[0],
-                                callback_data: sendphone_point[1] 
-                            })
-                        }
+                    let updates = {}
+                    updates['Kickstarter/payments/withdraw_requests/' + query.data.split('_')[1] + '/status'] = 'ERROR'
+                    let authordata = fb.database().ref('Kickstarter/users/' + result.val().id)
+                    authordata.get().then(reply => {
             
                         let date = new Date()
                         let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
                         let timeOfffset = 6 //Astana GMT +6
                         let time_now = new Date(utcTime + (3600000 * timeOfffset))
             
-                        let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                        let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                        console.log(time_now.getTime() < restriction_time_min)
+                        let created_date = new Date(result.val().date)
+                        let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
             
-                        let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                        let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                        let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                        let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-            
-                        ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                        ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                        ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                        let ttd 
-                        if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                            ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                        }
-            
-                        if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                            ttd = ttd_minutes + ' мин.'
-                        }
-                        console.log('ttd_hours: ' + ttd_hours)
-            
-                        let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-            
-                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                            console.log('1 wrong TIME, time_now: ' + time_now)
-                            user_deliverdate[chat.id] = 'Как можно раньше'
-                            msgtext += ` (Закрыто)`
-                        }
+                        updates['Kickstarter/users/' + result.val().id + '/balance/pending_withdrawal'] = reply.val().balance.pending_withdrawal - result.val().withdraw_amount
+                        updates['Kickstarter/users/' + result.val().id + '/balance/bank'] = reply.val().balance.bank + result.val().withdraw_amount
                         
-                        let rating
-                        if (point_rating[chat.id] < 1){
-                            rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
+                        let newaction = {
+                            description: 'Запрос на вывод от ' + createddate + '. Результат: ОТКЛОНЕНО (деньги возвращены на счет баланса)',
+                            date: time_now.getTime()
+                        }
+                        if (reply.val().balance.history !== undefined) {
+                            updates['Kickstarter/users/' + result.val().id + '/balance/history/' + reply.val().balance.history.length] = newaction
                         }
             
-                        if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                            rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
+                        if (reply.val().balance.history === undefined) {
+                            updates['Kickstarter/users/' + result.val().id + '/balance/history/0'] = newaction
                         }
             
-                        if (point_rating[chat.id] > 2){
-                            rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                        }
-                        if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                            msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-                        }
-                        if (snapshot.val().other_info.stats.delivery_time > 0) {
-                            msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                        }
+                        fb.database().ref().update(updates)
             
-                        msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-            
-                        if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                            msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-                        }
-            
-                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                            msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-                        }
-            
-                        if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                            msgtext += `
-                            
-` + snapshot.val().other_info.delivery_info.disclaimer
-                        }
+                        let error_txt = 'К сожалению, Ваш запрос на вывод ' + result.val().withdraw_amount + ' руб. от ' + createddate + ' не прошел модерацию и мы были вынуждены его <b>отклонить</b>'
+                        error_txt = '\nДеньги были возвращены на счет Вашего баланса'
+                        error_txt = '\n❗️ Возможно Вы ввели некорректные данные для вывода. Попробуйте изменить номер счета для вывода'
+                        error_txt += '\n\n Если ситуация не решится, свяжитесь с <a href="tg://user?id='+ res.val().payments.info.moderator_id +'">модератором</a>'
+                                
+                        bot.sendMessage(result.val().id, error_txt, {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: 'Служба поддержки',
+                                        url: 'tg://user?id=' + res.val().payments.info.moderator_id
+                                    }]
+                                ]
+                            }
+                        })
+                        .then(msgansw => {
+                            message_toedit[result.val().id][1] = msgansw.message_id
+                        })
                         
-                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                            console.log('2 wrong TIME, time_now: ' + time_now)
-                            msgtext += `
-            
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
+                    })
+                })
+            })
+        }
+    
+        //ПРИНЯТЬ УЧАСТИЕ В СБОРЕ
+        if (query.data.includes(participatebutton[1])){
+            let userdata = fb.database().ref('Kickstarter/users/' + chat.id)
+            userdata.get().then(result => {
+                if (result.val().balance.bank >= parseInt(query.data.split('_')[1])){
+                    //деньги есть
+                    let txt = 'Введите сумму, которую хотите внести в сбор, либо внесите минимальную сумму для участия: <b>' + query.data.split('_')[1] + ' руб </b>(нажмите на кнопку снизу)'
+                    txt += '\n\nВы можете внести сумму больше минимальной (до '+ result.val().balance.bank +' руб), чтобы ускорить сбор или просто порадовать автора сбора 🥰'
+                    participating_data[chat.id] = []
+                    participating_data[chat.id][0] = true
+                    participating_data[chat.id][1] = parseInt(query.data.split('_')[1])
+                    participating_data[chat.id][2] = result.val().balance.bank
+    
+                    bot.editMessageText(txt, {
+                        parse_mode: 'HTML',
+                        chat_id: chat.id,
+                        message_id: message_toedit[chat.id][0],
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: backtostart[0],
+                                    callback_data: opendonationparticipant
+                                }],
+                                [{
+                                    text: query.data.split('_')[1] + ' руб. (мин.)',
+                                    callback_data: 'participate_' + query.data.split('_')[1]
+                                }]
+                            ]
                         }
-            
-                        let finalbuttons
-                        if (snapshot.val().chats.admin !== chat.id){
-                            finalbuttons = [{
-                                text: anotherpoint_text,
-                                callback_data: anotherpoint_text
-                            },
-                            {
-                                text: loadcategories[0],
-                                callback_data: loadcategories[1]
-                            }]
-                        }
-            
-                        if (snapshot.val().chats.admin === chat.id){
-                            isAdmin[chat.id] = true
-                            finalbuttons = [{
-                                text: anotherpoint_text,
-                                callback_data: anotherpoint_text
-                            },
-                            {
-                                text: openadminpanel[0],
-                                callback_data: openadminpanel[1]
-                            }]
-                        }
-            
-                        if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                            bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                                parse_mode: 'HTML',
-                                caption: msgtext,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        buttons_data,
-                                        finalbuttons
-                                    ]
-                                }
-                            }).then(res => {
-                                message_toedit[chat.id][0] = res.message_id
-                                message_text[chat.id][0] = res.caption
-                            })
-                            .catch(() => {
-                                bot.sendMessage(chat.id, msgtext, {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            buttons_data,
-                                            finalbuttons
-                                        ]
-                                    }
-                                })
-                                .then(res => {
-                                    message_toedit[chat.id][0] = res.message_id
-                                    message_text[chat.id][0] = res.text
-                                })
-                            })
-                        }
-                        if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                            bot.sendMessage(chat.id, msgtext, {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        buttons_data,
-                                        finalbuttons
-                                    ]
-                                }
-                            })
-                            .then(res => {
-                                message_toedit[chat.id][0] = res.message_id
-                                message_text[chat.id][0] = res.text
-                            })
-                        }
-                        
+                    })
+                    .catch(err => {
+                        console.log('here: ' + err)
+                        bot.editMessageCaption(txt, {
+                            parse_mode: 'HTML',
+                            chat_id: chat.id,
+                            message_id: message_toedit[chat.id][0],
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{
+                                        text: backtostart[0],
+                                        callback_data: opendonationparticipant
+                                    }],
+                                    [{
+                                        text: query.data.split('_')[1] + ' руб. (мин)',
+                                        callback_data: 'participate_' + query.data.split('_')[1]
+                                    }]
+                                ]
+                            }
+                        })
                     })
                 }
+    
                 else {
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chatId, message_id - i).catch(err => {
-                            //console.log(err)
-                        })
-                    }
-                    bot.sendSticker(chatId, sticker_hello).then(() => {
-                        anotherpoint_multiple[chatId] = 2
-                        //keyboards.CategoriesKeyboard(category_keyboard[chatId], userCategories[chatId], categories_count[chatId], fb, bot, chatId, msg, anotherpoint_text, choosecategory_text, choosecategory_text, location_text, phone_text)
-                        bot.sendMessage(chatId, hellomessage_text, {
-                            parse_mode: 'HTML',
-                        })
-                        keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
+                    let txt = 'К сожалению, у вас недостаточно средств для участия в сборе.\nВам нужно еще <b>' + (parseInt(query.data.split('_')[1]) - result.val().balance.bank) + ' руб.</b>'
+                    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                    bot.sendMessage(chat.id, txt, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: addmoneyparticipant[0],
+                                    callback_data: addmoneyparticipant[1]
+                                }]
+                            ]
+                        }
+                    }).then(res => {
+                        if (messagetext_toedit[chat.id] === undefined) messagetext_toedit[chat.id] = []
+                        if (message_toedit[chat.id] === undefined) message_toedit[chat.id] = []
+                        messagetext_toedit[chat.id][1] = res.text
+                        message_toedit[chat.id][1] = res.message_id
                     })
+                }
+            })
+        }
+    
+        //ПРИНЯТЬ УЧАСТИЕ С МИНИМАЛЬНОЙ СУММОЙ
+        if (query.data.includes('participate_')){
+            ParticipateDonation(chat, query.data.split('_')[1])
+        }
+    
+        //СПИСОК СБОРОВ
+        if (query.data === myparticipantslist[1]){
+            MyParticipateDonationsList(chat)
+        }
+    }
+
+    if (message_toedit[chat.id] === undefined){
+        Start(query.message)
+    }
+})
+
+bot.on('channel_post', post => {
+    console.log(post)
+})
+
+bot.onText(/\/balance/, msg =>
+{
+    const { chat, message_id, text } = msg
+    myBalance(chat)
+})
+
+bot.onText(/\/faq/, msg =>
+{
+    const { chat, message_id, text } = msg
+    if (!current_mode[chat.id].includes('evaluating')){
+        let txt = 'Вот несколько часто задаваемых вопросов: \n\n' + faqquestions[0] + faqquestions[1] + faqquestions[2]
+        bot.deleteMessage(chat.id, message_id)
+        bot.deleteMessage(chat.id, message_toedit[chat.id][2]).catch(err => {console.log('here: ' + err)})
+        bot.sendMessage(chat.id, txt, {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: backtoblank[0],
+                        callback_data: openmenubutton[1]
+                    }]
+                ]
+            }
+        })
+        .then(res=> {
+            message_toedit[chat.id][2] = res.message_id
+        })
+    }
+    
+    
+})
+
+//Нужно для быстрого получения chatid пользователя. Достаточно ввести команду "/Admin_controller:GetChatInfo" и бот пришлет его в ответ.
+bot.onText(/\/Admin_controller:GetChatInfo/, msg =>
+    {
+        //console.log(msg)
+        const chatId = msg.chat.id
+        bot.sendMessage(chatId, chatId)
+    
+})
+
+bot.onText(/\/Admin_controller:CheckDonationsRenew/, msg =>
+{
+    //console.log(msg)
+    const chatId = msg.chat.id
+    CheckDeadlinesList(true)
+})
+
+bot.onText(/\/Admin_controller:CheckDonations/, msg =>
+{
+    //console.log(msg)
+    const chatId = msg.chat.id
+    CheckDeadlinesList(false)
+})
+
+function CreateDonation(chat){
+    donateregisterstep[chat.id] = 0
+    donate_sendduration[chat.id] = 3
+
+    bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+
+    let date = new Date()
+    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    let timeOfffset = 6 //Astana GMT +6
+    let finaldate = new Date(utcTime + (3600000 * timeOfffset))
+
+    donate_duration_secs[chat.id] = finaldate.getTime() + (donate_duration[chat.id] * 86400 * 1000)
+    donate_sendduration_secs[chat.id] = donate_duration_secs[chat.id] + (donate_sendduration[chat.id] * 86400 * 1000)
+
+    let created_date = new Date(donate_duration_secs[chat.id])
+    let createddate = created_date.getDate() + '.' + (created_date.getMonth() + 1)
+    console.log(createddate)
+
+    let txt = '<b><a href="tg://user?id='+ chat.id +'">'+ chat.first_name +'</a></b> собирает на: <b>' +  donate_name[chat.id] + '</b>\n\n├ Собрано сейчас: <b>0%</b>\n├ Минимальная сумма участия: <b>' + donate_minmoney[chat.id] + ' руб.</b>\n└ Сбор закончится: <b>' + createddate + '</b>'
+    
+    bot.getMe().then(res => {
+        /* if (donate_private[chat.id] === false) txt += '\nТип сбора: <b>открытый</b>'
+        if (donate_private[chat.id] === true) txt += '\nТип сбора: <b>закрытый</b>' */
+        txt += '\n\nСсылка-приглашение (НЕ НАЖИМАЙТЕ!): https://t.me/'+ res.username +'?start=_part_' + chat.id + '_' + donate_duration_secs[chat.id]
+        txt += '\n\nЕсли все указано верно, нажмите на кнопку <b>' + createdonation[0] + '</b>'
+    
+        bot.sendPhoto(chat.id, donate_photo[chat.id], {
+            caption: txt,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: backtostart[0],
+                        callback_data: backtonewdonate[4]
+                    }],
+                    [{
+                        text: createdonation[0],
+                        callback_data: createdonation[1]
+                    }]
+                ]
+            }
+        })
+        .then(res => {
+            message_toedit[chat.id][0] = res.message_id
+        })
+        .catch(err => {
+            console.log('here: ' + err)
+            bot.sendMessage(chat.id, txt, {
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: backtostart[0],
+                            callback_data: backtonewdonate[4]
+                        }],
+                        [{
+                            text: createdonation[0],
+                            callback_data: createdonation[1]
+                        }]
+                    ]
+                }
+            })
+            .then(res => {
+                message_toedit[chat.id][0] = res.message_id
+                console.log('here:')
+            })
+            .catch(err => {console.log('here: ' + err)})
+        })
+    }).catch(err => {console.log('here: ' + err)})
+}
+
+function ParticipateDonation(chat, text){
+    let updates = {}
+    let userdata = fb.database().ref('Kickstarter/users/' + chat.id)
+    userdata.get().then(result => {
+        if (result.val().participants !== null && result.val().participants !== undefined && result.val().participants !== ''){
+            updates['Kickstarter/users/' + chat.id + '/participants'] = result.val().participants + ',' + user_donationlink[chat.id].split('/donations/')[0] + '.' + user_donationlink[chat.id].split('/donations/')[1]
+        }
+        else {
+            updates['Kickstarter/users/' + chat.id + '/participants'] = user_donationlink[chat.id].split('/donations/')[0] + '.' + user_donationlink[chat.id].split('/donations/')[1]
+        }
+        let donationdata = fb.database().ref('Kickstarter/users/' + user_donationlink[chat.id])
+        donationdata.get().then(reply => {
+            let date = new Date()
+            let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+            let timeOfffset = 6 //Astana GMT +6
+            let finaldate = new Date(utcTime + (3600000 * timeOfffset))
+
+            let newparticipant = {
+                id: chat.id,
+                date: finaldate.getTime(),
+                amount: parseInt(text),
+                name: chat.first_name
+            }
+            if (reply.val().participants === undefined || reply.val().participants === undefined){
+                updates['Kickstarter/users/' + user_donationlink[chat.id] + '/participants/0'] = newparticipant
+            }
+            if (reply.val().participants !== undefined && reply.val().participants !== undefined){
+                updates['Kickstarter/users/' + user_donationlink[chat.id] + '/participants/' + reply.val().participants.length] = newparticipant
+            }
+            updates['Kickstarter/users/' + user_donationlink[chat.id] + '/bank'] = reply.val().bank += parseInt(text)
+            updates['Kickstarter/users/' + chat.id + '/balance/bank'] = result.val().balance.bank -= parseInt(text)
+            
+            let newhistory = {
+                date: finaldate.getTime(), 
+                description: 'Участие в сборе ' + user_donationlink[chat.id].split('/donations/')[0] + '.' + user_donationlink[chat.id].split('/donations/')[1] + ' за ' + parseInt(text) + ' руб.'
+            }
+            if (result.val().balance.history === undefined || result.val().balance.history === undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newhistory
+            }
+            if (result.val().balance.history !== undefined && result.val().balance.history !== undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().balance.history.length] = newhistory
+            }
+
+            fb.database().ref().update(updates).then(() => {
+                participating_data[chat.id] = []
+                OpenDonationParticipant(chat, null)
+            })
+            
+        })
+        
+    })
+}
+
+function WithDrawInfo(chat){
+    let balancedata = fb.database().ref('Kickstarter/users/' + chat.id)
+    balancedata.get().then(result => {
+        let txt = ''
+        let kb = []
+        kb[0] = [{
+            text: backtostart[0],
+            callback_data: mybalancebutton[1]
+        }]
+
+        kb[1] = [{
+            text: cardinfobutton[0],
+            callback_data: cardinfobutton[1] + '_0'
+        }]
+
+        if (result.val().balance.bank > 0) {
+            if (result.val().balance.bank > result.val().balance.withdroval_limit){
+                txt += '<b>💵 Средства, доступные для вывода:</b> ' + result.val().balance.bank + ' рублей'
+                txt += '\n\nВы можете вывести все средства разом, а можете запросить конкретную сумму.\n\n<b>Минимальная сумма для вывода:</b> '+result.val().balance.withdroval_limit+' рублей'
+                
+                if (result.val().balance.card !== undefined && result.val().balance.card !== '' && (result.val().balance.card).includes(':')){
+                    kb[2] = 
+                    [{
+                        text: withdrawallbutton[0],
+                        callback_data: withdrawallbutton[1] + '_0_' + result.val().balance.comission
+                    },
+                    {
+                        text: withdrawcustombutton[0],
+                        callback_data: withdrawcustombutton[1] + '_0_' + result.val().balance.comission
+                    }]
+                }
+            }
+            else {
+                txt += '<b>💵 Ваш баланс:</b> ' + result.val().balance.bank + ' рублей\n\nДля того, чтобы запросить вывод, необходимо иметь на балансе хотябы '+result.val().balance.withdroval_limit+' рублей'
+            }
+        }
+
+        if (result.val().balance.bank <= 0) {
+            txt += '<b>💵 Ваш баланс:</b> ' + result.val().balance.bank + ' рублей\n\nДля того, чтобы запросить вывод, необходимо иметь на балансе хотябы '+result.val().balance.withdroval_limit+' рублей'
+        }
+
+        if (result.val().balance.card === undefined || result.val().balance.card === ''){
+            txt += '\n\n‼️ Для того, чтобы совершить вывод, необходимо указать свои реквизиты. Для этого нажмите на кнопку <b>' + cardinfobutton[0] + '</b>'
+        }
+
+        if (result.val().balance.card !== undefined && result.val().balance.card !== '' && (result.val().balance.card).includes(':')){
+            if (result.val().balance.card.includes('qiwi')){
+                txt += '\n\n🥝 <b>Привязанный номер Qiwi:</b> ' + result.val().balance.card.split(':')[1]
+            }
+            if (result.val().balance.card.includes('yoomoney')){
+                txt += '\n\n<b>Привязанный счет ЮMoney:</b> ' + result.val().balance.card.split(':')[1]
+            }
+        }
+
+        bot.editMessageText(txt, {
+            chat_id: chat.id,
+            message_id: message_toedit[chat.id][0],
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: kb
+            }
+        })
+    })
+}
+
+function myBalance(chat){
+
+    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+    bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+    let balancedata = fb.database().ref('Kickstarter/users/' + chat.id)
+    balancedata.get().then(result => {
+        let txt = '💰 Ваш баланс: <b>' + result.val().balance.bank + ' руб.</b>'
+        let kb = []
+        kb[0] = 
+        [{
+            text: addmoneybutton[0],
+            callback_data: addmoneybutton[1]
+        },
+        {
+            text: balancehistory[0],
+            callback_data: balancehistory[1]
+        }]
+
+        console.log(result.val().donations)
+        if (result.val().donations !== undefined){
+
+            let donatetitles = Object.keys(result.val().donations)
+            
+            let donationbank_overall = 0 
+            for (let i = 0; i < donatetitles.length; i++){
+                let donatebankdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + donatetitles[i])
+                donatebankdata.get().then(res => {
+
+                    if (res.val().status === 'online' || res.val().status === 'waiting'){
+                        donationbank_overall += res.val().bank
+                    }
+
+                    if (i === donatetitles.length - 1){
+                        if (result.val().balance.pending_withdrawal !== undefined && result.val().balance.pending_withdrawal !== null && result.val().pending_withdrawal !== 0){
+                            txt += '\n├ В процессе вывода: <b>' + result.val().balance.pending_withdrawal + ' руб.</b>'
+                        }
+                        if (donationbank_overall > 0){
+                            txt += '\n├ В заморозке (активные сборы): <b>' + donationbank_overall + ' руб.</b>'
+                        }
+                        
+                        txt += '\n├ Заработано за все время: <b>' + result.val().balance.overall + ' руб.</b>'
+                        txt += '\n└ Выведено за все время: <b>' + result.val().balance.withdrew + ' руб.</b>'
+                        
+                        kb[1] = [{
+                            text: withdrawbutton[0],
+                            callback_data: withdrawbutton[1]
+                        }]
+
+                        kb.push([{
+                            text: backtostart[0],
+                            callback_data: backtostart[1]
+                        }])
+
+                        bot.sendMessage(chat.id, txt, {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: kb
+                            }
+                        })
+                        .then(answer => {
+                            message_toedit[chat.id][0] = answer.message_id
+                        })
+                
+                        if (messagetext_toedit[chat.id] === undefined) messagetext_toedit[chat.id] = []
+                        messagetext_toedit[chat.id][0] = txt
+                    }
+                })
+            }
+        }
+
+        if (result.val().donations === undefined){
+            kb.push([{
+                text: backtostart[0],
+                callback_data: backtostart[1]
+            }])
+    
+            bot.sendMessage(chat.id, txt, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: kb
+                }
+            })
+            .then(answer => {
+                message_toedit[chat.id][0] = answer.message_id
+            })
+    
+            if (messagetext_toedit[chat.id] === undefined) messagetext_toedit[chat.id] = []
+            messagetext_toedit[chat.id][0] = txt
+        }
+    })
+}
+
+function AddMoney(chat, isparticipant){
+    let txt = ''
+
+    let addmoneykeyboard = [[],[]]
+    if (!isparticipant){
+        txt += messagetext_toedit[chat.id][0] + '\n\nДля пополнения баланса, выберите сумму с помощью кнопок ниже:' 
+        addmoneykeyboard[1] = [{
+            text: backtoblank[0],
+            callback_data: mybalancebutton[1]
+        }]
+    }
+    if (isparticipant){
+        txt += 'Для пополнения баланса, выберите сумму с помощью кнопок ниже:' 
+        addmoneykeyboard[1] = [{
+            text: backtoblank[0],
+            callback_data: checkchannelfollow[1] + '_1'
+        }]
+    }
+    let addmoney_data = fb.database().ref('Kickstarter/payments/addmoney/')
+    addmoney_data.get().then(result => {
+        addmoneykeyboard[0] = []
+        for (let i = 0; i < result.val().length; i++){
+            addmoney[i] = result.val()[i]
+            addmoneykeyboard[0].push(
+                {
+                    text: addmoney[i] + ' руб.',
+                    callback_data: addmoneyamount + addmoney[i]
+                }
+            )
+            if (i === result.val().length - 1){
+                bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+                bot.editMessageText(txt, {
+                    chat_id: chat.id,
+                    message_id: message_toedit[chat.id][0],
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: addmoneykeyboard
+                    }
+                })
+                .then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                })
+            }
+        }
+    })
+}
+
+function CheckNewMails(chatid){
+    let newmails = fb.database().ref('Grindr/users/' + chatid + '/dialogs/')
+    newmails.on('value', (result) => {
+        if (result.val() !== null){
+            console.log(result.val())
+            if (current_mode[chatid].split('_')[0] === 'dialog'  && current_mode[chatid].split('_')[1] === result.val()[result.val().length - 1]){
+                bot.sendMessage(chatid, result.val()[result.val().length - 1].lastmessage)
+            }
+            else {
+                bot.sendMessage(chatid, 'Вы получили сообщение от <b>' + result.val()[result.val().length - 1] + '</b>' + result.val().lastmessage + 'Желаете ответить?', {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: answermessage[0],
+                                callback_data: answermessage[1] + result.val()[result.val().length - 1]
+                            },
+                            {
+                                text: 'Нет',
+                                callback_data: 'deletemessage'
+                            }]
+                        ]
+                    }
+                })
+                .then(res => {
+                    message_todelete[chatid][1] = res.message_id
+                })
+            }
+        }
+    }
+    ).catch(err => {console.log(err)})
+}
+
+function OpenDonation(chat, link){
+    let donationdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + link)
+    donationdata.get().then(result => {
+
+        let endday = new Date(result.val().duration)
+        let end_day = endday.getDate() + '.' + (endday.getMonth() + 1)
+
+        let sendmaterialsday = new Date(result.val().sendduration)
+        let materials_day = sendmaterialsday.getDate() + '.' + (sendmaterialsday.getMonth() + 1)
+
+        bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(error => {console.log(error)})
+        bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(error => {console.log(error)})
+    
+        let txt = '<b><a href="tg://user?id='+ chat.id +'">'+ chat.first_name +'</a></b> собирает на: <b>' + result.val().name + '</b>\n'
+        txt += '\nСбор заканчивается: <b>' + end_day + '</b>\n' 
+        txt += 'Прикрепить материалы до: <b>' + materials_day + '</b>\n\n'
+        
+        txt += 'Собрано: <b>' + result.val().bank + ' руб. из ' + result.val().money + ' руб. (' + Math.floor((100*result.val().bank) / result.val().money) + '%)</b>\n'
+        if (result.val().participants === undefined || result.val().participants === null){
+            txt += 'Участников: <b>0</b>\n'
+        }
+        if (result.val().participants !== undefined && result.val().participants !== null){
+            txt += 'Участников: <b>'+ result.val().participants.length +'</b>\n'
+        }
+
+        if (result.val().materials !== 'null' && result.val().materials !== ''){
+            txt += 'Материал прикреплен: <b>Да</b>\n' 
+        }
+
+        if (result.val().materials === 'null' || result.val().materials === ''){
+            txt += 'Материал прикреплен: <b>Нет!</b>\n' 
+        }
+
+        bot.getMe().then(res => {
+            if (result.val().privacy === false) txt += '\nТип сбора: <b>открытый</b>'
+            if (result.val().privacy === true) txt += '\nТип сбора: <b>закрытый</b>'
+            txt += '\nСсылка-приглашение (НЕ НАЖИМАЙТЕ!): https://t.me/'+ res.username +'?start=_part_' + chat.id + '_' + link
+            
+            let kb = []
+            kb.push([{
+                text: backtomain[0],
+                callback_data: mydonationslist[1]
+            }])
+            if (result.val().status === 'online'){
+                kb.push([{
+                    text: editmaterial[0],
+                    callback_data: editmaterial[1] + '_' + link
+                }])
+                kb.push([{
+                    text: editpreview[0],
+                    callback_data: editpreview[1] + '_' + link
+                }])
+                kb.push([{
+                    text: canceldonation[0],
+                    callback_data: canceldonation[1] + '_0_' + link
+                }])
+            }
+            if (result.val().status === 'waiting'){
+                if (result.val().materials === 'null' || result.val().materials === ''){
+                    kb.push([{
+                        text: editmaterial[0],
+                        callback_data: editmaterial[1] + '_' + link
+                    }])
+                    kb.push([{
+                        text: editpreview[0],
+                        callback_data: editpreview[1] + '_' + link
+                    }])
+                }
+                if (result.val().materials.includes('https://')){
+                    kb.push([{
+                        text: finishdonation[0],
+                        callback_data: finishdonation[1] + '_0_' + link
+                    }])
+                }
+                kb.push([{
+                    text: canceldonation[0],
+                    callback_data: canceldonation[1] + '_0_' + link
+                }])
+            }
+            
+            
+            if (result.val().participants !== undefined && result.val().participants.length > 0){
+                kb.push([{
+                    text: checkparticipantsbutton[0],
+                    callback_data: checkparticipantsbutton[1] + '_' + link
+                }])
+            }
+
+            bot.sendPhoto(chat.id, result.val().photo, {
+                caption: txt,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+                reply_markup: {
+                    inline_keyboard: kb
+                }
+            })
+            .then(res => {
+                message_toedit[chat.id][0] = res.message_id
+            })
+            .catch(err => {
+                console.log('here: ' + err)
+                bot.sendMessage(chat.id, txt, {
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true,
+                    reply_markup: {
+                        inline_keyboard: kb
+                    }
+                })
+                .then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                })
+                .catch(err => {console.log('here: ' + err)})
+            })
+        })
+        
+    })
+}
+
+function CancelDonation(chat, link){
+
+    console.log('canceled')
+    let date = new Date()
+    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    let timeOfffset = 6 //Astana GMT +6
+    let currenttime = new Date(utcTime + (3600000 * timeOfffset))
+
+    let donationdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + link)
+    donationdata.get().then(reply => {
+        let updates = {}
+        updates['Kickstarter/users/' + chat.id + '/donations/' + link + '/status'] = 'canceled'
+        updates['Kickstarter/users/' + chat.id + '/donations/' + link + '/bank'] = 0
+    
+        BankCancelation(reply.val(), currenttime.getTime())
+
+        let authorslists = fb.database().ref('Kickstarter/users/' + chat.id)
+        authorslists.get().then(result => {
+            
+            let newaction = {
+                date: currenttime.getTime(),
+                description: 'Статус сбора '+chat.id+'.'+link +' изменен Вами на ОТМЕНЕН.'
+            }
+            if (result.val().balance.history !== undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().balance.history.length] = newaction
+            }
+            if (result.val().balance.history === undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newaction
+            }
+
+            fb.database().ref().update(updates).then(() => {
+                let txt_author = '🔴 Ваш сбор <b>"' + reply.val().name + '"</b> был отменен.\n\n<b>Деньги были возвращены участникам</b>'
+                bot.sendMessage(chat.id, txt_author, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: 'opendonation_' + link
+                            }]
+                        ]
+                    }
+                })
+            })
+        })
+
+        /* if (reply.val().privacy === false){
+            let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+            publicdonationdata.get().then(result => {
+                let donation_updates = {}
+                for (let i = 0; i < result.val().length; i++){
+                    if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === link){
+                        donation_updates['Kickstarter/gallery/donations/' + i] = null
+                        fb.database().ref().update(donation_updates)
+                    }
+                }
+            })
+        } */
+        
+    })
+}
+
+function FinishDonation(chat, link){
+    let date = new Date()
+    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    let timeOfffset = 6 //Astana GMT +6
+    let currenttime = new Date(utcTime + (3600000 * timeOfffset))
+
+    let donationdata = fb.database().ref('Kickstarter/users/' + chat.id + '/donations/' + link)
+    donationdata.get().then(reply => {
+        let updates = {}
+        updates['Kickstarter/users/' + chat.id + '/donations/' + link + '/status'] = 'offline'
+        MaterialsMailing(reply.val(), reply.val().materials)
+
+        let authorslists = fb.database().ref('Kickstarter/users/' + chat.id)
+        authorslists.get().then(result => {
+            updates['Kickstarter/users/' + chat.id + '/donations/' + link + '/bank'] = 0
+            updates['Kickstarter/users/' + chat.id + '/balance/bank'] = result.val().balance.bank + reply.val().bank
+            
+            let newaction = {
+                date: currenttime.getTime(),
+                description: 'Окончание сбора '+chat.id+'.'+ link +'. Пополнение основного баланса: +' + reply.val().bank + ' руб.'
+            }
+            if (result.val().balance.history !== undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/' + result.val().balance.history.length] = newaction
+            }
+            if (result.val().balance.history === undefined){
+                updates['Kickstarter/users/' + chat.id + '/balance/history/0'] = newaction
+            }
+            
+            let txt_author = '🥳 Сбор <b>"' + reply.val().name + '"</b> закрыт!\nМатериалы были автоматически разосланы участникам сбора, а на Ваш счет было зачислено <b>' + reply.val().bank + ' руб.</b>'
+            
+            fb.database().ref().update(updates).then(() => {
+                bot.sendMessage(chat.id, txt_author, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: backtostart[0],
+                                callback_data: 'opendonation_' + link
+                            }]
+                        ]
+                    }
+                })
+                .then(res => {
+                    if (message_toedit[chat.id] === undefined) message_toedit[chat.id] = []
+                    if (messagetext_toedit[chat.id] === undefined) messagetext_toedit[chat.id] = []
+                    messagetext_toedit[chat.id][1] = res.text
+                    message_toedit[chat.id][1] = res.message_id
+                })
+            })
+            
+        })
+
+        /* if (reply.val().privacy === false){
+            let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+            publicdonationdata.get().then(result => {
+                let donation_updates = {}
+                for (let i = 0; i < result.val().length; i++){
+                    if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === link){
+                        donation_updates['Kickstarter/gallery/donations/' + i] = null
+                        fb.database().ref().update(donation_updates)
+                    }
+                }
+            })
+        } */
+    })
+}
+
+function OpenDonationParticipant(chat, linkref){
+    let link = user_donationlink[chat.id]
+    if (linkref !== null) link = linkref
+    let donationdata = fb.database().ref('Kickstarter/users/' + link)
+    donationdata.get().then(result => {
+        let authordata = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+        authordata.get().then(reply => {
+            let endday = new Date(result.val().duration)
+            let end_day = endday.getDate() + '.' + (endday.getMonth() + 1)
+    
+            let sendmaterialsday = new Date(result.val().duration)
+            let materials_day = sendmaterialsday.getDate() + '.' + (sendmaterialsday.getMonth() + 1)
+    
+            bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(error => {console.log('here: ' + error)})
+            let txt = ''
+            let kb = []
+            kb[0] = [{
+                text: backtostart[0],
+                callback_data: backtomain[1]
+            }]
+            if (result.val().participants === undefined || result.val().participants === null){
+                if (result.val().status === 'online' && link.split('/donations/')[0] !== (chat.id).toString()){
+                    kb.push([{
+                        text: participatebutton[0] + '(' + result.val().minmoney + ' руб.)',
+                        callback_data: participatebutton[1] + '_' + result.val().minmoney
+                    }])
+                }
+            }
+            if (result.val().participants !== undefined && result.val().participants !== null){
+                for (let i = 0; i< result.val().participants.length; i++){
+                    if (result.val().participants[i].id === chat.id){
+                        if (result.val().status === 'online'){
+                            kb.push([{
+                                text: '✅ Вы - участник ('+ result.val().participants[i].amount +' руб.)',
+                                callback_data: 'emptyhandler'
+                            }])
+                        }
+                        if (result.val().status === 'offline'){
+                            kb.push([{
+                                text: '🔗 Материалы',
+                                url: result.val().materials
+                            }])
+                        }
+                    }
+                    if (i === result.val().participants.length - 1 && result.val().participants[i].id !== chat.id){
+                        if (result.val().status === 'online' && link.split('/donations/')[0] !== (chat.id).toString()){
+                            kb.push([{
+                                text: participatebutton[0] + '(' + result.val().minmoney + ' руб.)',
+                                callback_data: participatebutton[1] + '_' + result.val().minmoney
+                            }])
+                        }
+                    }
+                } 
+            }
+
+            if (result.val().status === 'canceled') txt  = '🔴 <b>Сбор отменен</b>\n\n'
+            if (result.val().status === 'offline') txt  = '✅ <b>Сбор завершен</b>\n\n'
+            if (result.val().status === 'waiting') txt  = '🟡 <b>Сбор завершен, идет рассылка</b>\n\n'
+
+            txt += '<b><a href="tg://user?id='+ reply.val().profile.id +'">'+ reply.val().profile.name +'</a></b> собирает на: <b>' + result.val().name + '</b>\n'
+            
+            if (result.val().duration !== 0 && result.val().sendduration !== 0){
+                txt += '\nСбор заканчивается: <b>' + end_day + '</b>\n'
+
+                if (result.val().materials !== 'null' && result.val().materials !== ''){
+                    txt += 'Рассылка контента: <b>моментально</b>\n\n'
+                }
+        
+                if (result.val().materials === 'null' || result.val().materials === ''){
+                    txt += 'Рассылка контента: <b>' + materials_day + '</b>\n\n'
                 }
                 
+                if (result.val().status === 'online'){
+                    txt += 'Собрано: <b>' + Math.floor((100*result.val().bank) / result.val().money) + '%</b>\n'
+                }
+            }
+
+            if (result.val().duration === 0 && result.val().sendduration === 0){
+                txt += '\n<b>Моментальный доступ к контенту</b>\n'
+            }
+            
+
+            if (result.val().participants === undefined || result.val().participants === null){
+                txt += 'Участников пока нет\n\n'
+            }
+            if (result.val().participants !== undefined && result.val().participants !== null){
+                txt += 'Участников: <b>'+ result.val().participants.length +'</b>\n\n'
             }
     
-            if (text.includes('_salelink')){
-                bot.deleteMessage(chatId, message_id)
-                let inform = text.split(' ')
-                inform = inform[1].split('_')
-                if (inform.length === 5){
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chatId, message_id - i).catch(err => {
-                            //console.log(err)
+            //txt += 'Мин. сумма участия: <b>' + result.val().minmoney + ' руб.</b>\n'
+    
+            bot.getMe().then(res => {
+                if (result.val().privacy === false) txt += 'Тип сбора: <b>открытый</b>'
+                if (result.val().privacy === true) txt += 'Тип сбора: <b>закрытый</b>'
+                txt += '\nСсылка-приглашение (для друзей): https://t.me/'+ res.username +'?start=_part_' + link.split('/donations/')[0] + '_' + link.split('/donations/')[1]
+    
+                bot.sendPhoto(chat.id, result.val().photo, {
+                    caption: txt,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true,
+                    reply_markup: {
+                        inline_keyboard: kb
+                    }
+                })
+                .then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                })
+                .catch(err => {
+                    console.log('here: ' + err)
+                    bot.sendMessage(chat.id, txt, {
+                        parse_mode: 'HTML',
+                        disable_web_page_preview: true,
+                        reply_markup: {
+                            inline_keyboard: kb
+                        }
+                    })
+                    .then(res => {
+                        message_toedit[chat.id][0] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                })
+            })
+        })
+    })
+}
+
+function MyParticipateDonationsList(chat){
+    donate_editmaterials[chat.id] = false
+    donate_editpreview[chat.id] = false
+        
+    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+    bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(error => {console.log(error)})
+    
+    let txt = '<b>Список сборов, в которых Вы участвуете:</b>'
+
+    //user_donations[chat.id] = []
+
+    let kb = []
+
+    let num_online = 0
+    let txt_online = ''
+    let kb_online = []
+
+    let num_waiting = 0
+    let txt_waiting = ''
+    let kb_waiting = []
+
+    let num_canceled = 0
+    let txt_canceled = ''
+    let kb_canceled = []
+    
+    let num_offline = 0
+    let txt_offline = ''
+    let kb_offline = []
+
+    let participantsdata = fb.database().ref('Kickstarter/users/' + chat.id + '/participants/')
+    participantsdata.get().then(reply => {
+        //уже проверили, хотябы 1 сбор есть
+        let donations = reply.val().split(',')
+        for (let i = 0; i<donations.length; i++){
+            let donationsdata = fb.database().ref('Kickstarter/users/' + donations[i].split('.')[0] + '/donations/' +  donations[i].split('.')[1])
+            donationsdata.get().then(result => {
+                if (result.val().status === 'online'){
+                    if (num_online === 0) txt_online += '\n\n<b>🟢 Активные сборы:</b>'
+        
+                    //user_donations[chat.id][num_online] = result.val()
+        
+                    let stringlength = result.val().name.length
+                    console.log(stringlength)
+        
+                    if (stringlength > 15) {
+                        txt_online += '\n' + (result.val().name).slice(0, 15) + '...'
+                        kb_online.push([{
+                            text: '🟢 ' + (result.val().name).slice(0, 15) + '...',
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    if (stringlength <= 15){
+                        txt_online += '\n' + result.val().name
+                        kb_online.push([{
+                            text: '🟢 ' + result.val().name,
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+        
+                    num_online++
+                }
+                if (result.val().status === 'waiting'){
+        
+                    if (num_waiting === 0) txt_waiting += '\n\n<b>🟡 Ожидает материалов:</b>'
+        
+                    let stringlength = result.val().name.length
+                    console.log(stringlength)
+        
+                    if (stringlength > 15) {
+                        txt_waiting += '\n' + (result.val().name).slice(0, 15) + '...'
+                        kb_waiting.push([{
+                            text: '🟡 ' + (result.val().name).slice(0, 15) + '...',
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    if (stringlength <= 15){
+                        txt_waiting += '\n' + result.val().name
+                        kb_waiting.push([{
+                            text: '🟡 ' + result.val().name,
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    num_waiting++
+                }
+                if (result.val().status === 'canceled'){
+        
+                    if (num_canceled === 0) txt_canceled += '\n\n<b>🔴 Отмененные сборы:</b>'
+        
+                    let stringlength = result.val().name.length
+                    console.log(stringlength)
+        
+                    if (stringlength > 15) {
+                        txt_canceled += '\n' + (result.val().name).slice(0, 15) + '...'
+                        kb_canceled.push([{
+                            text: '🔴 ' + (result.val().name).slice(0, 15) + '...',
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    if (stringlength <= 15){
+                        txt_canceled += '\n' + result.val().name
+                        kb_canceled.push([{
+                            text: '🔴 ' + result.val().name,
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    num_canceled++
+                }
+                if (result.val().status === 'offline'){
+        
+                    if (num_offline === 0) txt_offline += '\n\n<b>✅ Завершенные:</b>'
+        
+                    let stringlength = result.val().name.length
+                    console.log(stringlength)
+        
+                    if (stringlength > 15) {
+                        txt_offline += '\n' + (result.val().name).slice(0, 15) + '...'
+                        kb_offline.push([{
+                            text: '✅ ' + (result.val().name).slice(0, 15) + '...',
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    if (stringlength <= 15){
+                        txt_offline += '\n' + result.val().name
+                        kb_offline.push([{
+                            text: '✅ ' + result.val().name,
+                            callback_data: 'opendonationparticipant_' +  donations[i].split('.')[0] + '_' + donations[i].split('.')[1]
+                        }])
+                    }
+                    num_offline++
+                }
+                if (i === donations.length - 1){
+                    txt += txt_online + txt_waiting + txt_canceled + txt_offline
+                    txt += '\n\nДля просмотра сбора, нажмите на кнопку(-и) ниже'
+                    console.log('here')
+                    kb.push([{
+                        text: backtomain[0],
+                        callback_data: backtomain[1]
+                    }])
+                    if (kb_online.length > 0){
+                        for (let x=0; x < kb_online.length; x++){
+                            kb.push(kb_online[x])
+                        }
+                    }
+                    
+                    if (kb_waiting.length > 0) {
+                        for (let y=0; y < kb_waiting.length; y++){
+                            kb.push(kb_waiting[y])
+                        }
+                    }
+                    
+                    if (kb_canceled.length > 0){
+                        for (let z=0; z < kb_canceled.length; z++){
+                            kb.push(kb_canceled[z])
+                        }
+                    }
+                    
+                    if (kb_offline.length > 0){
+                        for (let b=0; b< kb_offline.length; b++){
+                            kb.push(kb_offline[b])
+                        }
+                    }
+        
+                    bot.sendMessage(chat.id, txt, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: kb
+                        }
+                    })
+                    .then(res => {
+                        message_toedit[chat.id][0] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                }
+            })
+        }
+    })
+}
+
+function GlobalDonationList(chat){
+        
+    bot.deleteMessage(chat.id, message_toedit[chat.id][1]).catch(err => {console.log('here: ' + err)})
+    bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(error => {console.log(error)})
+    
+    let txt = '<b>🔓 Список открытых сборов, в которых может участвовать каждый</b>'
+
+    //user_donations[chat.id] = []
+
+    let kb = []
+
+    let donationlistdata = fb.database().ref('Kickstarter/gallery/donations')
+    donationlistdata.get().then(result => {
+        kb.push([{
+            text: backtostart[0],
+            callback_data: backtomain[1]
+        }])
+        for (let i = 0; i < result.val().length; i++){
+            kb.push([{
+                text: result.val()[i].name,
+                callback_data: 'opendonationparticipant_' + result.val()[i].user_id + '_' + result.val()[i].donation_id
+            }])
+            if (i === result.val().length - 1){
+                bot.sendMessage(chat.id, txt, {
+                    parse_mode: 'HTML',
+                })
+                .then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                })
+                .catch(err => {console.log('here: ' + err)})
+            }
+        }
+    })
+}
+
+function CheckDeadlinesList(isRenew){
+    let authorslists = fb.database().ref('Kickstarter/')
+    authorslists.get().then(result => {
+        if (result.val().mailing.authors !== ''){
+            let authors = []
+            if (result.val().mailing.authors.includes(',')){
+                authors = (result.val().mailing.authors).split(',')
+            }
+            if (!result.val().mailing.authors.includes(',')){
+                authors[0] = result.val().mailing.authors
+            }
+
+            if (isRenew){
+                deelay(1000 * 86400).then(() => {CheckDeadlinesList(true)})
+            }
+            for (let x = 0; x < authors.length; x++) {
+                let donationschekc = fb.database().ref('Kickstarter/users/' + authors[x] + '/donations')
+                donationschekc.get().then(answ => {
+                    let donations = Object.keys(answ.val())
+                    for (let i = 0; i < donations.length; i++) {
+                        let donationdata = fb.database().ref('Kickstarter/users/' + authors[x] + '/donations/' + donations[i])
+                        donationdata.get().then(reply => {
+                            if (reply.val().status === 'online' || reply.val().status === 'waiting'){
+                                CheckDeadlines(authors[x] + '/donations/' + donations[i], reply.val())
+                                console.log('started checking deadlines')
+                            }
                         })
                     }
-                    Reset(chat.id)
-                    buttons_message[chatId] = message_id
-                    UserDelCat[chat.id] = inform[2]
-                    userPoint[chat.id] = inform[3]
-                    let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons')
-                    point_info.get().then((snapshot) => {
-                        if (snapshot.exists()){
-                            let coupons = Object.keys(snapshot.val())
-                            for (let i = 0; i < coupons.length; i++){
-                                let gett = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i])
-                                gett.get().then((res) => {
-                                    if (inform[4] === res.val().name){
-                                        if (res.val().activ_left > 0){
-                                            clients = res.val().clients 
-                                            if (!clients.includes(chatId.toString())) {
-                                                coupondata = []
-                                                coupondata[chatId] = []
-                                                coupondata[chatId][0] = res.val().name
-                                                coupondata[chatId][1] = res.val().percent
-                
-                                                //let updates = {}
-                                                //updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i] + '/activ_left'] = res.val().activ_left - 1
-                                                //updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i] + '/activated'] = res.val().activated + 1
-                                                //updates['Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/loyal_system/coupons/' + coupons[i] + '/clients'] = res.val().clients + ',' + chat.id
-                                                
-                                                //fb.database().ref().update(updates)
-                
-                                                //bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                                bot.sendMessage(chatId, `Промокод успешно активирован 🥳 
-Вы получаете скидку ` + res.val().percent + `%. Бегом тратить!` , {
-                                                    parse_mode: 'HTML'
-                                                })
-                                                .then(res => {
-                                                    let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-                                                    point_info.get().then((snapshot) => {
-                                            
-                                                        help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                                                        point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                                                        point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                                                        point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-                                            
-                                                        point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                                                        point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-                                            
-                                                        delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                                                        delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                                                        point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                                                        point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-                                            
-                                                        point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                                                        point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                                                        //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                                                        point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                                                        //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-                                            
-                                                        point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                                                        point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-                                            
-                                                        delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                                                        console.log('325 ' + delivery_chat[chat.id])
-                                            
-                                                        let buttons_data = []
-                                                        if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                                                            buttons_data.push({
-                                                                text: sendadress_point[0],
-                                                                callback_data: sendadress_point[1]
-                                                            })
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                                                            buttons_data.push({
-                                                                text: sendphone_point[0],
-                                                                callback_data: sendphone_point[1] 
-                                                            })
-                                                        }
-                                            
-                                                        let date = new Date()
-                                                        let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                                        let timeOfffset = 6 //Astana GMT +6
-                                                        let time_now = new Date(utcTime + (3600000 * timeOfffset))
-                                            
-                                                        let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                                                        let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                                                        console.log(time_now.getTime() < restriction_time_min)
-                                            
-                                                        let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                                                        let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                                                        let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                                                        let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-                                            
-                                                        ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                                                        ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                                                        ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                                                        let ttd 
-                                                        if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                                                            ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                                                        }
-                                            
-                                                        if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                                                            ttd = ttd_minutes + ' мин.'
-                                                        }
-                                                        console.log('ttd_hours: ' + ttd_hours)
-                                            
-                                                        let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-                                            
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('1 wrong TIME, time_now: ' + time_now)
-                                                            user_deliverdate[chat.id] = 'Как можно раньше'
-                                                            msgtext += ` (Закрыто)`
-                                                        }
-                                                        
-                                                        let rating
-                                                        if (point_rating[chat.id] < 1){
-                                                            rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                                                            rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] > 2){
-                                                            rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                                        if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                                                            msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-                                                        }
-                                                        if (snapshot.val().other_info.stats.delivery_time > 0) {
-                                                            msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                                                        }
-                                            
-                                                        msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-                                            
-                                                        if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                                                            msgtext += `
-                                                            
-` + snapshot.val().other_info.delivery_info.disclaimer
-                                                        }
-                                                        
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('2 wrong TIME, time_now: ' + time_now)
-                                                            msgtext += `
-                                            
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-                                                        }
-                                            
-                                                        let finalbuttons
-                                                        if (snapshot.val().chats.admin !== chat.id){
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            },
-                                                            {
-                                                                text: loadcategories[0],
-                                                                callback_data: loadcategories[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().chats.admin === chat.id){
-                                                            isAdmin[chat.id] = true
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            },
-                                                            {
-                                                                text: openadminpanel[0],
-                                                                callback_data: openadminpanel[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                                                            bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                                                                parse_mode: 'HTML',
-                                                                caption: msgtext,
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            }).then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.caption
-                                                            })
-                                                            .catch(() => {
-                                                                bot.sendMessage(chat.id, msgtext, {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup: {
-                                                                        inline_keyboard: [
-                                                                            buttons_data,
-                                                                            finalbuttons
-                                                                        ]
-                                                                    }
-                                                                })
-                                                                .then(res => {
-                                                                    message_toedit[chat.id][0] = res.message_id
-                                                                    message_text[chat.id][0] = res.text
-                                                                })
-                                                            })
-                                                        }
-                                                        if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                                                            bot.sendMessage(chat.id, msgtext, {
-                                                                parse_mode: 'HTML',
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            })
-                                                            .then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.text
-                                                            })
-                                                        }
-                                                        
-                                                    })
-                                                    message_toedit[chatId][2] = res.message_id
-                                                })
-                                            }
-                                            else if (clients.includes(chatId.toString())){
-                                                //bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                                bot.sendMessage(chatId, 'Вы уже использовали этот промокод', {
-                                                    parse_mode: 'HTML'
-                                                })
-                                                .then(res => {
-                                                    let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-                                                    point_info.get().then((snapshot) => {
-                                            
-                                                        help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                                                        point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                                                        point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                                                        point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-                                            
-                                                        point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                                                        point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-                                            
-                                                        delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                                                        delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                                                        point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                                                        point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-                                            
-                                                        point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                                                        point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                                                        //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                                                        point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                                                        //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-                                            
-                                                        point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                                                        point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-                                            
-                                                        delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                                                        console.log('325 ' + delivery_chat[chat.id])
-                                            
-                                                        let buttons_data = []
-                                                        if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                                                            buttons_data.push({
-                                                                text: sendadress_point[0],
-                                                                callback_data: sendadress_point[1]
-                                                            })
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                                                            buttons_data.push({
-                                                                text: sendphone_point[0],
-                                                                callback_data: sendphone_point[1] 
-                                                            })
-                                                        }
-                                            
-                                                        let date = new Date()
-                                                        let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                                        let timeOfffset = 6 //Astana GMT +6
-                                                        let time_now = new Date(utcTime + (3600000 * timeOfffset))
-                                            
-                                                        let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                                                        let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                                                        console.log(time_now.getTime() < restriction_time_min)
-                                            
-                                                        let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                                                        let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                                                        let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                                                        let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-                                            
-                                                        ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                                                        ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                                                        ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                                                        let ttd 
-                                                        if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                                                            ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                                                        }
-                                            
-                                                        if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                                                            ttd = ttd_minutes + ' мин.'
-                                                        }
-                                                        console.log('ttd_hours: ' + ttd_hours)
-                                            
-                                                        let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-                                            
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('1 wrong TIME, time_now: ' + time_now)
-                                                            user_deliverdate[chat.id] = 'Как можно раньше'
-                                                            msgtext += ` (Закрыто)`
-                                                        }
-                                                        
-                                                        let rating
-                                                        if (point_rating[chat.id] < 1){
-                                                            rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                                                            rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] > 2){
-                                                            rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                                        if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                                                            msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-                                                        }
-                                                        if (snapshot.val().other_info.stats.delivery_time > 0) {
-                                                            msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                                                        }
-                                            
-                                                        msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-                                            
-                                                        if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                                                            msgtext += `
-                                                            
-` + snapshot.val().other_info.delivery_info.disclaimer
-                                                        }
-                                                        
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('2 wrong TIME, time_now: ' + time_now)
-                                                            msgtext += `
-                                            
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-                                                        }
-                                            
-                                                        let finalbuttons
-                                                        if (snapshot.val().chats.admin !== chat.id){
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            },
-                                                            {
-                                                                text: loadcategories[0],
-                                                                callback_data: loadcategories[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().chats.admin === chat.id){
-                                                            isAdmin[chat.id] = true
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            },
-                                                            {
-                                                                text: openadminpanel[0],
-                                                                callback_data: openadminpanel[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                                                            bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                                                                parse_mode: 'HTML',
-                                                                caption: msgtext,
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            }).then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.caption
-                                                            })
-                                                            .catch(() => {
-                                                                bot.sendMessage(chat.id, msgtext, {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup: {
-                                                                        inline_keyboard: [
-                                                                            buttons_data,
-                                                                            finalbuttons
-                                                                        ]
-                                                                    }
-                                                                })
-                                                                .then(res => {
-                                                                    message_toedit[chat.id][0] = res.message_id
-                                                                    message_text[chat.id][0] = res.text
-                                                                })
-                                                            })
-                                                        }
-                                                        if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                                                            bot.sendMessage(chat.id, msgtext, {
-                                                                parse_mode: 'HTML',
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            })
-                                                            .then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.text
-                                                            })
-                                                        }
-                                                        
-                                                    })
-                                                    message_toedit[chatId][2] = res.message_id
-                                                })
-                                            }
-                                        }
-                                        else {
-                                            //bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                            bot.sendMessage(chatId, 'О нет, Вы не успели. Промокод уже ввели 😢', {
-                                                parse_mode: 'HTML'
-                                            })
-                                            .then(res => {
-                                                let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-                                                    point_info.get().then((snapshot) => {
-                                            
-                                                        help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                                                        point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                                                        point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                                                        point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-                                            
-                                                        point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                                                        point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-                                            
-                                                        delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                                                        delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                                                        point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                                                        point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-                                            
-                                                        point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                                                        point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                                                        //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                                                        point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                                                        //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-                                            
-                                                        point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                                                        point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-                                            
-                                                        delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                                                        console.log('325 ' + delivery_chat[chat.id])
-                                            
-                                                        let buttons_data = []
-                                                        if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                                                            buttons_data.push({
-                                                                text: sendadress_point[0],
-                                                                callback_data: sendadress_point[1]
-                                                            })
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                                                            buttons_data.push({
-                                                                text: sendphone_point[0],
-                                                                callback_data: sendphone_point[1] 
-                                                            })
-                                                        }
-                                            
-                                                        let date = new Date()
-                                                        let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                                        let timeOfffset = 6 //Astana GMT +6
-                                                        let time_now = new Date(utcTime + (3600000 * timeOfffset))
-                                            
-                                                        let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                                                        let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                                                        console.log(time_now.getTime() < restriction_time_min)
-                                            
-                                                        let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                                                        let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                                                        let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                                                        let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-                                            
-                                                        ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                                                        ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                                                        ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                                                        let ttd 
-                                                        if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                                                            ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                                                        }
-                                            
-                                                        if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                                                            ttd = ttd_minutes + ' мин.'
-                                                        }
-                                                        console.log('ttd_hours: ' + ttd_hours)
-                                            
-                                                        let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-                                            
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('1 wrong TIME, time_now: ' + time_now)
-                                                            user_deliverdate[chat.id] = 'Как можно раньше'
-                                                            msgtext += ` (Закрыто)`
-                                                        }
-                                                        
-                                                        let rating
-                                                        if (point_rating[chat.id] < 1){
-                                                            rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                                                            rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] > 2){
-                                                            rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                                        if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                                                            msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-                                                        }
-                                                        if (snapshot.val().other_info.stats.delivery_time > 0) {
-                                                            msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                                                        }
-                                            
-                                                        msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-                                            
-                                                        if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                                                            msgtext += `
-                                                            
-` + snapshot.val().other_info.delivery_info.disclaimer
-                                                        }
-                                                        
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('2 wrong TIME, time_now: ' + time_now)
-                                                            msgtext += `
-                                            
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-                                                        }
-                                            
-                                                        let finalbuttons
-                                                        if (snapshot.val().chats.admin !== chat.id){
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            }],
-                                                            [{
-                                                                text: loadcategories[0],
-                                                                callback_data: loadcategories[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().chats.admin === chat.id){
-                                                            isAdmin[chat.id] = true
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            }],
-                                                            [{
-                                                                text: openadminpanel[0],
-                                                                callback_data: openadminpanel[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                                                            bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                                                                parse_mode: 'HTML',
-                                                                caption: msgtext,
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            }).then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.caption
-                                                            })
-                                                            .catch(() => {
-                                                                bot.sendMessage(chat.id, msgtext, {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup: {
-                                                                        inline_keyboard: [
-                                                                            buttons_data,
-                                                                            finalbuttons
-                                                                        ]
-                                                                    }
-                                                                })
-                                                                .then(res => {
-                                                                    message_toedit[chat.id][0] = res.message_id
-                                                                    message_text[chat.id][0] = res.text
-                                                                })
-                                                            })
-                                                        }
-                                                        if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                                                            bot.sendMessage(chat.id, msgtext, {
-                                                                parse_mode: 'HTML',
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            })
-                                                            .then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.text
-                                                            })
-                                                        }
-                                                        
-                                                    })
-                                                message_toedit[chatId][2] = res.message_id
-                                            })
-                                        }
-                                    }
-                                    if (i === coupons.length - 1 && inform[4] !== res.val().name){
-                                        bot.deleteMessage(chatId, message_toedit[chatId][2])
-                                        bot.sendMessage(chatId, 'Промокод не подходит 😕', {
-                                            parse_mode: 'HTML'
-                                        })
-                                        .then(res => {
-                                            let point_info = fb.database().ref('Delivery/' + UserDelCat[chat.id] +'/' + userPoint[chat.id] + '/')
-                                                    point_info.get().then((snapshot) => {
-                                            
-                                                        help_phone[chat.id] = snapshot.val().other_info.place_info.contact_phone
-                                                        point_adress[chat.id] = snapshot.val().other_info.place_info.adress_text
-                                                        point_location[chat.id][0] = snapshot.val().other_info.place_info.latitude
-                                                        point_location[chat.id][1] = snapshot.val().other_info.place_info.longitude
-                                            
-                                                        point_payment_options[chat.id][0] = snapshot.val().other_info.payments.pay_beznal
-                                                        point_payment_options[chat.id][1] = snapshot.val().other_info.payments.pay_nal
-                                            
-                                                        delivery_min_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_min_price
-                                                        delivery_price[chat.id] = snapshot.val().other_info.delivery_info.delivery_price
-                                                        point_disclaimer[chat.id] = snapshot.val().other_info.delivery_info.disclaimer
-                                                        point_pplamount[chat.id] = snapshot.val().other_info.delivery_info.people_amount
-                                            
-                                                        point_workingtime[chat.id] = snapshot.val().other_info.delivery_info.working_time.split('-')
-                                                        point_workingtime[chat.id][0] = point_workingtime[chat.id][0].split(':')
-                                                        //point_workingtime[chat.id][0] = [parseInt(point_workingtime[chat.id][0][0]), parseInt(point_workingtime[chat.id][0][1])]
-                                                        point_workingtime[chat.id][1] = point_workingtime[chat.id][1].split(':')
-                                                        //point_workingtime[chat.id][1] = [parseInt(point_workingtime[chat.id][1][0]), parseInt(point_workingtime[chat.id][1][1])]
-                                            
-                                                        point_rating[chat.id] = snapshot.val().other_info.stats.rating
-                                                        point_delivery_time[chat.id] = snapshot.val().other_info.stats.delivery_time
-                                            
-                                                        delivery_chat[chat.id] = snapshot.val().chats.delivery_chat
-                                                        console.log('325 ' + delivery_chat[chat.id])
-                                            
-                                                        let buttons_data = []
-                                                        if (snapshot.val().other_info.place_info.adress_text !== 'unknown' && snapshot.val().other_info.place_info.adress_text !==undefined && snapshot.val().other_info.place_info.adress_text !== ''){
-                                                            buttons_data.push({
-                                                                text: sendadress_point[0],
-                                                                callback_data: sendadress_point[1]
-                                                            })
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.contact_phone !== 'unknown' && snapshot.val().other_info.place_info.contact_phone !==undefined && snapshot.val().other_info.place_info.contact_phone !== ''){
-                                                            buttons_data.push({
-                                                                text: sendphone_point[0],
-                                                                callback_data: sendphone_point[1] 
-                                                            })
-                                                        }
-                                            
-                                                        let date = new Date()
-                                                        let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
-                                                        let timeOfffset = 6 //Astana GMT +6
-                                                        let time_now = new Date(utcTime + (3600000 * timeOfffset))
-                                            
-                                                        let restriction_time_min = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][0][0], point_workingtime[chatId][0][1])
-                                                        let restriction_time_max = new Date(time_now.getFullYear(), time_now.getMonth(), time_now.getDate(), point_workingtime[chatId][1][0], point_workingtime[chatId][1][1])
-                                                        console.log(time_now.getTime() < restriction_time_min)
-                                            
-                                                        let ttd_ms = snapshot.val().other_info.stats.delivery_time
-                                                        let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                                                        let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                                                        let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-                                            
-                                                        ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                                                        ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                                                        ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-                                                        let ttd 
-                                                        if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                                                            ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                                                        }
-                                            
-                                                        if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                                                            ttd = ttd_minutes + ' мин.'
-                                                        }
-                                                        console.log('ttd_hours: ' + ttd_hours)
-                                            
-                                                        let msgtext = `<b>` + snapshot.val().point_name + `</b>`
-                                            
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('1 wrong TIME, time_now: ' + time_now)
-                                                            user_deliverdate[chat.id] = 'Как можно раньше'
-                                                            msgtext += ` (Закрыто)`
-                                                        }
-                                                        
-                                                        let rating
-                                                        if (point_rating[chat.id] < 1){
-                                                            rating = feedback_options[0] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                                                            rating = feedback_options[1] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                            
-                                                        if (point_rating[chat.id] > 2){
-                                                            rating = feedback_options[2] + ' (' + snapshot.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                                                        }
-                                                        if (snapshot.val().other_info.stats.feedbacks_amount >= 5){
-                                                            msgtext += `
-<b>⭐️ Рейтинг:</b> ` + rating
-                                                        }
-                                                        if (snapshot.val().other_info.stats.delivery_time > 0) {
-                                                            msgtext += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                                                        }
-                                            
-                                                        msgtext += `
-<b>🕒 Часы работы:</b> ` + snapshot.val().other_info.delivery_info.working_time
-                                            
-                                                        if (delivery_min_price[chat.id] !== false && delivery_min_price[chat.id] !== 'unknown' && delivery_min_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Мин. сумма заказа:</b> ` + delivery_min_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (delivery_price[chat.id] !== false && delivery_price[chat.id] !== 'unknown' && delivery_price[chat.id] !== 0){
-                                                            msgtext += `
-<b>💰 Стоимость доставки:</b> ` + delivery_price[chat.id] + ` тенге.`
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.delivery_info.disclaimer !== undefined && snapshot.val().other_info.delivery_info.disclaimer !== 'unknown' && snapshot.val().other_info.delivery_info.disclaimer !== '' && snapshot.val().other_info.delivery_info.disclaimer !== 0){
-                                                            msgtext += `
-                                                            
-` + snapshot.val().other_info.delivery_info.disclaimer
-                                                        }
-                                                        
-                                                        if (time_now.getTime() < restriction_time_min || time_now.getTime() > restriction_time_max){
-                                                            console.log('2 wrong TIME, time_now: ' + time_now)
-                                                            msgtext += `
-                                            
-<b>❗️ Внимание.</b> Сделанный Вами заказ в этом месте будет доставлен как только курьерская служба начнет свою работу`
-                                                        }
-                                            
-                                                        let finalbuttons
-                                                        if (snapshot.val().chats.admin !== chat.id){
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            }],
-                                                            [{
-                                                                text: loadcategories[0],
-                                                                callback_data: loadcategories[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().chats.admin === chat.id){
-                                                            isAdmin[chat.id] = true
-                                                            finalbuttons = [{
-                                                                text: anotherpoint_text,
-                                                                callback_data: anotherpoint_text
-                                                            }],
-                                                            [{
-                                                                text: openadminpanel[0],
-                                                                callback_data: openadminpanel[1]
-                                                            }]
-                                                        }
-                                            
-                                                        if (snapshot.val().other_info.place_info.photo_url !== false && snapshot.val().other_info.place_info.photo_url !== 'unknown'){
-                                                            bot.sendPhoto(chat.id, snapshot.val().other_info.place_info.photo_url, {
-                                                                parse_mode: 'HTML',
-                                                                caption: msgtext,
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            }).then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.caption
-                                                            })
-                                                            .catch(() => {
-                                                                bot.sendMessage(chat.id, msgtext, {
-                                                                    parse_mode: 'HTML',
-                                                                    reply_markup: {
-                                                                        inline_keyboard: [
-                                                                            buttons_data,
-                                                                            finalbuttons
-                                                                        ]
-                                                                    }
-                                                                })
-                                                                .then(res => {
-                                                                    message_toedit[chat.id][0] = res.message_id
-                                                                    message_text[chat.id][0] = res.text
-                                                                })
-                                                            })
-                                                        }
-                                                        if (snapshot.val().other_info.place_info.photo_url === false || snapshot.val().other_info.place_info.photo_url === 'unknown'){
-                                                            bot.sendMessage(chat.id, msgtext, {
-                                                                parse_mode: 'HTML',
-                                                                reply_markup: {
-                                                                    inline_keyboard: [
-                                                                        buttons_data,
-                                                                        finalbuttons
-                                                                    ]
-                                                                }
-                                                            })
-                                                            .then(res => {
-                                                                message_toedit[chat.id][0] = res.message_id
-                                                                message_text[chat.id][0] = res.text
-                                                            })
-                                                        }
-                                                        
-                                                    })
-                                            message_toedit[chatId][2] = res.message_id
-                                        })
-                                    }
-                                })
+                })
+
+                if (x === authors.length - 1){
+                    bot.sendMessage(result.val().payments.info.moderator_id, '⚙️ Ведется проверка сборов ' + authors.length + ' VIP авторов')
+                    .then(res => {
+                        if (message_toedit[result.val().payments.info.moderator_id] === undefined) message_toedit[result.val().payments.info.moderator_id] = []
+                        if (messagetext_toedit[result.val().payments.info.moderator_id] === undefined) messagetext_toedit[result.val().payments.info.moderator_id] = []
+                        messagetext_toedit[result.val().payments.info.moderator_id][1] = res.text
+                        message_toedit[result.val().payments.info.moderator_id][1] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                }
+            }
+        }
+        if (result.val().mailing.free_authors !== ''){
+            let authors = []
+            if (result.val().mailing.free_authors.includes(',')){
+                authors = (result.val().mailing.free_authors).split(',')
+            }
+            if (!result.val().mailing.free_authors.includes(',')){
+                authors[0] = result.val().mailing.free_authors
+            }
+
+            if (isRenew){
+                deelay(1000 * 86400).then(() => {CheckDeadlinesList(true)})
+            }
+            for (let x = 0; x < authors.length; x++) {
+                let donationschekc = fb.database().ref('Kickstarter/users/' + authors[x] + '/donations')
+                donationschekc.get().then(answ => {
+                    let donations = Object.keys(answ.val())
+                    for (let i = 0; i < donations.length; i++) {
+                        let donationdata = fb.database().ref('Kickstarter/users/' + authors[x] + '/donations/' + donations[i])
+                        donationdata.get().then(reply => {
+                            if (reply.val().status === 'online' || reply.val().status === 'waiting'){
+                                CheckDeadlines(authors[x] + '/donations/' + donations[i], reply.val())
+                                console.log('started checking deadlines')
+                            }
+                        })
+                    }
+                })
+
+                if (x === authors.length - 1){
+                    bot.sendMessage(result.val().payments.info.moderator_id, '⚙️ Ведется проверка сборов ' + authors.length + ' авторов')
+                    .then(res => {
+                        if (message_toedit[result.val().payments.info.moderator_id] === undefined) message_toedit[result.val().payments.info.moderator_id] = []
+                        if (messagetext_toedit[result.val().payments.info.moderator_id] === undefined) messagetext_toedit[result.val().payments.info.moderator_id] = []
+                        messagetext_toedit[result.val().payments.info.moderator_id][1] = res.text
+                        message_toedit[result.val().payments.info.moderator_id][1] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                }
+            }
+        }
+    })
+}
+
+function CheckDeadlines(link, donationdata){
+
+    let date = new Date()
+    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    let timeOfffset = 6 //Astana GMT +6
+    let currenttime = new Date(utcTime + (3600000 * timeOfffset))
+    let duration = new Date(donationdata.duration)
+    let sendduration = new Date(donationdata.sendduration)
+    console.log('time: ' + currenttime.getTime() + ', ' + duration.getTime())
+
+    if (donationdata.status === 'online' && currenttime.getTime() >= duration.getTime()){
+        let updates = {}
+
+        if (donationdata.bank >= donationdata.money){
+            if (donationdata.materials !== undefined && donationdata.materials.includes('https://')){
+                updates['Kickstarter/users/' + link + '/status'] = 'offline'
+                //1. получить список участников
+                //2. отправить им сообщения по рассылке через другую функцию (с контентом)
+                //+ указать в рассылке что можно если че связаться с модером
+
+                console.log('stat mailing')
+                MaterialsMailing(donationdata, donationdata.materials)
+
+                //3. перевести баланс с банка сбора в банк автора
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    updates['Kickstarter/users/' + link + '/bank'] = 0
+                    updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/bank'] = result.val().balance.bank + donationdata.bank
+                    
+                    //4. добавить в операции (history) автора инфу о том, что ему на счет поступили деньги за сбор *номер сбора*
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Окончание сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +'. Пополнение основного баланса: +' + donationdata.bank + ' руб.'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+                    
+                    //5. Послать автору сообщение мол сбор закрыт ты получаешь деньги
+                    let txt_author = '🥳 Сбор <b>"' + donationdata.name + '"</b> закрыт!\nМатериалы были автоматически разосланы участникам сбора, а на Ваш счет было зачислено <b>' + donationdata.bank + ' руб.</b>'
+                    
+                    fb.database().ref().update(updates).then(() => {
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                    
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
                             }
                         }
-                        else {
-                            bot.deleteMessage(chatId, message_toedit[chatId][2])
-                            bot.sendMessage(chatId, 'Промокод не подходит 😕', {
+                    })
+                } */
+                
+            }
+            else {
+                updates['Kickstarter/users/' + link + '/status'] = 'waiting'
+
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Статус сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +' изменен на ОЖИДАНИЕ (деньги собраны)'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+
+                    fb.database().ref().update(updates).then(() => {
+                        let txt_author = '🟡 Ваш сбор <b>"' + donationdata.name + '"</b> собрал нужную сумму денег и перешел в статус ожидания.\n<b>У Вас есть 3 дня, чтобы загрузить материалы.</b> Если Вы этого не сделаете, сбор будет отменен, деньги вернуться участникам'
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
+                            }
+                        }
+                    })
+                } */
+            }
+        }
+        
+        else {
+            updates['Kickstarter/users/' + link + '/status'] = 'waiting'
+
+            let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+            authorslists.get().then(result => {
+                
+                let newaction = {
+                    date: currenttime.getTime(),
+                    description: 'Статус сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +' изменен на ОЖИДАНИЕ (собрана не вся сумма)'
+                }
+                if (result.val().balance.history !== undefined){
+                    updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                }
+                if (result.val().balance.history === undefined){
+                    updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                }
+
+                fb.database().ref().update(updates).then(() => {
+                    let txt_author = ''
+                    if (donationdata.materials !== undefined && donationdata.materials.includes('https://')){
+                        txt_author = '🟡 Ваш сбор <b>"' + donationdata.name + '" не смог собрать нужную сумму ('+ donationdata.bank + ' из '+ donationdata.money +' руб.)</b>, но, из-за дедлайна, перешел в статус ожидания.\n\nВ следующие <b>3 дня</b> Вам необходимо либо отменить сбор (деньги вернутся участникам), либо признать сбор состоявшимся (участники получат материалы, а Вы - собранную сумму). Сделать это можно, открыв страницу сбора в этом боте.\n\nЕсли по истечении срока Вы не выполните эти действия, сбор будет отменен автоматически.'
+                    }
+
+                    if (donationdata.materials === undefined || !donationdata.materials.includes('https://')){
+                        txt_author = '🟡 Ваш сбор <b>"' + donationdata.name + '" не смог собрать нужную сумму ('+ donationdata.bank + ' из '+ donationdata.money +' руб.)</b>, но, из-за дедлайна, перешел в статус ожидания.\n\nВ следующие <b>3 дня</b> Вам необходимо либо отменить сбор (деньги вернутся участникам), либо прикрепить ссылку на материалы и признать сбор состоявшимся (участники получат материалы, а Вы - собранную сумму). Сделать это можно, открыв страницу сбора в этом боте (кнопка закрытия сбора не появится, пока Вы не прикрепите ссылку на материалы).\n\nЕсли по истечении срока Вы не выполните эти действия, сбор будет отменен автоматически.'
+                    }
+                    
+                    bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                        parse_mode: 'HTML',
+                    })
+                    .then(res => {
+                        if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                        if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                        messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                        message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                    })
+                })
+            })
+
+            /* if (reply.val().privacy === false){
+                let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                publicdonationdata.get().then(result => {
+                    let donation_updates = {}
+                    for (let i = 0; i < result.val().length; i++){
+                        if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                            donation_updates['Kickstarter/gallery/donations/' + i] = null
+                            fb.database().ref().update(donation_updates)
+                        }
+                    }
+                })
+            } */
+        }
+        
+    }
+    if (donationdata.status === 'waiting' && currenttime.getTime() >= sendduration.getTime()){
+        let updates = {}
+        if (donationdata.bank < donationdata.money){
+            //не собрали бабки + нет материала = отмена
+            if (donationdata.materials === undefined || !donationdata.materials.includes('https://')){
+                updates['Kickstarter/users/' + link + '/status'] = 'canceled'
+                updates['Kickstarter/users/' + link + '/bank'] = 0
+
+                BankCancelation(donationdata, currenttime.getTime())
+
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Статус сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +' изменен на ОТМЕНЕН, т.к. не была вовремя прикреплена ссылка на материал, а также не была достигнута цель сбора'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+
+                    fb.database().ref().update(updates).then(() => {
+                        let txt_author = '🔴 Ваш сбор <b>"' + donationdata.name + '"</b> не смог побить цель по сборам, поэтому он был отменен.\nТакже Вы не прикрепили ссылку на материал.\n\n<b>Деньги были возвращены участникам</b>'
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
+                            }
+                        }
+                    })
+                } */
+            }
+            //не собрали бабки + есть материал = отмена
+            if (donationdata.materials !== undefined && donationdata.materials.includes('https://')){
+                updates['Kickstarter/users/' + link + '/status'] = 'canceled'
+                updates['Kickstarter/users/' + link + '/bank'] = 0
+
+                BankCancelation(donationdata, currenttime.getTime())
+
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Статус сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +' изменен на ОТМЕНЕН, т.к. не была достигнута цель сбора'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+
+                    fb.database().ref().update(updates).then(() => {
+                        let txt_author = '🔴 Ваш сбор <b>"' + donationdata.name + '"</b> не смог побить цель по сборам, поэтому он был отменен.\n\n<b>Деньги были возвращены участникам, никто не получил доступ к Вашему материалу (ссылке)</b>'
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
+                            }
+                        }
+                    })
+                } */
+            }
+        }
+        else {
+            // собрали бабки - нет материала = отмена
+            if (donationdata.materials === undefined || !donationdata.materials.includes('https://')){
+                updates['Kickstarter/users/' + link + '/status'] = 'canceled'
+                updates['Kickstarter/users/' + link + '/bank'] = 0
+
+                BankCancelation(donationdata, currenttime.getTime())
+
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Статус сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +' изменен на ОТМЕНЕН, т.к. за время ожидания материал не был прикреплен'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+
+                    fb.database().ref().update(updates).then(() => {
+                        let txt_author = '🔴 Ваш сбор <b>"' + donationdata.name + '"</b> побил цель по сборам, но вы так и не прикрепили ссылку на материалы. Сбор был отменен.\n\n<b>Деньги были возвращены участникам</b>'
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
+                            }
+                        }
+                    })
+                } */
+            }
+            // собрали бабки - есть материал = готово!
+            if (donationdata.materials !== undefined && donationdata.materials.includes('https://')){
+                updates['Kickstarter/users/' + link + '/status'] = 'offline'
+                MaterialsMailing(donationdata, donationdata.materials)
+
+                let authorslists = fb.database().ref('Kickstarter/users/' + link.split('/donations/')[0])
+                authorslists.get().then(result => {
+                    updates['Kickstarter/users/' + link + '/bank'] = 0
+                    updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/bank'] = result.val().balance.bank + donationdata.bank
+                    
+                    let newaction = {
+                        date: currenttime.getTime(),
+                        description: 'Окончание сбора '+link.split('/donations/')[0]+'.'+link.split('/donations/')[1] +'. Пополнение основного баланса: +' + donationdata.bank + ' руб.'
+                    }
+                    if (result.val().balance.history !== undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/' + result.val().balance.history.length] = newaction
+                    }
+                    if (result.val().balance.history === undefined){
+                        updates['Kickstarter/users/' + link.split('/donations/')[0] + '/balance/history/0'] = newaction
+                    }
+                    
+                    let txt_author = '🥳 Сбор <b>"' + donationdata.name + '"</b> закрыт!\nМатериалы были автоматически разосланы участникам сбора, а на Ваш счет было зачислено <b>' + donationdata.bank + ' руб.</b>'
+                    
+                    fb.database().ref().update(updates).then(() => {
+                        bot.sendMessage(link.split('/donations/')[0], txt_author, {
+                            parse_mode: 'HTML',
+                        })
+                        .then(res => {
+                            if (message_toedit[link.split('/donations/')[0]] === undefined) message_toedit[link.split('/donations/')[0]] = []
+                            if (messagetext_toedit[link.split('/donations/')[0]] === undefined) messagetext_toedit[link.split('/donations/')[0]] = []
+                            messagetext_toedit[link.split('/donations/')[0]][1] = res.text
+                            message_toedit[link.split('/donations/')[0]][1] = res.message_id
+                        })
+                    })
+                    
+                })
+
+                /* if (reply.val().privacy === false){
+                    let publicdonationdata = fb.database().ref('Kickstarter/gallery/donations')
+                    publicdonationdata.get().then(result => {
+                        let donation_updates = {}
+                        for (let i = 0; i < result.val().length; i++){
+                            if (result.val()[i].user_id === chat.id && result.val()[i].donation_id === query.data.split('_')[2]){
+                                donation_updates['Kickstarter/gallery/donations/' + i] = null
+                                fb.database().ref().update(donation_updates)
+                            }
+                        }
+                    })
+                } */
+            }
+        }
+    }
+}
+
+function MaterialsMailing(donationdata, materials){
+
+    if (donationdata.participants !== undefined){
+        let authorslists = fb.database().ref('Kickstarter/payments/info/moderator_id')
+        authorslists.get().then(result => {
+            let txt = '🥳 Ура! Вы и другие участники побили цель сбора <b>' + donationdata.name + '</b>. \nВы можете посмотреть материалы на странице сбора в боте, либо <b>нажав на кнопку ниже.</b>\n\n Если Вы считаете, что отправленный материал не соответствует описанию сбора, свяжитесь с <a href="tg://user?id='+ result.val() +'">модератором</a>'
+            for (let i = 0; i < donationdata.participants.length; i++){
+                bot.sendMessage(donationdata.participants[i].id, txt, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: '🔗 Материалы',
+                                url: materials
+                            }]
+                        ]
+                    }
+                })
+                .then(res => {
+                    if (message_toedit[donationdata.participants[i].id] === undefined) message_toedit[donationdata.participants[i].id] = []
+                    if (messagetext_toedit[donationdata.participants[i].id] === undefined) messagetext_toedit[donationdata.participants[i].id] = []
+                    messagetext_toedit[donationdata.participants[i].id][1] = res.text
+                    message_toedit[donationdata.participants[i].id][1] = res.message_id
+                })
+                .catch(err => {console.log('here: ' + err)})
+    
+                if (i === donationdata.participants.length - 1){
+                    bot.sendMessage(result.val(), '📩 По результату сбора ('+ donationdata.duration +') был отправлен <a href="tg://user?id='+ materials +'">материал</a> ' + donationdata.participants.length + ' людям.', {
+                        parse_mode: 'HTML',
+                    })
+                    .then(res => {
+                        if (message_toedit[result.val()] === undefined) message_toedit[result.val()] = []
+                        if (messagetext_toedit[result.val()] === undefined) messagetext_toedit[result.val()] = []
+                        messagetext_toedit[result.val()][1] = res.text
+                        message_toedit[result.val()][1] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                }
+            }
+        })
+    }
+}
+
+function BankCancelation(donationdata, time){
+    if (donationdata.participants !== undefined){
+        for (let i = 0; i < donationdata.participants.length; i++){
+            let authorslists = fb.database().ref('Kickstarter/users/' + donationdata.participants[i].id)
+            authorslists.get().then(result => {
+                let updates = {}
+                updates['Kickstarter/users/' + donationdata.participants[i].id + '/balance/bank'] = result.val().balance.bank + donationdata.participants[i].amount
+                let newaction = {
+                    date: time,
+                    description: 'Сбор '+ donationdata.name +' был отменен, Ваши деньги (' + donationdata.participants[i].amount + ' руб) вернулись на Ваш баланс.'
+                }
+                if (result.val().balance.history !== undefined){
+                    updates['Kickstarter/users/' + donationdata.participants[i].id + '/balance/history/' + result.val().balance.history.length] = newaction
+                }
+                if (result.val().balance.history === undefined){
+                    updates['Kickstarter/users/' + donationdata.participants[i].id + '/balance/history/0'] = newaction
+                }
+    
+                fb.database().ref().update(updates).then(() => {
+                    bot.sendMessage(donationdata.participants[i].id, '😢 Сбор <b>'+ donationdata.name +'</b> был отменен. Ваши деньги были возвращены на баланс', {
+                        parse_mode: 'HTML',
+                    })
+                    .then(res => {
+                        if (message_toedit[donationdata.participants[i].id] === undefined) message_toedit[donationdata.participants[i].id] = []
+                        if (messagetext_toedit[donationdata.participants[i].id] === undefined) messagetext_toedit[donationdata.participants[i].id] = []
+                        messagetext_toedit[donationdata.participants[i].id][1] = res.text
+                        message_toedit[donationdata.participants[i].id][1] = res.message_id
+                    })
+                    .catch(err => {console.log('here: ' + err)})
+                })
+            })
+        }
+    }
+    
+}
+
+function Start(msg){
+    const { chat, message_id, text } = msg
+    for (let i=0; i<100; i++){
+        bot.deleteMessage(chat.id, message_id - i).catch(err => {/* console.log() */})
+    }
+
+    if (message_toedit[chat.id] === undefined) {
+        message_toedit[chat.id] = []
+        messagetext_toedit[chat.id] = []
+    }
+    if (messagetext_toedit[chat.id] === undefined) {
+        messagetext_toedit[chat.id] = []
+        messagetext_toedit[chat.id] = []
+    }
+
+    let checkuser = fb.database().ref('Kickstarter/users/' + chat.id)
+    checkuser.get().then(result => {
+        if (result.exists()) {
+            console.log('REGISTERED')
+            if (text.includes('_part')){
+                user_donationlink[chat.id] = text.split('part_')[1]
+                user_donationlink[chat.id] = user_donationlink[chat.id].split('_')[0] + '/donations/' + user_donationlink[chat.id].split('_')[1]
+
+                OpenDonationParticipant(chat, null)
+            }
+            else {
+                Auth(chat)
+            }
+        }
+        else {
+            if (text.includes('_author')){
+                let main_data = fb.database().ref('Kickstarter/')
+                main_data.get().then(reply => {
+                    if (reply.val().coupons.authors > 0){
+                        let updates = {}
+                        updates['Kickstarter/coupons/authors'] = reply.val().coupons.authors - 1
+                        if (reply.val().mailing.authors === ''){
+                            updates['Kickstarter/mailing/authors'] = (chat.id).toString()
+                        }
+                        if (reply.val().mailing.authors !== ''){
+                            updates['Kickstarter/mailing/authors'] = reply.val().mailing.authors + ',' + chat.id
+                        }
+
+                        updates['Kickstarter/users/' + chat.id + '/profile/id'] = chat.id
+                        updates['Kickstarter/users/' + chat.id + '/profile/name'] = chat.first_name
+                        
+                        updates['Kickstarter/users/' + chat.id + '/balance/bank'] = 0
+                        updates['Kickstarter/users/' + chat.id + '/balance/comission'] = 10
+                        updates['Kickstarter/users/' + chat.id + '/balance/overall'] = 0
+                        updates['Kickstarter/users/' + chat.id + '/balance/withdrew'] = 0
+                        updates['Kickstarter/users/' + chat.id + '/balance/withdroval_limit'] = 3000 //мин. сумма для вывода
+                        fb.database().ref().update(updates).then(() => {
+                            bot.sendMessage(chat.id, hellomessage, {
                                 parse_mode: 'HTML',
                                 reply_markup: {
                                     inline_keyboard: [
                                         [{
-                                            text: '◀️ Назад',
-                                            callback_data: mybasket_text
+                                            text: checkchannelfollow[0],
+                                            callback_data: backtostart[1]
                                         }]
                                     ]
                                 }
+                            }).then(res => {
+                                message_toedit[chat.id][0] = res.message_id
+                                messagetext_toedit[chat.id][0] = res.text
                             })
-                            .then(res => {
-                                message_toedit[chatId][2] = res.message_id
-                            })
-                        }
-                    })
-                }
-                else {
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chatId, message_id - i).catch(err => {
-                            //console.log(err)
-                        })
-                    }
-                    bot.sendSticker(chatId, sticker_hello).then(() => {
-                        anotherpoint_multiple[chatId] = 2
-                        bot.sendMessage(chatId, hellomessage_text, {
-                            parse_mode: 'HTML',
-                        })
-                        keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
-                    })
-                }
-                
-            }
-    
-            if (text.includes('_forbuyer')){
-    
-                business_info[chat.id] = []
-                business_info[chat.id][0] = 0 //message_id который прилетит мне
-                business_info[chat.id][1] = chat.first_name
-                if (chat.last_name === undefined){
-                    business_info[chat.id][2] = 'Не указано'
-                }
-                if (chat.last_name !== undefined){
-                    business_info[chat.id][2] = chat.last_name
-                }
-    
-                if (chat.username === undefined){
-                    business_info[chat.id][4] = 'Не указано'
-                }
-                if (chat.username !== undefined){
-                    business_info[chat.id][4] = chat.username
-                }
-    
-                
-                business_info[chat.id][3] = chat.id
-    
-                let first_info = {
-                    id: business_info[chat.id][3],
-                    first_name: business_info[chat.id][1],
-                    last_name: business_info[chat.id][2],
-                    username: business_info[chat.id][4]
-                }
-                         
-                let updates_first = {}
-                updates_first['Motherbase/customers/list/' + chat.id] = first_info
-                fb.database().ref().update(updates_first)
-    
-                let mb_data = fb.database().ref('Motherbase/')
-                mb_data.get().then((result) => {
-    
-                    business_info[chat.id][6] = result.val().customers.links.media.howitworks
-                    business_info[chat.id][7] = result.val().customers.links.media.comparison
-                    business_info[chat.id][8] = result.val().chats.business_id
-                    business_info[chat.id][9] = result.val().customers.links.media.pricing
-                    business_info[chat.id][12] = result.val().customers.links.media.videonote
-    
-                    let txt_me = `🥳 <b>Новый клиент</b>
-├ <b>Имя:</b> ` + business_info[chat.id][1] + ' ' + business_info[chat.id][2] + `
-└ <b>Username, Id:</b> @` + business_info[chat.id][4] + `, ` + business_info[chat.id][3]
-                    
-                    bot.getUserProfilePhotos(chat.id).then(res => {
-                        business_info[chat.id][5] = res.photos[0][0].file_id
-                        console.log(res.photos[0][0].file_id)
-                       
-                        bot.forwardMessage(result.val().chats.business_id, chat.id, message_id)
-                        .then(() => {
-                            bot.deleteMessage(chatId, message_id)
-                            for (let i=0; i<100; i++){
-                                bot.deleteMessage(chatId, message_id - i).catch(err => {
-                                    //console.log(err)
-                                })
-                            }
-                        })
-                        bot.sendPhoto(result.val().chats.business_id,  business_info[chat.id][5], {
-                            parse_mode: 'HTML',
-                            caption: txt_me
-                        }).then(res => {
-                            message_toedit[chat.id] = []
-                            message_toedit[chat.id][15] = res.message_id
-                            message_text[chat.id] = []
-                            message_text[chat.id][15] = res.caption
-                        }) .catch(err => {console.log('here ' + err.name + `\n\n ` + err.message)})
-                    }).catch(err => {
-                        console.log(err)
-                        bot.sendMessage(result.val().chats.business_id, txt_me, {
-                            parse_mode: 'HTML'
-                        })
-                        .then(res => {
-                            message_toedit[chat.id] = []
-                            message_toedit[chat.id][15] = res.message_id
-                            message_text[chat.id] = []
-                            message_text[chat.id][15] = res.text
-                        })
-                        .catch(err => {
-                            console.log('here ' + err.name + `\n\n ` + err.message)
-                        })
-                    })
-                    
-                })
-    
-                
-                bot.sendSticker(chatId, sticker_hello).then(() => {
-                    let txt = `👋 Добрый день! Это Resify - сервис автоматизации доставки. За небольшую плату сэкономим кучу времени, сил и денег на организации доставки и засчет удобного сервиса для клиентов, увеличим число заказов в 5-6 раз минимум`
-                    bot.sendMessage(chat.id, txt, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: 'Как это работает?',
-                                    callback_data: business_cbcs[0]
-                                }]
-                            ]
-                        }
-                    })
-                })
-    
-                
-            }
-    
-            else {
-                business_info[chat.id] = undefined
-                if (buttons_message[chatId] === 0 || UserDelCats[chat.id] === undefined){
-                    Reset(chat.id)
-            
-                    if (chatId !== delivery_chat[chatId] && text === '/start'){
-                        for (let i=0; i<100; i++){
-                            bot.deleteMessage(chatId, message_id - i).catch(err => {
-                                //console.log(err)
-                            })
-                        }
-                        bot.sendSticker(chatId, sticker_hello).then(() => {
-                            anotherpoint_multiple[chatId] = 2
-                            bot.sendMessage(chatId, hellomessage_text, {
-                                parse_mode: 'HTML',
-                            })
-                            keyboards.DeliveryCatKeyboard(delcat_keyboard[chat.id], UserDelCats[chat.id], fb, bot, chat.id, mother_link, choosecat_text, message_toedit[chat.id], message_text[chat.id])
                         })
                         
+
+                        /* fb.database().ref().update(updates).then(() => {
+                            bot.deleteMessage(chat.id, message_toedit[chat.id][0]).catch(err => {console.log('here: ' + err)})
+                            bot.sendMessage(chat.id, newdonationsteps[0], {
+                                parse_mode: 'HTML',
+                            })
+                            .then(res => {
+                                message_toedit[chat.id][0] = res.message_id
+                                messagetext_toedit[chat.id][0] = newdonationsteps[0]
+                            })
+                        }) */
+                        //создание первого сбора для админа
+                        /* donateregisterstep[chat.id] = 1
+                        donate_name[chat.id] = ''
+                        donate_money[chat.id] = 0
+                        donate_minmoney[chat.id] = 0
+                        donate_duration[chat.id] = 0
+                        donate_sendduration[chat.id] = 3 //три дня дается на ожидание
+                        donate_private[chat.id] = false
+                        donate_photo[chat.id] = ''
+                        donate_duration_secs[chat.id] = 0
+                        donate_sendduration_secs[chat.id] = 0
+                        donate_materials[chat.id] = '' */
                     }
-                    if (chatId === delivery_chat[chatId]){
-                        bot.sendMessage(chatId, 'Привет! Я буду скидывать сюда заказы. Чтобы начать выполнять заказ, нажмите на кнопку "✅ Принять", под заказом. Так клиент поймет, что его заказ принят.')
+                })
+                
+            }
+            if (text.includes('_part')){
+                console.log('USER DIDNT REGISTER YET')
+                user_donationlink[chat.id] = text.split('part_')[1]
+                user_donationlink[chat.id] = user_donationlink[chat.id].split('_')[0] + '/donations/' + user_donationlink[chat.id].split('_')[1]
+                
+                let newuser = {
+                    profile: {
+                        name: chat.first_name,
+                        id: chat.id,
+                    },
+                    balance: {
+                        bank: 0,
+                        comission: 25,
+                        overall: 0,
+                        withdrew: 0,
+                        withdroval_limit: 1500
                     }
                 }
-            
-                if (buttons_message[chatId] !== 0 && UserDelCats[chat.id] !== undefined) {
-                    bot.sendMessage(chat.id, 'Вы уверены, что хотите сменить магазин? Ваша корзина опустеет 😟', {
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: '◀️ Назад',
-                                    callback_data: query_deletethismessage
-                                }],
-                                [{
-                                    text: reallystartagain[0],
-                                    callback_data: reallystartagain[1]
-                                }]
-                            ]
-                        }
-                    })
+                let updates = {}
+                updates['Kickstarter/users/' + chat.id] = newuser
+                fb.database().ref().update(updates)
+                
+                bot.sendMessage(chat.id, hellomessage, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: checkchannelfollow[0],
+                                callback_data: checkchannelfollow[1] + '_0'
+                            }]
+                        ]
+                    }
+                }).then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                    messagetext_toedit[chat.id][0] = res.text
+                })
+            }
+            if (!text.includes('_part') && !text.includes('_author')) {
+
+                let newuser = {
+                    profile: {
+                        name: chat.first_name,
+                        id: chat.id,
+                    },
+                    balance: {
+                        bank: 0,
+                        comission: 25,
+                        overall: 0,
+                        withdrew: 0,
+                        withdroval_limit: 1500
+                    }
                 }
+                let updates = {}
+                updates['Kickstarter/users/' + chat.id] = newuser
+                fb.database().ref().update(updates)
+
+                bot.sendMessage(chat.id, hellomessage, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: checkchannelfollow[0],
+                                callback_data: checkchannelfollow[1] + '_0'
+                            }]
+                        ]
+                    }
+                }).then(res => {
+                    message_toedit[chat.id][0] = res.message_id
+                    messagetext_toedit[chat.id][0] = res.text
+                })
             }
         }
-        else {
-            bot.deleteMessage(chatId, message_id).then(() => {
-                //bot.sendMessage(chatId, 'Ошибка 2512839')
-            })
+    }).catch(err => {})
+}
+
+//Кнопка меню ("Главная")
+bot.onText(/\/start/, msg => {
+    //const { chat, message_id, text } = msg
+    Start(msg)
+})
+
+async function getProvider(method, account){
+    switch(method){
+        case 'qiwi': {
+            return Recipients.QIWI
+        }
+        case 'yoomoney': {
+            return Recipients.YooMoney
+        }
+        case 'card': {
+            console.log(detector.getCardProvider(account))
+            return detector.getCardProvider(account)
+        }
+        case 'mobile': {
+            console.log(detector.getPhoneProvider(account))
+            return detector.getPhoneProvider(account)
         }
     }
-    else {
-        isWritingBusiness[chat.id] = 0
-    }
+}
+
+async function sendPayment(method, account, amount, comment) {
+    const provider = await getProvider(method, account);
+    const commission = await qiwi.getCommission(provider, account, amount);
+    console.log('here: ' + provider)
+    // Используем метод `pay2` вместо `pay` для лучшей читаемости
+    await qiwi.pay2({
+      // Пускай комиссию платит получатель
+      amount: amount - commission,
+      account,
+  
+      // Указываем провайдера так-как переводим не только на КИВИ
+      provider,
     
-})
-
-//Кнопка меню "Я бизнес-участник"
-bot.onText(/\/im_admin/, msg => {
-    const { chat, message_id, text } = msg
-
-    if (isWritingBusiness[chat.id] === 0 || isWritingBusiness[chat.id] === undefined){
-        let cbadmin_data = fb.database().ref('Delivery/' + UserDelCat[chat.id] + '/' + userPoint[chat.id])
-        cbadmin_data.get().then((result) => {
-            if (result.exists().chats !== undefined && result.val().chats !== null){
-                console.log(result.val())
-                if (result.val().chats.admin === chat.id){
-                    isMailingMessage[chat.id] = 0
-                    //isChangingPrefs[chat.id] = 0
-                    isChangingPhone[chat.id] = 0
-                    isChangingTime[chat.id] = 0
-                    isChangingDelivery[chat.id] = 0
-                    isCreatingCoupon[chat.id] = 0
-                    mailing_text[chat.id] = ''
-                    
-                    isAdmin[chat.id] = true
-                    //message_text[chat.id] = []
-                    //message_toedit[chat.id] = []
-        
-                    point_rating[chat.id] = result.val().other_info.stats.rating
-                    point_delivery_time[chat.id] = result.val().other_info.stats.delivery_time
-        
-                    let rating
-                    if (point_rating[chat.id] < 1){
-                        rating = feedback_options[0] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                    }
-        
-                    if (point_rating[chat.id] >= 1 && point_rating[chat.id] <= 2){
-                        rating = feedback_options[1] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                    }
-        
-                    if (point_rating[chat.id] > 2){
-                        rating = feedback_options[2] + ' (' + result.val().other_info.stats.feedbacks_amount + ' отзывов)'
-                    }
-        
-                    let ttd_ms = result.val().other_info.stats.delivery_time
-                    let ttd_seconds = Math.floor((ttd_ms / 1000) % 60)
-                    let ttd_minutes = Math.floor((ttd_ms / (1000 * 60)) % 60)
-                    let ttd_hours = Math.floor((ttd_ms / (1000 * 60 * 60)) % 24)
-        
-                    ttd_hours = (ttd_hours < 10) ? "0" + ttd_hours : ttd_hours;
-                    ttd_minutes = (ttd_minutes < 10) ? "0" + ttd_minutes : ttd_minutes;
-                    ttd_seconds = (ttd_seconds < 10) ? "0" + ttd_seconds : ttd_seconds;
-        
-                    let ttd 
-                    if (ttd_hours !== 00 && ttd_hours !== 0 && ttd_hours !== '00'){
-                        ttd = ttd_hours + 'ч. ' + ttd_minutes + ' мин.'
-                    }
-        
-                    if (ttd_hours === 00 || ttd_hours === 0 || ttd_hours === '00'){
-                        ttd = ttd_minutes + ' мин.'
-                    }
-                    console.log('ttd_hours: ' + ttd_hours)
-        
-                    for (let i=0; i<100; i++){
-                        bot.deleteMessage(chat.id, message_id - i).catch(err => {
-                            //console.log(err)
-                        })
-                    }
-                    let txt = `Привет! Вы вошли как Администратор <b>` + result.val().point_name + `</b>
-`
-        
-                    if (result.val().other_info.stats.feedbacks_amount >= 5){
-                        txt += `
-<b>⭐️ Ваш рейтинг:</b> ` + rating
-                    }
-                    if (result.val().other_info.stats.delivery_time > 0) {
-                        txt += `
-<b>🚴‍♂️ Скорость доставки:</b> ~` + ttd 
-                    }
-        
-                    bot.sendMessage(chat.id, txt, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: keyboards.admin_menu_keyboard
-                        }
-                    })
-                    .then(res => {
-                        message_text[chat.id][6] = res.text
-                        message_toedit[chat.id][6] = res.message_id
-                    })
-                }
-                else {
-                    bot.deleteMessage(chat.id, msg.message_id)
-                    business_info[chat.id] = undefined
-                    let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
-Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
-                    bot.sendMessage(chat.id,  txty, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{
-                                    text: 'О нас',
-                                    callback_data: business_cbcs[7]
-                                }],
-                                [{
-                                    text: '⬅️ Назад',
-                                    callback_data: query_deletethismessage
-                                }]
-                            ]
-                        }
-                    })
-                }
-            }
-            
-            else {
-                bot.deleteMessage(chat.id, msg.message_id)
-                business_info[chat.id] = undefined
-                let txty = `Хотите стать партнером Resify? Нажмите на кнопку <b>"О нас"</b> 🤩
-Уже являетесь партнером Resify? Просто выберите свое заведение и нажмите "Войти как админ 🛒"`
-                                bot.sendMessage(chat.id,  txty, {
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [{
-                                                text: 'О нас',
-                                                callback_data: business_cbcs[7]
-                                            }],
-                                            [{
-                                                text: '⬅️ Назад',
-                                                callback_data: query_deletethismessage
-                                            }]
-                                        ]
-                                    }
-                                })
-            }
-        })
-    }
-    else {
-        isWritingBusiness[chat.id] = 0
-    }
-
-})
+      // Указываем валюту (хотя можно этого не делать)
+      currency: Currency.RUB,
+    }).then(res => {
+        console.log(res)
+    })
+}
 
 //Функция для сброса данных о пользователе. Применяется, когда цикл "старт-заказ принят" был выполнен. 
-function Reset(current_chat){
-    user_phone[current_chat] = ''
-    user_adress[current_chat] = ''
-    user_name[current_chat] = ''
-    user_username[current_chat] = 'unknown'
-    user_id[current_chat] = 0
-    average_purchases[current_chat] = 0
-    user_coins[current_chat] = 0
-    added_coins[current_chat] = 0
-    alltime_purchases_amount[current_chat] = 0
-    userstatus[current_chat] = 'unknown'
-    order_name[current_chat] = ''
-    order_date[current_chat] = ''
-    order_status[current_chat] = 'unknown'
-    skidka[current_chat] = 0
-    //user_lastbill[current_chat] = []
-
-    finalprice[current_chat] = 0
-    finalbasket[current_chat] = ''
-    temp_backet_food[current_chat] = 0
-    temp_food_text[current_chat] = ''
-    temp_food_price[current_chat] = 0
-    temp_foodamount[current_chat] = 1
-
-    basket[current_chat] = []
-
-    food_categories[current_chat] = [['☕️ Кофе', 0, 'coffee'], ['🍦 Мороженое', 0, 'icecream'], ['🍣 Суши', 0, 'sushi'], ['🍰 Десерты', 0, 'deserts'], ['🍔 Фаст-фуд', 0, 'fastfood'], ['Остальное', 0, 'other']]
-
-    add_info_msg[current_chat] = 0
-
-    anotherpoint_multiple[current_chat] = 0
-
-    temp_message[current_chat] = 0
-    userPoint[current_chat] = 0
-    //
-    userCategory[current_chat] = ''
-    userCategories[current_chat] = []
-    category_keyboard[current_chat] = []
-    categories_count[current_chat] = 0
-    //
-    userFood[current_chat] = ''
-    userFoodlist[current_chat] = []
-    foodlist_keyboard[current_chat] = []
-    foodlist_count[current_chat] = 0
-    //
-    userCities[current_chat] = []
-    userPoint[current_chat] = ''
-    userPoints[current_chat] = []
-    points_keyboard[current_chat] = []
-    cities_count[current_chat] = 0
-    points_count[current_chat] = 0
-
-    isMakingChanges[current_chat] = 0
-    isMakingChanges_2[current_chat] = 0
-    isMakingChanges_3[current_chat] = 0
-
-    help_phone[current_chat] = 0
-    delivery_min_price[current_chat] = 0
-    delivery_price[current_chat] = 0
-    point_location[current_chat] = []
-    point_adress[current_chat] = ''
-    point_disclaimer[current_chat] = false
-    point_pplamount[current_chat] = false
-    point_workingtime[current_chat] = false
-    point_payment_options[current_chat] = []
-    point_rating[current_chat] = 0
-    point_delivery_time[current_chat] = 0
-
-    userlocation[current_chat] = [0.1,0.1]
-    nearest_place[current_chat] = 0
-    min_distance[current_chat] = 9999999
-
-    buttons_message[current_chat] = 0
+async function Auth(chat){
     
-    answered_feedback[current_chat] = 0
-    isAnswered_feedback[current_chat] = 0
+    //sendPayment("mobile", "77075112224", 20);
+    //qiwi.getPersonProfile().then(console.log);
+    /* sendPayment('yoomoney','4100117037853859', 30, 'lol').then(res => {
+        console.log('works')
+        console.log(res)
+    }).catch(err => {console.log(err)}) */
+    let creatordata = fb.database().ref('Kickstarter/users/' + chat.id)
+    creatordata.get().then(result => {
+        let txt = 'Привет, <b>' + chat.first_name + '</b>\n'
 
-    user_personsamount[current_chat] = 1
-    user_payingmethod[current_chat] = 'Наличными курьеру'
-    user_deliverdate[current_chat] = 'Сейчас'
-    user_howtocome[current_chat] = 'unknown'
-    user_sdachainfo[current_chat] = 'unknown'
+        if (result.val().donations !== null && result.val().donations !== undefined){
+            donationnames[chat.id] = Object.keys(result.val().donations)
+            console.log(result.val().donations)
+        }
+        
+        if (result.val().participants !== null && result.val().participants !== undefined){
+            if (result.val().participants.includes(','))participantsnames[chat.id] = result.val().participants.split(',')
+            if (!result.val().participants.includes(',')){
+                if (result.val().participants === ''){
+                    participantsnames[chat.id] = undefined
+                }
+                if (result.val().participants !== ''){
+                    participantsnames[chat.id] = result.val().participants.split(',')
+                }
+            }
+        }
 
-    delivery_chat[current_chat] = 0
+        let kb = []
 
-    delcat_keyboard[current_chat] = []
-    UserDelCats[current_chat] = []
-    UserDelCat[current_chat] = ''
+        /* if (reply.exists() && reply.val().length > 0){
+            kb.push([{
+                text: publicdonationlist[0],
+                callback_data: publicdonationlist[1]
+            }])
+        } */
 
-    message_toedit[current_chat] = []
-    message_text[current_chat] = []
+        let donationbutton = []
+        donationbutton.push({
+            text: '➕ Новый сбор',
+            callback_data: whoareyoubutton[1]
+        })
+        if (donationnames[chat.id] !== undefined && donationnames[chat.id].length > 0){ 
+            txt += 'Вы открыли: <b>' + donationnames[chat.id].length + ' сборов</b>'
+            donationbutton.push(
+            {
+                text: mydonationslist[0],
+                callback_data: mydonationslist[1]
+            })
+        }
+        kb.push(donationbutton)
+        if (participantsnames[chat.id] !== undefined && participantsnames[chat.id].length > 0){ 
+            txt += '\nВы участвовали/участвуете в: <b>' + participantsnames[chat.id].length + ' сборах</b>'
+            kb.push([{
+                text: myparticipantslist[0],
+                callback_data: myparticipantslist[1]
+            }])
+        }
 
-    isWritingCoupon[current_chat] = 0
+        if (participantsnames[chat.id] === undefined || participantsnames[chat.id].length === 0){ 
+            if (donationnames[chat.id] === undefined || donationnames[chat.id].length === 0)
+            txt += '\nВы участвовали/участвуете в: 0<b> сборах</b>'
+        }
+
+        txt += '\n\nЧтобы просмотреть подробную информацию, нажмите на кнопки ниже\n'
+
+        kb.push([{
+            text: mybalancebutton[0],
+            callback_data: mybalancebutton[1]
+        }])
+
+        bot.sendMessage(chat.id, txt, {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: kb
+            }
+        })
+        .then(res => {
+            if (message_toedit[chat.id] === undefined) {
+                message_toedit[chat.id] = []
+            }
+            message_toedit[chat.id][0] = res.message_id
+        })
+    })
+
 }
 
 //Все возникающие у пользователей критические ошибки отлавливаем и сохраняем в базу данных, а также админу в телеграм.
-process.on('uncaughtException', function (err) {
+/* process.on('uncaughtException', function (err) {
     console.log(err)
     let userdata = fb.database().ref('Motherbase/logger/uncaughtException/')
     userdata.get().then((result) => {
@@ -9254,12 +4033,13 @@ process.on('uncaughtException', function (err) {
         let timeOfffset = 6 //Astana GMT +6
         let time_now = new Date(utcTime + (3600000 * timeOfffset))
 
-        let updates = {}
         let newreport = {
             when: time_now,
             error_text: err.message.toString(),
             error_stack: err.stack.toString()
         }
+
+        let updates = {}
         updates['Motherbase/logger/uncaughtException/' + counter.length] = newreport
         fb.database().ref().update(updates)
         let mb_data = fb.database().ref('Motherbase/chats/')
@@ -9284,4 +4064,8 @@ process.on('uncaughtException', function (err) {
     
     })
     
-})
+}) */
+
+process.on('uncaughtException', function (err) {
+    console.log(err);
+});

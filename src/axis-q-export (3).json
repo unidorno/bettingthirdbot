@@ -1,0 +1,197 @@
+{
+  "cities" : {
+    "astana" : {
+      "archive" : {
+        "quest12" : {
+          "chronology" : {
+            "creation_date" : 1630764191
+          },
+          "creator" : {
+            "link" : "https://www.tiktok.com/@iosif.ar",
+            "photo_url" : "https://firebasestorage.googleapis.com/v0/b/axis-q.appspot.com/o/axis3%2Favatars%2Fc1455717b130af13807056550dcbf638.jpeg?alt=media&token=935e26f1-1586-4903-baa1-6e109b610a84",
+            "username" : "@iosifff"
+          },
+          "quest" : {
+            "data" : {
+              "price" : 110,
+              "q_description" : "Третье описание квеста. Спрятал попытик за 50 долароу в одном из районов Нур-Султана. Кто первый найдет, соответсвенно найдет попытик. Желаю всем удачи и подпишитесь на пж. ",
+              "q_photo_url" : "https://image.flaticon.com/icons/png/512/1408/1408943.png"
+            },
+            "location" : {
+              "latitude" : 51.1698806,
+              "longitude" : 71.4219139
+            },
+            "zone" : {
+              "latitude" : "null",
+              "longitude" : "null",
+              "radius" : 0
+            }
+          },
+          "questions" : {
+            "answers" : {
+              "a_1" : 15,
+              "a_2" : 16,
+              "a_3" : 19
+            },
+            "data" : {
+              "correct_answer" : 19,
+              "t_question" : "Сколько мне лет?",
+              "type" : "quiz"
+            }
+          },
+          "stats" : {
+            "challenger_amount" : 187,
+            "participant_amount" : 10
+          },
+          "winner" : {
+            "creation_date" : 1632950545,
+            "link" : "https://www.tiktok.com/@iosif.ar",
+            "photo_url" : "https://firebasestorage.googleapis.com/v0/b/axis-q.appspot.com/o/axis3%2Favatars%2Fc1455717b130af13807056550dcbf638.jpeg?alt=media&token=935e26f1-1586-4903-baa1-6e109b610a84",
+            "q_description" : "Я нашел этот приз. Свои эмоции и промокод для получения 10 алмазов загрузил в ТикТок.",
+            "username" : "iosif"
+          }
+        },
+        "quest_names" : "quest12"
+      },
+      "current" : {
+        "quest1" : {
+          "chronology" : {
+            "creation_date" : 1630418591
+          },
+          "creator" : {
+            "link" : "https://www.tiktok.com/@iosif.ar",
+            "photo_url" : "https://firebasestorage.googleapis.com/v0/b/axis-q.appspot.com/o/axis3%2Favatars%2Fc1455717b130af13807056550dcbf638.jpeg?alt=media&token=935e26f1-1586-4903-baa1-6e109b610a84",
+            "username" : "@iosif"
+          },
+          "quest" : {
+            "basic_info" : {
+              "price" : 40,
+              "q_description" : "Спрятал попытик за 50 долароу в одном из районов Нур-Султана. Кто первый найдет, соответсвенно найдет попытик. Желаю всем удачи и подпишитесь на пж. ",
+              "q_photo_url" : "https://image.flaticon.com/icons/png/512/1408/1408943.png"
+            },
+            "data" : {
+              "price" : 40,
+              "q_description" : "Спрятал попытик за 50 долароу в одном из районов Нур-Султана. Кто первый найдет, соответсвенно найдет попытик. Желаю всем удачи и подпишитесь на пж. ",
+              "q_photo_url" : "https://image.flaticon.com/icons/png/512/1408/1408943.png"
+            },
+            "location" : {
+              "latitude" : 51.1749137,
+              "longitude" : 71.4055533
+            }
+          },
+          "questions" : {
+            "answers" : {
+              "a_1" : 15,
+              "a_2" : 16,
+              "a_3" : 19
+            },
+            "data" : {
+              "correct_answer" : 19,
+              "t_question" : "Сколько мне лет?",
+              "type" : "single"
+            }
+          },
+          "stats" : {
+            "challenger_amount" : 55,
+            "participant_amount" : 13
+          }
+        },
+        "quest15" : {
+          "chronology" : {
+            "creation_date" : 1630764191
+          },
+          "creator" : {
+            "link" : "https://www.tiktok.com/@iosif.ar",
+            "photo_url" : "https://firebasestorage.googleapis.com/v0/b/axis-q.appspot.com/o/axis3%2Favatars%2Fc1455717b130af13807056550dcbf638.jpeg?alt=media&token=935e26f1-1586-4903-baa1-6e109b610a84",
+            "username" : "@iosifff"
+          },
+          "quest" : {
+            "data" : {
+              "price" : 110,
+              "q_description" : "Третье описание квеста. Спрятал попытик за 50 долароу в одном из районов Нур-Султана. Кто первый найдет, соответсвенно найдет попытик. Желаю всем удачи и подпишитесь на пж. ",
+              "q_photo_url" : "https://image.flaticon.com/icons/png/512/1408/1408943.png"
+            },
+            "location" : {
+              "latitude" : 51.1698806,
+              "longitude" : 71.4219139
+            },
+            "zone" : {
+              "latitude" : "null",
+              "longitude" : "null",
+              "radius" : 0
+            }
+          },
+          "questions" : {
+            "answers" : {
+              "a_1" : 15,
+              "a_2" : 16,
+              "a_3" : 19
+            },
+            "data" : {
+              "correct_answer" : 19,
+              "t_question" : "Сколько мне лет?",
+              "type" : "quiz"
+            }
+          },
+          "stats" : {
+            "challenger_amount" : 187,
+            "participant_amount" : 10
+          }
+        },
+        "quest_names" : "quest1,quest15"
+      }
+    }
+  },
+  "settings" : {
+    "quests" : {
+      "integers" : {
+        "zone_radius" : {
+          "extra" : 50,
+          "zone_1" : 0,
+          "zone_2" : 150,
+          "zone_3" : 350
+        }
+      }
+    }
+  },
+  "update_info" : {
+    "appstoreurl" : "https://apple.co/3biHbSE",
+    "checkios" : 0,
+    "internet_time_url" : "https://vk.com/",
+    "turnON" : 0,
+    "weather_key" : "e3a642cec13d52496490dfa8e9ba11d3",
+    "weather_keys" : {
+      "weather_key1" : "3a642cec13d52496490dfa8e9ba11d3",
+      "weather_key2" : "95cdc6ce38cbe596eb14634f7dbfbca9",
+      "weather_key3" : "9c6da3397f56bda7f99b93f4c5485d1"
+    }
+  },
+  "users" : {
+    "iosif" : {
+      "main_info" : {
+        "finished_quests" : "quest12",
+        "idToken" : "eyJhbGciOiJSUzI1NiIsImtpZCI6IjJjZGFiZDIwNzVjODQxNDI0NDY3MTNlM2U0NGU5ZDcxOGU3YzJkYjQiLCJ0eXAiOiJKV1QifQ.eyJwcm92aWRlcl9pZCI6ImFub255bW91cyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9heGlzLXEiLCJhdWQiOiJheGlzLXEiLCJhdXRoX3RpbWUiOjE2MzA3ODU1MTEsInVzZXJfaWQiOiJ1TmUwdzV0SlIyVW1tZVRXdG9BQzFKZ2RRVk4yIiwic3ViIjoidU5lMHc1dEpSMlVtbWVUV3RvQUMxSmdkUVZOMiIsImlhdCI6MTYzMDc4NTUxMSwiZXhwIjoxNjMwNzg5MTExLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7fSwic2lnbl9pbl9wcm92aWRlciI6ImFub255bW91cyJ9fQ.NN_J9bo8X7DhcfGES3bG4-pK9iXWISOUvmK6Zc0vuWho5fwUoiCUiEVCSoZSKSttmNiPHIBwDVRGcs7HLjZ56pZHBY3VwTTaQITLe1YWLZa7rxDRSDdMv5ltiDsmaNqvRRygd53pIlIQwOxLHj2dD9GMSuJtW_JQdVcl3zYeeadUZfTea7UBkldPv0_yIK3sOLKlE-o0eALBd8_1ZtVJouV86cLRMpuwEPilxhDVIdiXvwjA85nun8PGvhFJmGULq8jJB5bAbGw5zi14wOk2Fpv0mdqhjm91jEvJSpS6ogRd16tYDrpYRaQzWgf9fNs0mYsXobKFnr7HDwsv_v1rgQ",
+        "localId" : "uNe0w5tJR2UmmeTWtoAC1JgdQVN2",
+        "photo_url" : "https://firebasestorage.googleapis.com/v0/b/axis-q.appspot.com/o/axis3%2Favatars%2Fc1455717b130af13807056550dcbf638.jpeg?alt=media&token=935e26f1-1586-4903-baa1-6e109b610a84",
+        "userName" : "iosif",
+        "user_diamonds" : 850
+      },
+      "quests" : {
+        "simple" : {
+          "quest12" : {
+            "description" : "Это описание второго квеста. Кто первый найдет, соответсвенно найдет попытик. Желаю всем удачи и подпишитесь на пж. ",
+            "latitude" : 51.1444001,
+            "longitude" : 71.4287559,
+            "q_link" : "https://axis-q.firebaseio.com/cities/astana/current/quest12",
+            "q_photo_url" : "https://image.flaticon.com/icons/png/512/1408/1408943.png",
+            "username" : "@iosiff"
+          }
+        },
+        "stats" : {
+          "archive" : "quest12",
+          "current" : ""
+        }
+      }
+    }
+  }
+}
