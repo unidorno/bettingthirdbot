@@ -88,13 +88,13 @@ bot.on('message', (msg) =>
         if (jobediting[chat.id] !== undefined) {
             bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
     
-            if (jobediting[chat.id] === 0 && text < 25) jobbody[chat.id].job_type = text
-            if (jobediting[chat.id] === 1 && text < 35) jobbody[chat.id].company_name = text
-            if (jobediting[chat.id] === 2 && text < 250) jobbody[chat.id].company_description = text
-            if (jobediting[chat.id] === 3 && text < 15) jobbody[chat.id].city = text
-            if (jobediting[chat.id] === 4 && text < 500) jobbody[chat.id].requirements = text
-            if (jobediting[chat.id] === 5 && text < 250) jobbody[chat.id].tasks = text
-            if (jobediting[chat.id] === 6 && text < 300) jobbody[chat.id].conditions = text
+            if (jobediting[chat.id] === 0 && text.length < 25) jobbody[chat.id].job_type = text
+            if (jobediting[chat.id] === 1 && text.length < 35) jobbody[chat.id].company_name = text
+            if (jobediting[chat.id] === 2 && text.length < 250) jobbody[chat.id].company_description = text
+            if (jobediting[chat.id] === 3 && text.length < 15) jobbody[chat.id].city = text
+            if (jobediting[chat.id] === 4 && text.length < 500) jobbody[chat.id].requirements = text
+            if (jobediting[chat.id] === 5 && text.length < 250) jobbody[chat.id].tasks = text
+            if (jobediting[chat.id] === 6 && text.length < 300) jobbody[chat.id].conditions = text
             if (jobediting[chat.id] === 7 && emailRegexp.test(text)) jobbody[chat.id].email = text
 
             let updates = {}
