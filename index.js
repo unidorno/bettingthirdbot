@@ -27,6 +27,8 @@ const bot = new TelegramBot(config.TOKEN,
     }
 })
 
+const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
 let job_post_price = 0 
 let channel_link = ''
 let bot_link = ''
@@ -34,6 +36,10 @@ let group_id = 0
 let channel_id = 0
 let customer_support = ''
 let active_session = []
+let postpone_delay = 1
+let postpone_enabled = false
+let timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
+let last_post = 0;
 
 let message_nobutton = []
 let message_todelete = []
@@ -46,7 +52,8 @@ const joblist = ['🧾 Мои вакансии', 'myjobscb']
 const editjob = ['Редактировать вакансию', 'editjobcb']
 const previewjob = ['Продолжить ▶️', 'previewjob_cb']
 const gotostart = ['🏠 Главная', 'gotostart']
-const acceptpost = ['✅ Опубликовать', 'acceptpublishcb']
+const acceptpost = ['✅ Сейчас', 'acceptpublishcb']
+const acceptpostpone = ['⏳ Отложенный', 'postponeblishcb']
 
 let settingsrequest = fb.database().ref('hrbot/settings')
 settingsrequest.on('value', (result) => {
@@ -58,8 +65,19 @@ settingsrequest.on('value', (result) => {
     channel_id = result.val().basic_info.channel_id
     customer_support = result.val().basic_info.customer_support
 })
+let postponerequest = fb.database().ref('hrbot/settings/postpone_info')
+postponerequest.on('value', (result) => {
+    clearTimeout(timer);
+    postpone_delay = result.val().postpone_delay
+    postpone_enabled = result.val().postpone_enabled
+    timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
+})
 bot.on('channel_post', msg => {
     console.log(msg)
+    let date = new Date()
+    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    let timeOfffset = 3
+    last_post = new Date(utcTime + (3600000 * timeOfffset))
 })
 bot.on('message', (msg) =>
 {
@@ -70,15 +88,15 @@ bot.on('message', (msg) =>
         if (jobediting[chat.id] !== undefined) {
             bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
     
-            if (jobediting[chat.id] === 0) jobbody[chat.id].job_type = text
-            if (jobediting[chat.id] === 1) jobbody[chat.id].company_name = text
-            if (jobediting[chat.id] === 2) jobbody[chat.id].company_description = text
-            if (jobediting[chat.id] === 3) jobbody[chat.id].city = text
-            if (jobediting[chat.id] === 4) jobbody[chat.id].requirements = text
-            if (jobediting[chat.id] === 5) jobbody[chat.id].tasks = text
-            if (jobediting[chat.id] === 6) jobbody[chat.id].conditions = text
-            if (jobediting[chat.id] === 7 && text.includes('@')) jobbody[chat.id].email = text
-    
+            if (jobediting[chat.id] === 0 && text < 25) jobbody[chat.id].job_type = text
+            if (jobediting[chat.id] === 1 && text < 35) jobbody[chat.id].company_name = text
+            if (jobediting[chat.id] === 2 && text < 250) jobbody[chat.id].company_description = text
+            if (jobediting[chat.id] === 3 && text < 15) jobbody[chat.id].city = text
+            if (jobediting[chat.id] === 4 && text < 500) jobbody[chat.id].requirements = text
+            if (jobediting[chat.id] === 5 && text < 250) jobbody[chat.id].tasks = text
+            if (jobediting[chat.id] === 6 && text < 300) jobbody[chat.id].conditions = text
+            if (jobediting[chat.id] === 7 && emailRegexp.test(text)) jobbody[chat.id].email = text
+
             let updates = {}
             updates['hrbot/users/' + chat.id + '/jobs/' + jobbody[chat.id].job_number] = jobbody[chat.id]
             fb.database().ref().update(updates)
@@ -97,10 +115,14 @@ bot.on('message', (msg) =>
 })
 bot.on('callback_query', query => {
     const { chat, message_id, text } = query.message
-    console.log(query.data)
     FixMessages(chat)
 
-    if (active_session[chat.id] !== undefined){
+    let sessionchecker = 0
+    if (query.message.chat.type === 'private') sessionchecker = chat.id
+    if (query.message.chat.type !== 'private') sessionchecker = query.from.id
+    console.log(sessionchecker)
+
+    if (active_session[sessionchecker] !== undefined){
         if (query.data === newjob[1] || query.data.includes(editjob[1])){
             if (query.data === newjob[1]){
                 let creatordata = fb.database().ref('hrbot/users/' + chat.id)
@@ -126,7 +148,9 @@ bot.on('callback_query', query => {
                         time_published: 0,
                         status: 'preparing', //preparing -> paid -> approved -> published
                         message_id: 0,
-                        publish_id: 0
+                        publish_id: 0,
+                        date: 0,
+                        readable_date: ''
                     }
                     EditJob(chat)
                 })
@@ -151,9 +175,11 @@ bot.on('callback_query', query => {
                             time_paid: result.val().time_paid,
                             time_approved: result.val().time_approved,
                             time_published: result.val().time_published,
-                            status: result.val().status, //preparing -> paid -> approved -> published
+                            status: result.val().status,            //preparing -> paid -> approved -> published
                             message_id: result.val().message_id,
-                            publish_id: result.val().publish_id
+                            publish_id: result.val().publish_id,
+                            readable_date: result.val().readable_date,
+                            date: result.val().date
                         }
                         if (jobbody[chat.id].status === 'paid' || jobbody[chat.id].status === 'published') PreviewJob(chat)
                         if (jobbody[chat.id].status !== 'paid' && jobbody[chat.id].status !== 'published') EditJob(chat)
@@ -166,9 +192,14 @@ bot.on('callback_query', query => {
             }
             
         }
-    
         if (query.data.includes('editjoparam')){
             jobediting[chat.id] = parseInt(query.data.split('_')[1])
+
+            let kb = []
+            kb.push([{
+                text: '◀️ Назад',
+                callback_data: editjob[1]
+            }])
     
             let txt = ''
             if (jobediting[chat.id] === 0) txt = 'Кого Вы ищете? Укажите специальность/должность:'
@@ -179,31 +210,98 @@ bot.on('callback_query', query => {
             if (jobediting[chat.id] === 5) txt = 'Какие задачи будет выполнять кандидат?'
             if (jobediting[chat.id] === 6) txt = 'Какие условия Вы предлагаете?'
             if (jobediting[chat.id] === 7) txt = 'Укажите почту для связи. Если Вы оставите это поле пустым, мы используем ссылку на Ваш телеграм-аккаунт'
+            if (jobediting[chat.id] === 8) {
+                txt = 'Выберите дату публикации. Если оплата будет произведена после этой даты, мы опубликуем пост в свободное время'
+                
+                let creatordata = fb.database().ref('hrbot/postpone/')
+                creatordata.get().then(result => {
+
+                    let date = new Date(query.message.date * 1000)
+                    console.log(date)
+                    let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                    let timeOfffset = 3
+                    let current_date = new Date(utcTime + (3600000 * timeOfffset))
+                    
+                    let current_data = current_date.getUTCDate()
+                    let current_month = current_date.getUTCMonth() + 1
+                    if (current_month < 10) current_month = '0' + current_month
+                    let readable_current_date = current_data + '.' + current_month
+
+                    let lastday_date = new Date(current_date.getFullYear(), current_date.getMonth() + 1, 0)
+                    let lastday_data = lastday_date.getUTCDate()
+                    let lastday_month = lastday_date.getUTCMonth() + 1
+                    if (lastday_month < 10) lastday_month = '0' + lastday_month
+                    let readable_last_date = lastday_data + '.' + lastday_month
+
+                    console.log('current date: ' + readable_current_date)
+                    console.log('last date: ' + readable_last_date)
+
+                    let row = 1
+                    //lastday_data: 28, current_data: 21 | i = 0; i < 7; i++
+                    for (let i = 0; i <= (lastday_data - current_data); i++){
+                        console.log(row)
+                        if (kb[row] !== undefined){
+
+                        }
+                        if (kb[row] === undefined){
+                            kb[row] = []
+                            for (let b = 0; b < 3 && i + b <= (lastday_data - current_data); b++){
+                                console.log("adding: " + 'sdt_' + (current_data + i + b) + '_' + current_month)
+                                let txt = '', cb
+                                if (result.val() !== null){
+                                    for (let x = 0; x < result.val().length; x++){
+                                        if (result.val()[x].date_text === (current_data + i + b) + '.' + current_month) {
+                                            txt = '❌' (current_data + i + b) + '.' + current_month
+                                            cb = 'null'
+                                        }
+                                    }
+                                }
+                                if (txt === ''){
+                                    txt = (current_data + i + b) + '.' + current_month
+                                    cb = 'sdt_' + (current_date.getTime() + ((i+b) * 86400000)) + '_' + (current_data + i + b) + '_' + current_month
+                                    console.log('availiable date: ' + (current_date.getTime() + ((i+b) * 86400000)))
+                                }
+                                kb[row].push({
+                                    text: txt,
+                                    callback_data: cb 
+                                })
+                            }
+                            i+=2
+                            row++
+                        }
+                    }
+
+                    bot.sendMessage(chat.id, txt, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: kb
+                        }
+                    }).then(res => {
+                        if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
+                        message_todelete[chat.id].push(res.message_id)
+                    })
+                })
+            }
             
-            bot.sendMessage(chat.id, txt, {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: '◀️ Назад',
-                            callback_data: editjob[1]
-                        }]
-                    ]
-                }
-            }).then(res => {
-                if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
-                message_todelete[chat.id].push(res.message_id)
-            })
+            if (jobediting[chat.id] !== 8){
+                bot.sendMessage(chat.id, txt, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: kb
+                    }
+                }).then(res => {
+                    if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
+                    message_todelete[chat.id].push(res.message_id)
+                })
+            }
+            
         }
-    
         if (query.data === gotostart[1]){
             jobbody[chat.id] = undefined
             jobediting[chat.id] = undefined
             Start(query.message)
         }
-    
         if (query.data === previewjob[1]) PreviewJob(chat)
-    
         if (query.data.includes('pay_')){
             if (query.data.split('_')[1] === 'jobpost'){
                 console.log(bot_link)
@@ -234,7 +332,6 @@ bot.on('callback_query', query => {
                 })
             }
         }
-    
         if (query.data === joblist[1]){
             let creatordata = fb.database().ref('hrbot/users/' + chat.id)
             creatordata.get().then(result => {
@@ -245,13 +342,20 @@ bot.on('callback_query', query => {
                         text: '◀️ Назад',
                         callback_data: gotostart[1]
                     }])
-                    for (let i = 0; i < result.val().jobs.length; i++){
+                    let lastjobnum = 0
+                    if (result.val().jobs.length >= 10) lastjobnum = result.val().jobs.length - 10
+
+                    for (let i = result.val().jobs.length - 1; i > lastjobnum; i--){
                         let temptxt = ''
                         if (result.val().jobs[i].status === 'preparing') temptxt += '- ШАБЛОН | '
                         if (result.val().jobs[i].status === 'paid') temptxt += '- ОПЛАЧЕНО | '
                         if (result.val().jobs[i].status === 'approved') temptxt += '- ОЖИДАНИЕ | '
                         if (result.val().jobs[i].status === 'published') temptxt += '- ОПУБЛИКОВАНО | '
-                        temptxt += result.val().jobs[i].job_type + ' в ' + result.val().jobs[i].company_name + '\n'
+                        let tempjobtype = result.val().jobs[i].job_type
+                        let tempcompanyname = result.val().jobs[i].company_name
+                        if (result.val().jobs[i].job_type.length > 10) tempjobtype = result.val().jobs[i].job_type.substring(0, 10) + '.'
+                        if (result.val().jobs[i].company_name.length > 10) tempcompanyname = result.val().jobs[i].company_name.substring(0, 10) + '...'
+                        temptxt += tempjobtype + ' в ' + tempcompanyname + '\n'
                         txt += temptxt
                         kb.push([{
                             text: temptxt,
@@ -291,7 +395,6 @@ bot.on('callback_query', query => {
                 }
             })
         }
-    
         if (query.data.includes(acceptpost[1])){
             //DONE 1. Опубликовать пост
             //2. Отправить клиенту ссылку на пост
@@ -364,8 +467,94 @@ bot.on('callback_query', query => {
                     fb.database().ref().update(updates)
                 })
             })
+        }
+        if (query.data.includes(acceptpostpone[1])){
+    
+            let id = query.data.split('_')[1]
+            let local_jobnum = query.data.split('_')[2]
+            let readable_date = query.data.split('_')[3]
+            let updates = {}
+            console.log(readable_date)
+    
+            let creatordata = fb.database().ref('hrbot/postpone/')
+            creatordata.get().then(result => {
+                
+                if (result.val() === null) {
+                    updates['hrbot/postpone/0/list/0'] = id + '_' + local_jobnum
+                    updates['hrbot/postpone/0/date'] = readable_date
+                }
+                if (result.val() !== null) {
+                    for (let i = 0; i < result.val().length; i++){
+                        if (result.val()[i].date === readable_date){
+                            let listinfo = fb.database().ref('hrbot/postpone/' + i)
+                            listinfo.get().then(reply => {
+                                updates['hrbot/postpone/' + i + '/list/' + reply.val().list.length] = id + '_' + local_jobnum
+                            })
+                            console.log('added to existing list')
+                            break;
+                        }
+                        if (i === result.val().length - 1 && result.val()[i].date !== readable_date){
+                            console.log('added to NEW list')
+                            updates['hrbot/postpone/' + result.val().length + '/list/0'] = id + '_' + local_jobnum
+                            updates['hrbot/postpone/' + result.val().length + '/date'] = readable_date
+                        }
+                    }
+                }
+
+                /* updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/status'] = 'published'
+                updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/time_published'] = res.date * 1000 */
+                
+                let jobdata = fb.database().ref('hrbot/users/' + id + '/jobs/' + local_jobnum)
+                jobdata.get().then(reply => {
+            
+
+                    let clienttext = 'Ваша вакансия <b>"' + reply.val().job_type + ' в '+ reply.val().company_name +'"</b> была одобрена и в скором времени будет опубликована.'
+                    bot.sendMessage(id, clienttext, {
+                        disable_web_page_preview: true,
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: 'Хорошо 👍🏻',
+                                    callback_data: gotostart[1]
+                                }]
+                            ]
+                        }
+                    }).then(res2 => {
+                        if (message_todelete[id] === undefined) message_todelete[id] = []
+                        message_todelete[id].push(res2.message_id)
+                    })
+    
+                    let admingroup_text = 'Пост <a href="tg://user?id='+id+'">пользователя</a> был поставлен в очередь на ' + readable_date
+                    bot.deleteMessage(group_id, reply.val().message_id).catch(err => {console.log('err: ' + err)})
+                    bot.sendMessage(group_id, admingroup_text, {
+                        parse_mode: 'HTML',
+                        disable_web_page_preview: true,
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: '💬 Связаться с клиентом',
+                                    url: 'tg://user?id='+ id
+                                }]
+                            ]
+                        }
+                    })
+                    .then(res => {
+                        updates['hrbot/users/' + id  + '/jobs/' + local_jobnum + '/message_id'] = res.message_id
+                        fb.database().ref().update(updates)
+                    })
+                })
+                
+            })
     
             
+        }
+        if (jobediting[chat.id] === 8 && query.data.includes('sdt_')){
+            jobbody[chat.id].date = parseInt(query.data.split('_')[1])
+            jobbody[chat.id].readable_date = query.data.split('_')[2] + '.' + query.data.split('_')[3]
+
+            EditJob(chat)
+            jobediting[chat.id] = undefined
         }
     }
     else {
@@ -373,6 +562,7 @@ bot.on('callback_query', query => {
         for (let i = 0; i < 50; i++){
             bot.deleteMessage(chat.id, message_id - i).catch(err => {console.log('err: ' + err)})
         }
+        active_session[chat.id] = true
         Start(query.message)
     }
 })
@@ -431,31 +621,48 @@ bot.on('successful_payment', query => {
         readable_date = data + '.' + month + ', ' + hours + ':' + minutes
 
         admin_text += '\n├ <b>Дата оплаты:</b> ' + readable_date
-        admin_text += '\n├ <b>Статус заявки:</b> Оплачено, ожидает модерации'
+        admin_text += '\n├ <b>Статус заявки:</b> ✅'
+
+        let kb = []
+        kb.push([{
+            text: '💬 Связаться с клиентом',
+            url: 'tg://user?id='+ id
+        }])
+        
+        if (result.val().jobs[job_number].readable_date.includes('.')) {
+            admin_text += '\n└ <b>Дата публикации:</b> ' + result.val().jobs[job_number].readable_date
+            kb.push([{
+                text: acceptpost[0],
+                callback_data: acceptpost[1] + '_' + id + '_' + job_number
+            },
+            {
+                text: acceptpostpone[0],
+                callback_data: acceptpostpone[1] + '_' + id + '_' + job_number + '_' + result.val().jobs[job_number].readable_date
+            }])
+        }
+        if (!result.val().jobs[job_number].readable_date.includes('.')) {
+            admin_text += '\n└ <b>Дата публикации:</b> ' + result.val().jobs[job_number].readable_date
+            kb.push([{
+                text: acceptpost[0],
+                callback_data: acceptpost[1] + '_' + id + '_' + job_number
+            }])
+        }
         admin_text += '\n\n<b>Текст вакансии:</b>\n\n'
         admin_text += txt
+        
 
         bot.deleteMessage(group_id, result.val().jobs[job_number].message_id).catch(err => {console.log('err: ' + err)})
         bot.sendMessage(group_id, admin_text, {
             parse_mode: 'HTML',
             reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: '💬 Связаться с клиентом',
-                        url: 'tg://user?id='+ id
-                    }],
-                    [{
-                        text: acceptpost[0],
-                        callback_data: acceptpost[1] + '_' + id + '_' + job_number
-                    }]
-                ]
+                inline_keyboard: kb
             }
         }).then(res => {
             updates['hrbot/users/' + id + '/jobs/' + job_number + '/message_id/'] = res.message_id
             fb.database().ref().update(updates)
         })
 
-        bot.sendMessage(id, '💵 Оплата была произведена, пост отправлен на модерацию. В случае возникновения вопросов, свяжитесь с <a href="https://t.me/'+ customer_support +'">модерацией</a>', {
+        bot.sendMessage(id, '💵 Оплата была произведена, пост отправлен на модерацию. Мы сообщим Вам, как только он будет одобрен и опубликован. В случае возникновения вопросов, свяжитесь с <a href="https://t.me/'+ customer_support +'">модерацией</a>', {
             parse_mode: 'HTML',
             disable_web_page_preview: true,
             reply_markup: {
@@ -485,7 +692,6 @@ bot.onText(/\/start/, msg => {
     active_session[msg.chat.id] = true
     Start(msg)
 })
-
 function Start(msg){
     const { chat, message_id, text } = msg
     
@@ -545,12 +751,11 @@ function Start(msg){
         }
     })
 }
-
 function FixMessages(chat){
 
     if (message_todelete[chat.id] !== undefined){
         for (let i = 0; i < message_todelete[chat.id].length; i++){
-            bot.deleteMessage(chat.id, message_todelete[chat.id][i]).catch(err => {console.log('err: ' + err)})
+            bot.deleteMessage(chat.id, message_todelete[chat.id][i]).catch(err => {/* console.log('err: ' + err) */})
         }
     }
 
@@ -561,7 +766,7 @@ function FixMessages(chat){
                 chat_id: chat.id,
                 message_id: message_nobutton[chat.id][i][0],
                 disable_web_page_preview: true
-            }).catch(err => {console.log('err: ' + err)})
+            }).catch(err => {/* console.log('err: ' + err) */})
             if (message_nobutton[chat.id][i][2] === true){
                 if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
                 message_todelete[chat.id].push(message_nobutton[chat.id][i][0])
@@ -569,52 +774,94 @@ function FixMessages(chat){
         }
     }
 }
-
 function EditJob(chat){
 
     console.log('editing job')
+    let pointready = []
+    for (let i = 0; i < 9; i++) pointready[i] = ''
+
     let txt = 'После того, как все поля будут заполнены, Вы сможете продолжить\n\n'
-    txt += '<b>Кого ищем?</b> ' + jobbody[chat.id].job_type + '\n'
-    txt += '<b>Название компании: </b>' + jobbody[chat.id].company_name + '\n'
-    txt += '<b>О компании: </b>' + jobbody[chat.id].company_description + '\n'
-    txt += '<b>Город: </b>' + jobbody[chat.id].city + '\n'
+    if (jobbody[chat.id].job_type !== '') pointready[0] = '✅ '
+    txt += '<b>Кого ищем?</b> \n' + jobbody[chat.id].job_type + '\n'
+
+    if (jobbody[chat.id].company_name !== '') {
+        txt += '\n' 
+        pointready[1] = '✅ '
+    }
+    txt += '<b>Название компании: </b>\n' + jobbody[chat.id].company_name + '\n'
+
+    if (jobbody[chat.id].company_description !== '') {
+        txt += '\n'
+        pointready[2] = '✅ '
+    }
+    txt += '<b>О компании: </b>\n' + jobbody[chat.id].company_description + '\n'
+
+    if (jobbody[chat.id].city !== '') {
+        txt += '\n' 
+        pointready[3] = '✅ '
+    }
+    txt += '<b>Город: </b>\n' + jobbody[chat.id].city + '\n'
+
+    if (jobbody[chat.id].requirements !== '') {
+        txt += '\n'
+        pointready[4] = '✅ '
+    }
     txt += '<b>Требования: </b>\n' + jobbody[chat.id].requirements + '\n'
+
+    if (jobbody[chat.id].tasks !== '') {
+        txt += '\n'
+        pointready[5] = '✅ '
+    }
     txt += '<b>Задачи: </b>\n' + jobbody[chat.id].tasks + '\n'
-    txt += '<b>Условия: </b>\n' + jobbody[chat.id].conditions + '\n'
-    txt += '<b>Почта (необязательно): </b>' + jobbody[chat.id].email + '\n'
+
+    if (jobbody[chat.id].conditions !== '') {
+        txt += '\n'
+        pointready[6] = '✅ '
+    }
+    txt += '<b>Условия: </b>\n' + jobbody[chat.id].conditions + '\n\n'
+
+    if (jobbody[chat.id].email !== ' ') pointready[7] = '✅ '
+    txt += '<b>✉️ Почта (необязательно): </b>' + jobbody[chat.id].email + '\n'
+
+    if (jobbody[chat.id].readable_date !== '') pointready[8] = '✅ '
+    txt += '<b>📅 Дата публикации (необязательно): </b>' + jobbody[chat.id].readable_date + '\n'
 
     let kb = [
         [{
-            text: 'Кого ищем? ' + jobbody[chat.id].job_type,
+            text: pointready[0] + 'Кого ищем? ' /* + jobbody[chat.id].job_type */,
             callback_data: 'editjoparam_0'
         }],
         [{
-            text: 'Название компании: ' + jobbody[chat.id].company_name,
+            text: pointready[1] + 'Название компании'/*  + jobbody[chat.id].company_name */,
             callback_data: 'editjoparam_1'
-        }],
-        [{
-            text: 'О компании: ' + jobbody[chat.id].company_description,
+        },
+        {
+            text: pointready[2] + 'О компании'/*  + jobbody[chat.id].company_description */,
             callback_data: 'editjoparam_2'
         }],
         [{
-            text: 'Город: ' + jobbody[chat.id].city,
+            text: pointready[3] + 'Город'/*  + jobbody[chat.id].city */,
             callback_data: 'editjoparam_3'
-        }],
-        [{
-            text: 'Требования: ' + jobbody[chat.id].requirements,
+        },
+        {
+            text: pointready[4] + 'Требования'/*  + jobbody[chat.id].requirements */,
             callback_data: 'editjoparam_4'
         }],
         [{
-            text: 'Задачи: ' + jobbody[chat.id].tasks,
+            text: pointready[5] + 'Задачи'/*  + jobbody[chat.id].tasks */,
             callback_data: 'editjoparam_5'
-        }],
-        [{
-            text: 'Условия: ' + jobbody[chat.id].conditions,
+        },
+        {
+            text: pointready[6] + 'Условия'/*  + jobbody[chat.id].conditions */,
             callback_data: 'editjoparam_6'
         }],
         [{
-            text: 'Почта: ' + jobbody[chat.id].email,
+            text: pointready[7] + 'Почта' /* + jobbody[chat.id].email */,
             callback_data: 'editjoparam_7'
+        },
+        {
+            text: pointready[8] + 'Дата'/*  + jobbody[chat.id].readable_date */,
+            callback_data: 'editjoparam_8'
         }]
     ]
     if (jobbody[chat.id].job_type !== '' && jobbody[chat.id].company_name !== '' && jobbody[chat.id].company_description !== '' && jobbody[chat.id].city !== '' && jobbody[chat.id].requirements !== '' && jobbody[chat.id].tasks !== '' && jobbody[chat.id].conditions !== ''){
@@ -650,11 +897,12 @@ function EditJob(chat){
         message_todelete[chat.id].push(res.message_id)
     })
 }
-
 function PreviewJob(chat){
 
     FixMessages(chat)
-    let txt = '🚀 Ищем <b>' + jobbody[chat.id].job_type + '</b> в <b>' + jobbody[chat.id].company_name + '</b>'
+    let txt = ''
+    if (jobbody[chat.id].readable_date.includes('.')) txt += '📅 Вакансия будет опубликована <b>' + jobbody[chat.id].readable_date + '</b>'
+    txt += '\n\n🚀 Ищем <b>' + jobbody[chat.id].job_type + '</b> в <b>' + jobbody[chat.id].company_name + '</b>'
     txt += '\n\n<b>Город:</b> ' + jobbody[chat.id].city
     txt += '\n\n<b>О компании:</b>\n' + jobbody[chat.id].company_description
     txt += '\n\n<b>Требования: </b>\n' + jobbody[chat.id].requirements
@@ -722,17 +970,6 @@ function PreviewJob(chat){
                 fb.database().ref().update(updates)
             })
         }
-
-        /* bot.sendMessage(chat.id, customer_message, {
-            parse_mode: 'HTML',
-            disable_web_page_preview: true,
-            reply_markup: {
-                inline_keyboard: kb
-            }
-        }).then(res => {
-            if (message_nobutton[chat.id] === undefined) message_nobutton[chat.id] = []
-            message_nobutton[chat.id].push([res.message_id, txt, true])
-        }) */
     }
 
     if (jobbody[chat.id].status === 'approved'){
@@ -861,7 +1098,145 @@ function PreviewJob(chat){
         message_todelete[chat.id].push(res.message_id)
     })
 }
+function PostPonePosting(){
+    console.log('postpone')
+    clearTimeout(timer);
+    //Получаем список постов с сегодняшней датой
+    let creatordata = fb.database().ref('hrbot/postpone/')
+    creatordata.get().then(result => {
 
+        if (result.val() !== null){
+            let id
+            let local_jobnum
+    
+            let date = new Date()
+            let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+            let timeOfffset = 3
+            let current_date = new Date(utcTime + (3600000 * timeOfffset))
+            
+            let current_data = current_date.getUTCDate()
+            let current_month = current_date.getUTCMonth() + 1
+            if (current_month < 10) current_month = '0' + current_month
+            let readable_current_date = current_data + '.' + current_month
+    
+            let updates = {}
+    
+            for (let i = 0; i < result.val().length; i++) {
+    
+                if (result.val()[i].date === readable_current_date && result.val()[i].list !== undefined) {
+    
+                    id = result.val()[i].list[0].split('_')[0]
+                    local_jobnum = result.val()[i].list[0].split('_')[1]
+    
+                    //Проверяем какое сейчас время и нужно ли сейчас постить
+    
+                    //Если время то и есть что постить узнаем когда был последний пост. Вычисляем getTime пост
+                    if ((date.getTime() - last_post.getTime()) > (1000 * 60 * postpone_delay)){
+                        console.log('TIME IS GOOD. POSTING NOW: date = ' + date.getTime() + ', last_post = ' + last_post.getTime() + ', deelay = ' + (1000 * 60 * postpone_delay))
+                        let newpostponelist = []
+                        if (result.val()[i].list.length > 1){
+                            for (let x = 1; x < result.val()[i].list.length; x++){
+                                newpostponelist[x - 1] = result.val()[i].list[x]
+                            }
+                            updates['hrbot/postpone/' + i + '/list/'] = newpostponelist
+                        }
+                        if (result.val()[i].list.length <= 1){
+                            updates['hrbot/postpone/' + i] = null
+                        }
+    
+                        let jobinfodata = fb.database().ref('hrbot/users/' + id + '/jobs/' + local_jobnum)
+                        jobinfodata.get().then(reply => {
+                
+                            let txt = '🚀 Ищем <b>' + reply.val().job_type + '</b> в <b>' + reply.val().company_name + '</b>'
+                            txt += '\n\n<b>Город:</b> ' + reply.val().city
+                            txt += '\n\n<b>О компании:</b>\n' + reply.val().company_description
+                            txt += '\n\n<b>Требования: </b>\n' + reply.val().requirements
+                            txt += '\n\n<b>Задачи: </b>\n' + reply.val().tasks
+                            txt += '\n\n<b>Условия: </b>\n' + reply.val().conditions
+                            if (reply.val().email.includes('@')) txt += '\n\nОтправьте свой отклик на почту: ' + reply.val().email
+                            if (!reply.val().email.includes('@')) txt += '\n\nОтправьте свой отклик <a href="tg://user?id='+ reply.val().sender +'">сюда</a>'
+                
+                            bot.sendMessage(channel_id, txt, {
+                                disable_web_page_preview: true,
+                                parse_mode: 'HTML'
+                            })
+                            .then(res => {
+                                console.log(res)
+                                updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/publish_id'] = res.message_id
+                                updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/status'] = 'published'
+                                updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/time_published'] = res.date * 1000
+                                
+                                let clienttext = 'Ваша вакансия <b><a href="'+ channel_link +'/'+ res.message_id +'">' + reply.val().job_type + ' в '+ reply.val().company_name +'"</a></b> была опубликована.'
+                                bot.sendMessage(id, clienttext, {
+                                    disable_web_page_preview: true,
+                                    parse_mode: 'HTML',
+                                    reply_markup: {
+                                        inline_keyboard: [
+                                            [{
+                                                text: 'Хорошо 👍🏻',
+                                                callback_data: gotostart[1]
+                                            }]
+                                        ]
+                                    }
+                                }).then(res2 => {
+                                    if (message_todelete[id] === undefined) message_todelete[id] = []
+                                    message_todelete[id].push(res2.message_id)
+                                })
+                
+                                let admingroup_text = 'Вы успешно <a href="'+ channel_link +'/'+ res.message_id +'">опубликовали</a> пост <a href="tg://user?id='+id+'">пользователя</a>'
+                                bot.deleteMessage(group_id, reply.val().message_id).catch(err => {console.log('err: ' + err)})
+                                bot.sendMessage(group_id, admingroup_text, {
+                                    parse_mode: 'HTML',
+                                    disable_web_page_preview: true,
+                                    reply_markup: {
+                                        inline_keyboard: [
+                                            [{
+                                                text: '💬 Связаться с клиентом',
+                                                url: 'tg://user?id='+id
+                                            }],
+                                            [{
+                                                text: 'Показать пост',
+                                                url: channel_link +'/'+ res.message_id
+                                            }]
+                                        ]
+                                    }
+                                })
+                                .then(res3 => {
+                                    updates['hrbot/users/' + id + '/jobs/' + local_jobnum + '/time_published'] = res3.date * 1000
+                                    fb.database().ref().update(updates)
+                                })
+                    
+                                
+                            })
+                        })
+                    }
+                    if ((date.getTime() - last_post.getTime()) <= (1000 * 60 * postpone_delay)){
+                        console.log('TOO EARLY TO POST: date - last_post = ' + (date.getTime() - last_post.getTime()) + ', deelay = ' + (1000 * 60 * postpone_delay))
+
+                        //Если разница между getTime сейчас и getTime поста меньше deelay, то создаем переменную futurepost с временем = getTime поста  + delay
+                        let futurepost = last_post.getTime() + postpone_delay
+    
+                        //Находим на сколько больше futurepost чем currenttime и заносим это в tempdelay. Прибавляем 5 сек на всякий случай
+                        let tempdelay = futurepost - date.getTime()
+    
+                        //Ставим таймер с tempdelay
+                        if (postpone_enabled) timer = setTimeout(() => PostPonePosting(), tempdelay)
+                    }
+                }
+                if (i === result.val().length - 1 && result.val()[i].date !== readable_current_date){
+                    if (postpone_enabled) timer = setTimeout(() => PostPonePosting(), 1000 * postpone_delay)
+                }
+                else {
+                    timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
+                }
+            }
+        }
+
+        else {
+            timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
+        }
+    })
+}
 process.on('uncaughtException', function (err) {
     console.log(err);
 });
