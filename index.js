@@ -7,9 +7,9 @@ const { reset } = require('nodemon')
 const { chat } = require('googleapis/build/src/apis/chat')
 
 const fb = firebase_connect.initializeApp({
-    apiKey:'AIzaSyA0wSxSsB938N4mKpV5Nec0tBWbpPFyZAQ',
-    authDomain:'upperrestaurant.firebaseapp.com',
-    databaseURL: 'https://upperrestaurant-default-rtdb.europe-west1.firebasedatabase.app'
+    apiKey:'AIzaSyCA_wrfIjslXl8cKKGYHYvNsqLZUf5Ce4w',
+    authDomain:'telegram-bot-jobs.firebaseapp.com',
+    databaseURL: 'https://telegram-bot-jobs-default-rtdb.europe-west1.firebasedatabase.app'
 })
 //====================================================================
 
