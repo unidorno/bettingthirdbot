@@ -169,91 +169,168 @@ bot.on('message', (msg) =>
             let success = false
             let userdata = fb.database().ref('bettingbot/standard/users/')
             userdata.get().then(result => {
-                for (let i = 0; i < result.val().length; i++){
-                    if (result.val()[i].email === text){
-                        bot.sendMessage(chat.id, emailexists, {
-                            parse_mode: 'HTML',
-                        })
-                        .then(res => {
-                            isTypingEmail[chat.id] = true
-                        })
-                    }
-                    if (i === result.val().length - 1 && result.val()[i].email !== text){
-                        var options_1 = {
-                            'method': 'GET',
-                            'hostname': 'www.digistore24.com',
-                            'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
-                            'headers': {
-                              'X-DS-API-KEY': digistore_key,
-                              'Accept': 'application/json',
-                              'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
-                            },
-                            'maxRedirects': 20
-                        };
-                        var req_1 = https.request(options_1, function (res_1) {
-                            var chunks1 = [];
-                            res_1.on("data", function (chunk) {
-                              chunks1.push(chunk);
-                            });
-            
-                            res_1.on("end", function (chunk) {
-                                var body1 = Buffer.concat(chunks1);
-                                let result_1 = JSON.parse(body1.toString())
-                                console.log(result_1);
-                                if (result_1.result === 'success'){
-                                    for (let x = 0; x < result_1.data.purchase_list.length; x++){
-                                        for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
-                                            if (result_1.data.purchase_list[x].items[u].product_id === product_id && result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
-                                                success = true
-                                                let newuser = {
-                                                    tg_id: chat.id,
-                                                    buyer_id: result_1.data.purchase_list[x].buyer_id,
-                                                    email: text,
-                                                    billing_mode: result_1.data.purchase_list[x].billing_mode,
-                                                    next_payment_at: result_1.data.purchase_list[x].next_payment_at,
-                                                    next_amount: result_1.data.purchase_list[x].next_amount,
-                                                    status: 'active'
-                                                }
-                                                let updates = {}
-                                                updates['bettingbot/standard/users/' + result.val().length] = newuser
-                                                fb.database().ref().update(updates)
-                                                bot.createChatInviteLink(channel_id, {
-                                                    name: 'newuser_' + chat.id, 
-                                                    expire_date: result.date + 3600,
-                                                    member_limit: 1
-                                                })
-                                                .then(invite => {
-                                                    FixMessages(chat)
-                                                    bot.sendMessage(chat.id, yourlinkmessage, {
-                                                        parse_mode: 'HTML',
-                                                        protect_content: true,
-                                                        reply_markup: {
-                                                            inline_keyboard: [
-                                                                [{
-                                                                    text: 'Join group',
-                                                                    url: invite.invite_link
-                                                                }]
-                                                            ]
-                                                        }
-                                                    }).catch(err1 => {console.log(err1)})
-                                                })
-                                                .catch(err => {console.log(err)})
-                                                break
-                                            }
-                                        }
-                                        if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
-                                    }
-                                }
-                                else EmailNotFound(chat)
-                            })
-                            res_1.on("error", function (error) {
-                              console.error('here: ' + error);
-                            });
+                if (result.val().length === 1 && result.val()[0] === 0) {
+                    var options_1 = {
+                        'method': 'GET',
+                        'hostname': 'www.digistore24.com',
+                        'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
+                        'headers': {
+                          'X-DS-API-KEY': digistore_key,
+                          'Accept': 'application/json',
+                          'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+                        },
+                        'maxRedirects': 20
+                    };
+                    var req_1 = https.request(options_1, function (res_1) {
+                        var chunks1 = [];
+                        res_1.on("data", function (chunk) {
+                          chunks1.push(chunk);
                         });
-                        req_1.end();
+        
+                        res_1.on("end", function (chunk) {
+                            var body1 = Buffer.concat(chunks1);
+                            let result_1 = JSON.parse(body1.toString())
+                            console.log(result_1);
+                            if (result_1.result === 'success'){
+                                for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                                    for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                                        if (result_1.data.purchase_list[x].items[u].product_id === product_id && result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                            success = true
+                                            let newuser = {
+                                                tg_id: chat.id,
+                                                buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                email: text,
+                                                billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                next_amount: result_1.data.purchase_list[x].next_amount,
+                                                status: 'active'
+                                            }
+                                            let updates = {}
+                                            updates['bettingbot/standard/users/' + result.val().length] = newuser
+                                            fb.database().ref().update(updates)
+                                            bot.createChatInviteLink(channel_id, {
+                                                name: 'newuser_' + chat.id, 
+                                                expire_date: result.date + 3600,
+                                                member_limit: 1
+                                            })
+                                            .then(invite => {
+                                                FixMessages(chat)
+                                                bot.sendMessage(chat.id, yourlinkmessage, {
+                                                    parse_mode: 'HTML',
+                                                    protect_content: true,
+                                                    reply_markup: {
+                                                        inline_keyboard: [
+                                                            [{
+                                                                text: 'Join group',
+                                                                url: invite.invite_link
+                                                            }]
+                                                        ]
+                                                    }
+                                                }).catch(err1 => {console.log(err1)})
+                                            })
+                                            .catch(err => {console.log(err)})
+                                            break
+                                        }
+                                    }
+                                    if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
+                                }
+                            }
+                            else EmailNotFound(chat)
+                        })
+                        res_1.on("error", function (error) {
+                          console.error('here: ' + error);
+                        });
+                    });
+                    req_1.end();
+                } 
+                else {
+                    for (let i = 0; i < result.val().length; i++){
+                        if (result.val()[i].email !== null && result.val()[i].email === text){
+                            bot.sendMessage(chat.id, emailexists, {
+                                parse_mode: 'HTML',
+                            })
+                            .then(res => {
+                                isTypingEmail[chat.id] = true
+                            })
+                        }
+                        if (i === result.val().length - 1 && (result.val()[i].email !== null || result.val()[i].email !== text)){
+                            var options_1 = {
+                                'method': 'GET',
+                                'hostname': 'www.digistore24.com',
+                                'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
+                                'headers': {
+                                  'X-DS-API-KEY': digistore_key,
+                                  'Accept': 'application/json',
+                                  'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+                                },
+                                'maxRedirects': 20
+                            };
+                            var req_1 = https.request(options_1, function (res_1) {
+                                var chunks1 = [];
+                                res_1.on("data", function (chunk) {
+                                  chunks1.push(chunk);
+                                });
+                
+                                res_1.on("end", function (chunk) {
+                                    var body1 = Buffer.concat(chunks1);
+                                    let result_1 = JSON.parse(body1.toString())
+                                    console.log(result_1);
+                                    if (result_1.result === 'success'){
+                                        for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                                            for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                                                if (result_1.data.purchase_list[x].items[u].product_id === product_id && result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                    success = true
+                                                    let newuser = {
+                                                        tg_id: chat.id,
+                                                        buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                        email: text,
+                                                        billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                        next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                        next_amount: result_1.data.purchase_list[x].next_amount,
+                                                        status: 'active'
+                                                    }
+                                                    let updates = {}
+                                                    updates['bettingbot/standard/users/' + result.val().length] = newuser
+                                                    fb.database().ref().update(updates)
+                                                    bot.createChatInviteLink(channel_id, {
+                                                        name: 'newuser_' + chat.id, 
+                                                        expire_date: result.date + 3600,
+                                                        member_limit: 1
+                                                    })
+                                                    .then(invite => {
+                                                        FixMessages(chat)
+                                                        bot.sendMessage(chat.id, yourlinkmessage, {
+                                                            parse_mode: 'HTML',
+                                                            protect_content: true,
+                                                            reply_markup: {
+                                                                inline_keyboard: [
+                                                                    [{
+                                                                        text: 'Join group',
+                                                                        url: invite.invite_link
+                                                                    }]
+                                                                ]
+                                                            }
+                                                        }).catch(err1 => {console.log(err1)})
+                                                    })
+                                                    .catch(err => {console.log(err)})
+                                                    break
+                                                }
+                                            }
+                                            if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
+                                        }
+                                    }
+                                    else EmailNotFound(chat)
+                                })
+                                res_1.on("error", function (error) {
+                                  console.error('here: ' + error);
+                                });
+                            });
+                            req_1.end();
+                        }
+                        if (i === result.val().length - 1 && result.val()[i].email === text) EmailNotFound(chat)
                     }
-                    if (i === result.val().length - 1 && result.val()[i].email === text) EmailNotFound(chat)
                 }
+                
             })  
         }
         else if (isTypingEmail[chat.id] === true && !text.includes('@')) {
