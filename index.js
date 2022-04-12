@@ -38,9 +38,9 @@ let timer = setTimeout(() => PostPonePosting(), 1000);
 
 let message_nobutton = []
 let message_todelete = []
-let product_id = '393193' //PLATINUM
-let product_link = 'https://sportwetten-university.de/stop-geheimes-video/'
-let product_image = 'https://d7jiromw385hv.cloudfront.net/merchant_584674/image/product/NQQQ0Z6G'
+let product_id = '348357' //- STANDARD, '393193' - PLATINUM
+let product_link = 'https://sportwetten-university.de/sportwetten-insider/'// PLATINUM - 'https://sportwetten-university.de/stop-geheimes-video/'
+//let product_image = 'https://d7jiromw385hv.cloudfront.net/merchant_584674/image/product/NQQQ0Z6G'
 let channel_id = -1001224734962 //PLATINUM:-1001569887769 | INSIDER:-1001637428332
 let admin_id = 338134907
 let linkexpiretime = 1000 * 60 * 5
@@ -54,7 +54,7 @@ const digistore_key = '621668-hev9iWtyp73T8bS0txxjLvl89IPk4Ia81EQxEu2b'
 let params = 'page_no=1&page_size=1000' //14790664 //platinum id = 393193
 let cookie = 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8' */
 
-let group_name = '🔐 PLATINUM INSIDER 🥇💎' //'Insider Tipps 💰'
+let group_name = 'Insider Tipps 💰'//'🔐 PLATINUM INSIDER 🥇💎'
 
 let hellomessage = 'Hello, with this bot you can get access to the ' + group_name + '\n\nTo get invite link you have to subscribe for this product'
 let hellomessage_authed = 'Hello, you are signed in group ' + group_name
@@ -167,7 +167,7 @@ bot.on('message', (msg) =>
             bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
             isTypingEmail[chat.id] = false
             let success = false
-            let userdata = fb.database().ref('bettingbot/platinum/users/')
+            let userdata = fb.database().ref('bettingbot/standard/users/')
             userdata.get().then(result => {
                 for (let i = 0; i < result.val().length; i++){
                     if (result.val()[i].email === text){
@@ -215,7 +215,7 @@ bot.on('message', (msg) =>
                                                     status: 'active'
                                                 }
                                                 let updates = {}
-                                                updates['bettingbot/platinum/users/' + result.val().length] = newuser
+                                                updates['bettingbot/standard/users/' + result.val().length] = newuser
                                                 fb.database().ref().update(updates)
                                                 bot.createChatInviteLink(channel_id, {
                                                     name: 'newuser_' + chat.id, 
@@ -268,7 +268,7 @@ bot.on('message', (msg) =>
         }
         else if (isTypingMessageAdmin[chat.id] === true){
             isTypingMessageAdmin[chat.id] = false
-            let userdata = fb.database().ref('bettingbot/platinum/users/')
+            let userdata = fb.database().ref('bettingbot/standard/users/')
             userdata.get().then(result => {
                 for (let i = 0; i < result.val().length; i++){
                     if (result.val()[i].status === 'active'){
@@ -364,7 +364,7 @@ bot.on('callback_query', query => {
                     .catch(err => {console.log(err)})
                 }
                 else {
-                    let userdata = fb.database().ref('bettingbot/platinum/users/')
+                    let userdata = fb.database().ref('bettingbot/standard/users/')
                     userdata.get().then(result => {
                         console.log(result.exists())
                         if (result.exists()) {
@@ -405,8 +405,8 @@ bot.on('callback_query', query => {
 
                                                                     if ((localdate.getTime() - current_date.getTime()) > -100){
                                                                         let updates = {}
-                                                                        updates['bettingbot/platinum/users/' + i + '/status'] = 'active'
-                                                                        updates['bettingbot/platinum/users/' + i + '/next_payment_at'] = result_1.data.purchase_list[x].next_payment_at
+                                                                        updates['bettingbot/standard/users/' + i + '/status'] = 'active'
+                                                                        updates['bettingbot/standard/users/' + i + '/next_payment_at'] = result_1.data.purchase_list[x].next_payment_at
                                                                         fb.database().ref().update(updates)
 
                                                                         bot.unbanChatMember(channel_id, chat.id)
@@ -487,7 +487,7 @@ bot.on('callback_query', query => {
                                             .catch(err => {console.log(err)})
                                         })
                                         let updates = {}
-                                        updates['bettingbot/platinum/users/' + i + '/status'] = 'active'
+                                        updates['bettingbot/standard/users/' + i + '/status'] = 'active'
                                         fb.database().ref().update(updates)
                                     }
                                 }
@@ -559,7 +559,7 @@ function Start(msg){
             })
         }
         else {
-            let userdata = fb.database().ref('bettingbot/platinum/users/')
+            let userdata = fb.database().ref('bettingbot/standard/users/')
             userdata.get().then(result => {
                 console.log(result.exists())
                 if (result.exists()) {
@@ -687,7 +687,7 @@ function PostPonePosting(){
     clearTimeout(timer);
     timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
     //Получаем список постов с сегодняшней датой
-    let userdata = fb.database().ref('bettingbot/platinum/users')
+    let userdata = fb.database().ref('bettingbot/standard/users')
     userdata.get().then(result => {
         if (result.val() !== null){
             let date = new Date()
@@ -727,7 +727,7 @@ function PostPonePosting(){
                                                 if (result_1.data.purchase_list[x].billing_status !== 'paying'){
                                                     if (result_1.data.purchase_list[x].billing_status === 'aborted'){
                                                         //прерван, kick user
-                                                        updates['bettingbot/platinum/users/' + i + '/status'] = 'stopped'
+                                                        updates['bettingbot/standard/users/' + i + '/status'] = 'stopped'
                                                         bot.kickChatMember(channel_id, result.val()[i].tg_id).catch(err => {console.log('err: ' + err)})
                                                         bot.sendMessage(result.val()[i].tg_id, youarekicked, {
                                                             parse_mode: 'HTML',
@@ -748,7 +748,7 @@ function PostPonePosting(){
                                                 }
                                                 if (result_1.data.purchase_list[x].billing_status === 'paying'){
                                                     if (result_1.data.purchase_list[x].next_payment_at !== result.val()[i].next_payment_at){
-                                                        updates['bettingbot/platinum/users/' + i + '/next_payment_at'] = result_1.data.purchase_list[x].next_payment_at
+                                                        updates['bettingbot/standard/users/' + i + '/next_payment_at'] = result_1.data.purchase_list[x].next_payment_at
                                                     }
                                                     let local_date = result_1.data.purchase_list[x].next_payment_at.split('-')
                                                     let localdate = new Date(parseInt(local_date[0]), parseInt(local_date[1]), parseInt(local_date[2]))
@@ -759,7 +759,7 @@ function PostPonePosting(){
                                                         //time is up
                                                         if ((localdate.getTime() - current_date.getTime()) < -100){
                                                             //time is up, kick user
-                                                            updates['bettingbot/platinum/users/' + i + '/status'] = 'stopped'
+                                                            updates['bettingbot/standard/users/' + i + '/status'] = 'stopped'
                                                             bot.kickChatMember(channel_id, result.val()[i].tg_id).catch(err => {console.log('err: ' + err)})
                                                             bot.sendMessage(result.val()[i].tg_id, youarekicked, {
                                                                 parse_mode: 'HTML',
@@ -803,7 +803,7 @@ function PostPonePosting(){
                                             }
                                             else {
                                                 //прерван, kick user
-                                                updates['bettingbot/platinum/users/' + i + '/status'] = 'stopped'
+                                                updates['bettingbot/standard/users/' + i + '/status'] = 'stopped'
                                                 bot.kickChatMember(channel_id, result.val()[i].tg_id).catch(err => {console.log('err: ' + err)})
                                                 bot.sendMessage(result.val()[i].tg_id, youarekicked, {
                                                     parse_mode: 'HTML',
@@ -826,7 +826,7 @@ function PostPonePosting(){
                                     }/* 
                                     if (x === result_1.data.purchase_list.length - 1) {
                                         //kick user
-                                        updates['bettingbot/platinum/users/' + i + '/status'] = 'stopped'
+                                        updates['bettingbot/standard/users/' + i + '/status'] = 'stopped'
                                         bot.kickChatMember(channel_id, result.val()[i].tg_id).catch(err => {console.log('err: ' + err)})
                                         bot.sendMessage(result.val()[i].tg_id, youarekicked, {
                                             parse_mode: 'HTML',
