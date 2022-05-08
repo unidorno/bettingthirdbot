@@ -34,7 +34,7 @@ const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-
 let active_session = []
 let postpone_delay = 60 * 24
 let postpone_enabled = false
-let timer = setTimeout(() => PostPonePosting(), 1000);
+//let timer = setTimeout(() => PostPonePosting(), 1000);
 
 let message_nobutton = []
 let message_todelete = []
@@ -44,11 +44,14 @@ let product_id_3 = '393195'
 let product_link = 'https://sportwetten-university.de/stop-geheimes-video/' //- PLATINUM, STANDARD - 'https://sportwetten-university.de/sportwetten-insider/'
 //let product_image = 'https://d7jiromw385hv.cloudfront.net/merchant_584674/image/product/NQQQ0Z6G'
 let channel_id = -1001258358771 //PLATINUM:-1001569887769 | INSIDER:-1001637428332 | THIRD: -1001258358771
-let admin_id = 338134907
+let admin_id = 1017018426//338134907 //1017018426
 let linkexpiretime = 1000 * 60 * 5
 let users_emails = []
 let isTypingEmail = []
 let isTypingMessageAdmin = []
+let isManuallClientEmail = []
+let isManuallClientID= []
+let newclientdata = []
 
 const digistore_key = '621668-hev9iWtyp73T8bS0txxjLvl89IPk4Ia81EQxEu2b'
 /* let method = 'listBuyers'
@@ -61,9 +64,11 @@ let hellomessage = 'Hallo, mit diesem Bot bekommst du Zugang zu den ' + group_na
 let hellomessage_authed = 'Hallo, Du erhältst ab sofort die ' + group_name
 let hellomessage_admin = 'Hello, you are admin of ' + group_name + '\n\nYou can send message to every participant in private'
 let typeemail = 'Schreibe unten deine E-Mail Adresse rein mit der du bestellt hast:'
+let typeeid = 'Type chat.id of your client. You can request it from him. To get chat.id, client needs to send message with /getid command to the bot:'
 let yourlinkmessage = 'Es hat geklappt! ✅ Du erhältst ab sofort die ' + group_name
 let email_not_found = 'Deine E-Mail Adresse wurde nicht gefunden. Bitte nutze die E-Mail, welche du bei der Bestellung genutzt hast. Schaue bitte in dein E-Mail Postfach und verwende 1:1 die selbe E-Mail von der du die Bestellbestätigung von Digistore24 bekommen hast.'
 let renewsubscription = 'Deine Mitgliedschaft endet demnächst! Bitte nehme die Zahlung wieder auf!\nAnsonsten wirst du automatisch an diesem Tag entfernt:'
+let justrenew = 'Hallo, deine Zahlung hat nicht geklappt! ❌\n\n<b>Deine nächsten Schritte:</b>\n\n1. Bitte gehe in deine Emails\n\n2. Klicke auf die Mail „Digistore24 - Eine Bestellung erfordert Ihre Aufmerksamkeit“\n\n3. Nehme die Zahlung über den link in der E-Mail jetzt wieder auf!'
 let youarekicked = 'Deine Mitgliedschaft ist abgelaufen! Um die ' + group_name + ' weiter zu nutzen, bestelle hier erneut: https://bit.ly/3vdA0FV'
 let emailexists = 'Diese E-Mail ist bereits verwendet. Bestelle hier sofern du noch kein Kunde bist: https://bit.ly/3vdA0FV'
 let wrongemail = 'Das ist keine E-Mail. Versuche es erneut!'
@@ -75,19 +80,21 @@ let b_gotostart = ['◀️ Zurück', 'gotostartcb']
 let b_typeemail = ['Ich bin bereits Mitglied ▶️', 'enteremail_cb']
 let b_requestlink = ['🔗 Link erhalten', 'requestlink_cb']
 let b_sendmessageadmin = ['✉️ Nachricht senden', 'sendmessageadmin_cb']
+let b_manuall = ['➕ Add client', 'manualclient_cb']
 let b_renew = 'Renew now'
 
-/* bot.on('channel_post', msg => {
-    console.log(msg)
+bot.on('channel_post', msg => {
+    console.log(msg)/* 
     let date = new Date()
     let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     let timeOfffset = 3
-    last_post = new Date(utcTime + (3600000 * timeOfffset))
-}) */
+    last_post = new Date(utcTime + (3600000 * timeOfffset)) */
+})
 bot.on('message', (msg) =>
 {
     const { chat, message_id, text } = msg
     //FixMessages(chat)
+    console.log(msg)
     if (text !== undefined) {
         if (active_session[chat.id] !== undefined && !text.includes('/start') && !text.includes('/mitgliederbereich') && !text.includes('/Admin_controller:GetChatInfo')){
             if (isTypingEmail[chat.id] === true && text.includes('@')){
@@ -256,6 +263,185 @@ bot.on('message', (msg) =>
                     
                 })  
             }
+            if (isManuallClientEmail[chat.id] === true && text.includes('@')){
+                bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
+                isManuallClientEmail[chat.id] = false
+                let success = false
+                let userdata = fb.database().ref('bettingbot/third/users/')
+                userdata.get().then(result => {
+                    if (result.val().length > 1) {
+                        for (let i = 1; i < result.val().length; i++){
+                            if (i === result.val().length - 1 && (result.val()[i].email !== null || result.val()[i].email !== text)){
+                                var options_1 = {
+                                    'method': 'GET',
+                                    'hostname': 'www.digistore24.com',
+                                    'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
+                                    'headers': {
+                                      'X-DS-API-KEY': digistore_key,
+                                      'Accept': 'application/json',
+                                      'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+                                    },
+                                    'maxRedirects': 20
+                                };
+                                var req_1 = https.request(options_1, function (res_1) {
+                                    var chunks1 = [];
+                                    res_1.on("data", function (chunk) {
+                                      chunks1.push(chunk);
+                                    });
+                    
+                                    res_1.on("end", function (chunk) {
+                                        var body1 = Buffer.concat(chunks1);
+                                        let result_1 = JSON.parse(body1.toString())
+                                        console.log(result_1);
+                                        if (result_1.result === 'success'){
+                                            for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                                                for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                                                    if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
+                                                        if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                            success = true
+                                                            let newuser = {
+                                                                tg_id: newclientdata[chat.id][0],
+                                                                buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                                email: text,
+                                                                billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                                next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                                next_amount: result_1.data.purchase_list[x].next_amount,
+                                                                status: 'active'
+                                                            }
+                                                            let updates = {}
+                                                            updates['bettingbot/third/users/' + result.val().length] = newuser
+                                                            fb.database().ref().update(updates)
+                                                            FixMessages(chat)
+                                                            bot.sendMessage(chat.id, '✅ This client was added to the database. To active the bot, he just needs press /start', {
+                                                                parse_mode: 'HTML'
+                                                            }).catch(err1 => {console.log(err1)})
+                                                            break
+                                                        }
+                                                    }
+                                                }
+                                                if (x === result_1.data.purchase_list.length - 1 && !success) {
+                                                    isManuallClientEmail[chat.id] = true
+                                                    bot.sendMessage(chat.id, '❌ This account is not active. Try another one', {
+                                                        parse_mode: 'HTML'
+                                                    }).catch(err1 => {console.log(err1)})
+                                                }
+                                            }
+                                        }
+                                        else {
+                                            isManuallClientEmail[chat.id] = true
+                                            bot.sendMessage(chat.id, '❌ There is no such email. Try again', {
+                                                parse_mode: 'HTML'
+                                            }).catch(err1 => {console.log(err1)})
+                                        }
+                                    })
+                                    res_1.on("error", function (error) {
+                                      console.error('here: ' + error);
+                                    });
+                                });
+                                req_1.end();
+                            }
+                            if (i === result.val().length - 1 && result.val()[i].email === text) {
+                                isManuallClientEmail[chat.id] = false
+                                bot.sendMessage(chat.id, '❌ There is no such email. Try again', {
+                                    parse_mode: 'HTML'
+                                }).catch(err1 => {console.log(err1)})
+                            }
+                        }        
+                    }
+                    else if (result.val().length === 1) {
+                        var options_1 = {
+                            'method': 'GET',
+                            'hostname': 'www.digistore24.com',
+                            'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
+                            'headers': {
+                              'X-DS-API-KEY': digistore_key,
+                              'Accept': 'application/json',
+                              'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+                            },
+                            'maxRedirects': 20
+                        };
+                        var req_1 = https.request(options_1, function (res_1) {
+                            var chunks1 = [];
+                            res_1.on("data", function (chunk) {
+                              chunks1.push(chunk);
+                            });
+            
+                            res_1.on("end", function (chunk) {
+                                var body1 = Buffer.concat(chunks1);
+                                let result_1 = JSON.parse(body1.toString())
+                                console.log(result_1);
+                                if (result_1.result === 'success'){
+                                    for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                                        for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                                            if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
+                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                    success = true
+                                                    let newuser = {
+                                                        tg_id: newclientdata[chat.id][0],
+                                                        buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                        email: text,
+                                                        billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                        next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                        next_amount: result_1.data.purchase_list[x].next_amount,
+                                                        status: 'active'
+                                                    }
+                                                    let updates = {}
+                                                    updates['bettingbot/third/users/' + result.val().length] = newuser
+                                                    fb.database().ref().update(updates)
+                                                    FixMessages(chat)
+                                                    bot.sendMessage(chat.id, '✅ This client was added to the database. To active the bot, he just needs press /start', {
+                                                        parse_mode: 'HTML'
+                                                    }).catch(err1 => {console.log(err1)})
+                                                    break
+                                                }
+                                            }
+                                        }
+                                        if (x === result_1.data.purchase_list.length - 1 && !success) {
+                                            isManuallClientEmail[chat.id] = true
+                                            bot.sendMessage(chat.id, '❌ This account is not active. Try another one', {
+                                                parse_mode: 'HTML'
+                                            }).catch(err1 => {console.log(err1)})
+                                        }
+                                    }
+                                }
+                                else {
+                                    isManuallClientEmail[chat.id] = true
+                                    bot.sendMessage(chat.id, '❌ There is no such email. Try again', {
+                                        parse_mode: 'HTML'
+                                    }).catch(err1 => {console.log(err1)})
+                                }
+                            })
+                            res_1.on("error", function (error) {
+                              console.error('here: ' + error);
+                            });
+                        });
+                        req_1.end();
+                    }
+                })  
+            }
+            if (isManuallClientID[chat.id] === true) {
+                isManuallClientID[chat.id] = false;
+                isManuallClientEmail[chat.id] = true
+                newclientdata[chat.id] = []
+                newclientdata[chat.id].push(parseInt(text))
+
+                bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
+                
+                bot.sendMessage(chat.id, typeemail, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{
+                                text: b_gotostart[0],
+                                callback_data: b_gotostart[1]
+                            }]
+                        ]
+                    }
+                }).then(res => {
+                    if (message_nobutton[chat.id] === undefined) message_nobutton[chat.id] = []
+                    message_nobutton[chat.id].push([res.message_id, typeemail])
+                })
+            }
             else if (isTypingEmail[chat.id] === true && !text.includes('@')) {
                 bot.deleteMessage(chat.id, message_id).catch(err => {console.log('err: ' + err)})
                 bot.sendMessage(chat.id, wrongemail, {
@@ -268,33 +454,127 @@ bot.on('message', (msg) =>
             }
             else if (isTypingMessageAdmin[chat.id] === true){
                 isTypingMessageAdmin[chat.id] = false
-                let userdata = fb.database().ref('bettingbot/third/users/')
+
+                let userdata = fb.database().ref('bettingbot/third/')
                 userdata.get().then(result => {
-                    for (let i = 0; i < result.val().length; i++){
-                        if (result.val()[i].status === 'active'){
-                            bot.sendMessage(result.val()[i].tg_id, messagefromadmin + '\n\n' + text, {
-                                parse_mode: 'HTML',
-                                protect_content: true
-                            })
-                        }
-                        if (i === result.val().length - 1){
-                            bot.sendMessage(chat.id, messagewassenttext, {
-                                parse_mode: 'HTML',
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{
-                                            text: b_gotostart[0],
-                                            callback_data: b_gotostart[1]
-                                        }]
-                                    ]
+                    for (let i = 1; i < result.val().users.length; i++){
+
+                        var options_1 = {
+                            'method': 'GET',
+                            'hostname': 'www.digistore24.com',
+                            'path': '/api/call/listPurchasesOfEmail/?email='+result.val().users[i].email+'&limit=1000',
+                            'headers': {
+                              'X-DS-API-KEY': digistore_key,
+                              'Accept': 'application/json',
+                              'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+                            },
+                            'maxRedirects': 20
+                        };
+                        var req_1 = https.request(options_1, function (res_1) {
+                            var chunks1 = [];
+                            res_1.on("data", function (chunk) {
+                              chunks1.push(chunk);
+                            });
+            
+                            res_1.on("end", function (chunk) {
+                                var body1 = Buffer.concat(chunks1);
+                                let result_1 = JSON.parse(body1.toString())
+                                let success = false;
+                                console.log(result_1);
+                                if (result_1.result === 'success'){
+                                    for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                                        for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                                            if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
+                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                    success = true
+                                                    let newuser = {
+                                                        tg_id: result.val().users[i].tg_id,
+                                                        buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                        email: result.val().users[i].email,
+                                                        billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                        next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                        next_amount: result_1.data.purchase_list[x].next_amount,
+                                                        status: 'active'
+                                                    }
+                                                    let updates = {}
+                                                    updates['bettingbot/third/users/' + i] = newuser
+                                                    fb.database().ref().update(updates)
+
+                                                    bot.sendMessage(result.val().users[i].tg_id, messagefromadmin + '\n\n' + text, {
+                                                        parse_mode: 'HTML',
+                                                        protect_content: true
+                                                    })
+                                                    break
+                                                }
+                                                else {
+                                                    if (!success && x === result_1.data.purchase_list.length - 1 && u === result_1.data.purchase_list[x].items.length - 1){
+                                                        let newuser = {
+                                                            tg_id: result.val().users[i].tg_id,
+                                                            buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                                            email: result.val().users[i].email,
+                                                            billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                                            next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                                            next_amount: result_1.data.purchase_list[x].next_amount,
+                                                            status: 'stopped'
+                                                        }
+                                                        let updates = {}
+                                                        updates['bettingbot/third/users/' + i] = newuser
+
+                                                        bot.sendMessage(result.val().users[i].tg_id, justrenew, {
+                                                            parse_mode: 'HTML',
+                                                            protect_content: true
+                                                        })
+
+                                                        fb.database().ref().update(updates)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        //if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
+                                    }
                                 }
-                            }).then(res => {
-                                if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
-                                message_todelete[chat.id].push(res.message_id)
+                                //else EmailNotFound(chat)
                             })
+                            res_1.on("error", function (error) {
+                              console.error('here: ' + error);
+                            });
+                        });
+                        req_1.end();
+                    }
+
+                    bot.sendMessage(chat.id, messagewassenttext, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{
+                                    text: b_gotostart[0],
+                                    callback_data: b_gotostart[1]
+                                }]
+                            ]
+                        }
+                    }).then(res => {
+                        if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
+                        message_todelete[chat.id].push(res.message_id)
+                    })
+
+                    if (result.val().chats.admins !== ''){
+                        if (result.val().chats.admins.includes(',')){
+                            let admins = result.val().chats.admins.split(',')
+                            for (let i = 0; i < admins.length; i++) {
+                                bot.sendMessage(parseInt(admins[i]), '<b><a href="tg://user?id="'+ chat.id + '>Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
+                                    parse_mode: 'HTML'
+                                })
+                                .catch(err => {console.log('cant send message to admins in cycle: ' + err)})
+                            }
+                        }
+                        else {
+                            bot.sendMessage(parseInt(result.val().chats.admins), '<b><a href="tg://user?id="'+ chat.id + '>Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
+                                parse_mode: 'HTML'
+                            })
+                            .catch(err => {console.log('cant send message to singe admin: ' + err)})
                         }
                     }
-                })
+                }) 
             }
         }
         else {
@@ -322,11 +602,32 @@ bot.on('callback_query', query => {
         if (query.data === b_gotostart[1]){
             isTypingEmail[chat.id] = undefined
             isTypingMessageAdmin[chat.id] = undefined
+            isManuallClientEmail[chat.id] = undefined
+            isManuallClientID[chat.id] = undefined
+            newclientdata[chat.id] = undefined
             Start(query.message)
         }
         else if (query.data === b_typeemail[1]){
             isTypingEmail[chat.id] = true
             bot.sendMessage(chat.id, typeemail, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{
+                            text: b_gotostart[0],
+                            callback_data: b_gotostart[1]
+                        }]
+                    ]
+                }
+            }).then(res => {
+                if (message_nobutton[chat.id] === undefined) message_nobutton[chat.id] = []
+                message_nobutton[chat.id].push([res.message_id, typeemail])
+            })
+        }
+        else if (query.data === b_manuall[1]){
+            isManuallClientID[chat.id] = true
+            isManuallClientEmail[chat.id] = false
+            bot.sendMessage(chat.id, typeeid, {
                 parse_mode: 'HTML',
                 reply_markup: {
                     inline_keyboard: [
@@ -556,7 +857,7 @@ bot.on('callback_query', query => {
         Start(query.message)
     }
 })
-bot.onText(/\/Admin_controller:GetChatInfo/, msg =>
+bot.onText(/\/getid/, msg =>
     {
         //console.log(msg)
         const chatId = msg.chat.id
@@ -584,20 +885,80 @@ bot.onText(/\/mitgliederbereich/, msg => {
     }).catch(err => {console.log('err: ' + err)})
 
 })
+bot.onText(/\/wettanbieter/, msg => {
+    const { chat, message_id, text } = msg
+
+    bot.sendMessage(chat.id, 'Klicke hier und melde dich bei den verfügbaren Buchmachern für unsere Strategie an 👉 https://sportwetten-university.de/buchmacher/', {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [{
+                    text: 'Wettanbieter',
+                    url: 'https://sportwetten-university.de/buchmacher/'
+                }]
+            ]
+        }
+    }).catch(err => {console.log('err: ' + err)})
+
+})
+bot.onText(/\/insidertippserhalten/, msg => {
+    const { chat, message_id, text } = msg
+
+    bot.sendMessage(chat.id, ': Klicke hier und schaue das Video an um die Insider Tipps sichern zu können 👉 https://bit.ly/3KClOMA', {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [{
+                    text: 'Insider Tipps erhalten',
+                    url: 'https://bit.ly/3KClOMA'
+                }]
+            ]
+        }
+    }).catch(err => {console.log('err: ' + err)})
+
+})
 function Start(msg){
     const { chat, message_id, text } = msg
     
     bot.getChatMember(channel_id, chat.id).then(reply => {
         if (reply.status === 'administrator' || reply.status === 'creator'){
+            let userdata = fb.database().ref('bettingbot/third/chats/admins')
+            userdata.get().then(result => {
+                let admins = result.val()
+
+                if (!result.val().includes((chat.id).toString())) {
+
+                    if (result.val() === ''){
+                        admins = chat.id
+                    }
+
+                    else {
+                        admins = result.val() + ',' + chat.id
+                    }
+
+                    let updates = {}
+                    updates['bettingbot/third/chats/admins'] = admins
+                    fb.database().ref().update(updates)
+                }
+            })
+
+            let kb = []
+            kb.push([{
+                text: b_sendmessageadmin[0],
+                callback_data: b_sendmessageadmin[1]
+            }])
+
+            if (chat.id === admin_id){
+                kb.push([{
+                    text: b_manuall[0],
+                    callback_data: b_manuall[1]
+                }])
+            }
+
             bot.sendMessage(chat.id, hellomessage_admin, {
                 parse_mode: 'HTML',
                 reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: b_sendmessageadmin[0],
-                            callback_data: b_sendmessageadmin[1]
-                        }]
-                    ]
+                    inline_keyboard: kb
                 }
             }).then(res => {
                 if (message_todelete[chat.id] === undefined) message_todelete[chat.id] = []
@@ -612,19 +973,14 @@ function Start(msg){
                     let isauthed = false
                     for (let i = 0; i < result.val().length; i++) {
                         if (result.val()[i].tg_id == chat.id){
+
+                            CheckSubscription(result)
+
                             console.log('authed')
                             isauthed = true
         
                             bot.sendMessage(chat.id, hellomessage_authed, {
-                                parse_mode: 'HTML'/* ,
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{
-                                            text: b_requestlink[0],
-                                            callback_data: b_requestlink[1]
-                                        }]
-                                    ]
-                                } */
+                                parse_mode: 'HTML'
                             }).then(res => {
                                 if (message_nobutton[chat.id] === undefined) message_nobutton[chat.id] = []
                                 message_nobutton[chat.id].push([res.message_id, hellomessage])
@@ -639,11 +995,7 @@ function Start(msg){
                                     [{
                                         text: b_typeemail[0],
                                         callback_data: b_typeemail[1]
-                                    }]/* ,
-                                    [{
-                                        text: '🔗 Subscribe',
-                                        url: product_link
-                                    }] */
+                                    }]
                                 ]
                             }
                         }).then(res => {
@@ -928,6 +1280,78 @@ function PostPonePosting(){
             timer = setTimeout(() => PostPonePosting(), 1000 * 60 * postpone_delay);
         }
     })
+}
+function CheckSubscription(result){
+    var options_1 = {
+        'method': 'GET',
+        'hostname': 'www.digistore24.com',
+        'path': '/api/call/listPurchasesOfEmail/?email='+result.val()[i].email+'&limit=1000',
+        'headers': {
+          'X-DS-API-KEY': digistore_key,
+          'Accept': 'application/json',
+          'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+        },
+        'maxRedirects': 20
+    };
+    var req_1 = https.request(options_1, function (res_1) {
+        var chunks1 = [];
+        res_1.on("data", function (chunk) {
+          chunks1.push(chunk);
+        });
+
+        res_1.on("end", function (chunk) {
+            var body1 = Buffer.concat(chunks1);
+            let result_1 = JSON.parse(body1.toString())
+            let success = false;
+            console.log(result_1);
+            if (result_1.result === 'success'){
+                for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                    for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                        if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
+                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                success = true
+                                let newuser = {
+                                    tg_id: result.val()[i].tg_id,
+                                    buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                    email: result.val()[i].email,
+                                    billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                    next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                    next_amount: result_1.data.purchase_list[x].next_amount,
+                                    status: 'active'
+                                }
+                                let updates = {}
+                                updates['bettingbot/third/users/' + i] = newuser
+                                fb.database().ref().update(updates)
+                                break
+                            }
+                            else {
+                                if (!success && x === result_1.data.purchase_list.length - 1 && u === result_1.data.purchase_list[x].items.length - 1){
+                                    let newuser = {
+                                        tg_id: result.val()[i].tg_id,
+                                        buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                        email: result.val()[i].email,
+                                        billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                        next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                        next_amount: result_1.data.purchase_list[x].next_amount,
+                                        status: 'stopped'
+                                    }
+                                    let updates = {}
+                                    updates['bettingbot/third/users/' + i] = newuser
+                                    fb.database().ref().update(updates)
+                                }
+                            }
+                        }
+                    }
+                    //if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
+                }
+            }
+            //else EmailNotFound(chat)
+        })
+        res_1.on("error", function (error) {
+          console.error('here: ' + error);
+        });
+    });
+    req_1.end();
 }
 process.on('uncaughtException', function (err) {
     console.log("here" + err);
