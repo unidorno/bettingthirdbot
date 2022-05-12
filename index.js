@@ -43,8 +43,8 @@ let product_id_2 = '348785'
 let product_id_3 = '393195'
 let product_link = 'https://sportwetten-university.de/stop-geheimes-video/' //- PLATINUM, STANDARD - 'https://sportwetten-university.de/sportwetten-insider/'
 //let product_image = 'https://d7jiromw385hv.cloudfront.net/merchant_584674/image/product/NQQQ0Z6G'
-let channel_id = -1001258358771 //PLATINUM:-1001569887769 | INSIDER:-1001637428332 | THIRD: -1001258358771
-let admin_id = 1017018426//338134907 //1017018426
+let channel_id = -1001258358771 //PLATINUM:-1001569887769 | INSIDER:-1001637428332 | THIRD: -1001258358771 | TEST: -1001224734962
+let admin_id = 1017018426 //338134907
 let linkexpiretime = 1000 * 60 * 5
 let users_emails = []
 let isTypingEmail = []
@@ -82,6 +82,75 @@ let b_requestlink = ['🔗 Link erhalten', 'requestlink_cb']
 let b_sendmessageadmin = ['✉️ Nachricht senden', 'sendmessageadmin_cb']
 let b_manuall = ['➕ Add client', 'manualclient_cb']
 let b_renew = 'Renew now'
+
+/* function Tester(){
+    var options_1 = {
+        'method': 'GET',
+        'hostname': 'www.digistore24.com',
+        'path': '/api/call/listPurchasesOfEmail/?email='+text+'&limit=1000',
+        'headers': {
+          'X-DS-API-KEY': digistore_key,
+          'Accept': 'application/json',
+          'Cookie': 'ds24=produ62546e26ed3747.84477455jRJV6aC37JjGM1l1fBXxATRA7UCKUQ9fWplebEEE3rz29TuhnVxcT7KTogvMuZlE68XevNWKSMYBQvptkHa4QJpMorfNZlMdUy8'
+        },
+        'maxRedirects': 20
+    };
+    var req_1 = https.request(options_1, function (res_1) {
+        var chunks1 = [];
+        res_1.on("data", function (chunk) {
+          chunks1.push(chunk);
+        });
+
+        res_1.on("end", function (chunk) {
+            var body1 = Buffer.concat(chunks1);
+            let result_1 = JSON.parse(body1.toString())
+            console.log(result_1);
+            if (result_1.result === 'success'){
+                for (let x = 0; x < result_1.data.purchase_list.length; x++){
+                    for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
+                        if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
+                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                success = true
+                                let newuser = {
+                                    tg_id: chat.id,
+                                    buyer_id: result_1.data.purchase_list[x].buyer_id,
+                                    email: text,
+                                    billing_mode: result_1.data.purchase_list[x].billing_mode,
+                                    next_payment_at: result_1.data.purchase_list[x].next_payment_at,
+                                    next_amount: result_1.data.purchase_list[x].next_amount,
+                                    status: 'active'
+                                }
+                                let updates = {}
+                                updates['bettingbot/third/users/' + result.val().length] = newuser
+                                fb.database().ref().update(updates)
+                                bot.createChatInviteLink(channel_id, {
+                                    name: 'newuser_' + chat.id, 
+                                    expire_date: result.date + 3600,
+                                    member_limit: 1
+                                })
+                                .then(invite => {
+                                    FixMessages(chat)
+                                    bot.sendMessage(chat.id, yourlinkmessage, {
+                                        parse_mode: 'HTML',
+                                        protect_content: true
+                                    }).catch(err1 => {console.log(err1)})
+                                })
+                                .catch(err => {console.log(err)})
+                                break
+                            }
+                        }
+                    }
+                    if (x === result_1.data.purchase_list.length - 1 && !success) EmailNotFound(chat)
+                }
+            }
+            else EmailNotFound(chat)
+        })
+        res_1.on("error", function (error) {
+          console.error('here: ' + error);
+        });
+    });
+    req_1.end();
+} */
 
 bot.on('channel_post', msg => {
     console.log(msg)/* 
@@ -129,7 +198,7 @@ bot.on('message', (msg) =>
                                     for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                         for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                             if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                     success = true
                                                     let newuser = {
                                                         tg_id: chat.id,
@@ -207,7 +276,8 @@ bot.on('message', (msg) =>
                                             for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                                 for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                                     if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                        if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                        console.log('HE PURCHASED THIS ITEM');
+                                                        if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                             success = true
                                                             let newuser = {
                                                                 tg_id: chat.id,
@@ -297,7 +367,7 @@ bot.on('message', (msg) =>
                                             for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                                 for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                                     if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                        if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                        if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                             success = true
                                                             let newuser = {
                                                                 tg_id: newclientdata[chat.id][0],
@@ -374,7 +444,7 @@ bot.on('message', (msg) =>
                                     for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                         for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                             if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                     success = true
                                                     let newuser = {
                                                         tg_id: newclientdata[chat.id][0],
@@ -485,7 +555,8 @@ bot.on('message', (msg) =>
                                     for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                         for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                             if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
+                                                    
                                                     success = true
                                                     let newuser = {
                                                         tg_id: result.val().users[i].tg_id,
@@ -699,7 +770,7 @@ bot.on('callback_query', query => {
                                                     if (!users_emails.includes(result.data.items[i].email)){
                                                         for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                                             if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription'){
+                                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                                     if (result_1.data.purchase_list[x].is_canceled_now === 'N' && result_1.data.purchase_list[x].next_payment_at !== '' && result_1.data.purchase_list[x].billing_status === 'paying'){
                                                                         let date = new Date()
                                                                         let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
@@ -929,7 +1000,7 @@ function Start(msg){
                 if (!result.val().includes((chat.id).toString())) {
 
                     if (result.val() === ''){
-                        admins = chat.id
+                        admins = (chat.id).toString()
                     }
 
                     else {
@@ -1121,7 +1192,7 @@ function PostPonePosting(){
                                 for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                     for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                         if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription'){
+                                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                                 if (result_1.data.purchase_list[x].is_canceled_now === 'N'){
                                                     if (result_1.data.purchase_list[x].billing_status !== 'paying'){
                                                         if (result_1.data.purchase_list[x].billing_status === 'aborted'){
@@ -1308,7 +1379,7 @@ function CheckSubscription(result){
                 for (let x = 0; x < result_1.data.purchase_list.length; x++){
                     for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                         if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && result_1.data.purchase_list[x].billing_type === 'subscription' && result_1.data.purchase_list[x].billing_status === 'paying'){
+                            if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
                                 success = true
                                 let newuser = {
                                     tg_id: result.val()[i].tg_id,
