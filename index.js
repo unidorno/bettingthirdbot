@@ -555,8 +555,19 @@ bot.on('message', (msg) =>
                                     for (let x = 0; x < result_1.data.purchase_list.length; x++){
                                         for (let u = 0; u < result_1.data.purchase_list[x].items.length; u++){
                                             if (result_1.data.purchase_list[x].items[u].product_id === product_id || result_1.data.purchase_list[x].items[u].product_id === product_id_2 || result_1.data.purchase_list[x].items[u].product_id === product_id_3){
-                                                if (result_1.data.purchase_list[x].last_payment.pay_method !== 'test' && (result_1.data.purchase_list[x].billing_type === 'subscription' || result_1.data.purchase_list[x].billing_type === 'single_payment') && (result_1.data.purchase_list[x].billing_status === 'paying' || result_1.data.purchase_list[x].billing_status === 'completed')){
-                                                    
+                                                let year_tmp = parseInt(result_1.data.purchase_list[x].next_payment_at.split('-')[0])
+                                                let month_tmp = parseInt(result_1.data.purchase_list[x].next_payment_at.split('-')[1])
+                                                let day_tmp = parseInt(result_1.data.purchase_list[x].next_payment_at.split('-')[2])
+                                                
+                                                let nextbill_date = new Date(year_tmp, month_tmp, day_tmp)
+                                                console.log(nextbill_date)
+                                                
+                                                let date = new Date()
+                                                let utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+                                                let timeOfffset = 0
+                                                let current_date = new Date(utcTime + (3600000 * timeOfffset))
+
+                                                if (current_date.getTime() < nextbill_date.getTime()){
                                                     success = true
                                                     let newuser = {
                                                         tg_id: result.val().users[i].tg_id,
@@ -568,7 +579,7 @@ bot.on('message', (msg) =>
                                                         status: 'active'
                                                     }
                                                     let updates = {}
-                                                    updates['bettingbot/third/users/' + i] = newuser
+                                                    updates['bettingbot/standard/users/' + i] = newuser
                                                     fb.database().ref().update(updates)
 
                                                     bot.sendMessage(result.val().users[i].tg_id, messagefromadmin + '\n\n' + text, {
@@ -577,7 +588,7 @@ bot.on('message', (msg) =>
                                                     })
                                                     break
                                                 }
-                                                else {
+                                                else if (current_date.getTime() >= nextbill_date.getTime()) {
                                                     if (!success && x === result_1.data.purchase_list.length - 1 && u === result_1.data.purchase_list[x].items.length - 1){
                                                         let newuser = {
                                                             tg_id: result.val().users[i].tg_id,
@@ -589,7 +600,7 @@ bot.on('message', (msg) =>
                                                             status: 'stopped'
                                                         }
                                                         let updates = {}
-                                                        updates['bettingbot/third/users/' + i] = newuser
+                                                        updates['bettingbot/standard/users/' + i] = newuser
 
                                                         bot.sendMessage(result.val().users[i].tg_id, justrenew, {
                                                             parse_mode: 'HTML',
