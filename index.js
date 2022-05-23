@@ -643,17 +643,21 @@ bot.on('message', (msg) =>
                         if (result.val().chats.admins.includes(',')){
                             let admins = result.val().chats.admins.split(',')
                             for (let i = 0; i < admins.length; i++) {
-                                bot.sendMessage(parseInt(admins[i]), '<b><a href="tg://user?id="'+ chat.id + '>Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
-                                    parse_mode: 'HTML'
-                                })
-                                .catch(err => {console.log('cant send message to admins in cycle: ' + err)})
+                                if (parseInt(admins[i]) !== chat.id){
+                                    bot.sendMessage(parseInt(admins[i]), '<b><a href="tg://user?id='+ chat.id + '">Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
+                                        parse_mode: 'HTML'
+                                    })
+                                    .catch(err => {console.log('cant send message to admins in cycle: ' + err)})
+                                }
                             }
                         }
                         else {
-                            bot.sendMessage(parseInt(result.val().chats.admins), '<b><a href="tg://user?id="'+ chat.id + '>Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
-                                parse_mode: 'HTML'
-                            })
-                            .catch(err => {console.log('cant send message to singe admin: ' + err)})
+                            if (parseInt(result.val().chats.admins) !== chat.id){
+                                bot.sendMessage(parseInt(result.val().chats.admins), '<b><a href="tg://user?id='+ chat.id + '">Admin</a> just sent a message to your clients:</b>' + '\n\n' + text, {
+                                    parse_mode: 'HTML'
+                                })
+                                .catch(err => {console.log('cant send message to singe admin: ' + err)})
+                            }
                         }
                     }
                 }) 
